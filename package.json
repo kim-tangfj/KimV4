@@ -1,0 +1,21 @@
+{
+  "name": "kim-storyboard-assistant",
+  "version": "1.0.0",
+  "description": "Kim 多级分镜提示词助手 - 面向视频创作者、AI内容生成师的多级分镜管理与提示词自动化生成工具",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron .",
+    "dev": "electron . --dev"
+  },
+  "devDependencies": {
+    "electron": "^40.6.1"
+  },
+  "keywords": [
+    "electron",
+    "video-production",
+    "storyboard",
+    "ai-prompts"
+  ],
+  "author": "KimV4",
+  "license": "MIT"
+}

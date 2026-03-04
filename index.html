@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Kim 多级分镜提示词助手</title>
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div id="app">
+    <!-- 项目列表栏 -->
+    <div class="panel project-panel">
+      <div class="panel-header">
+        <h3>项目</h3>
+        <div class="header-actions">
+          <button id="refresh-projects-btn" class="icon-btn" title="刷新">↻</button>
+          <button id="project-menu-btn" class="icon-btn">≡</button>
+        </div>
+      </div>
+      <div class="panel-content">
+        <div id="project-list" class="item-list">
+          <div class="placeholder-text">暂无项目，点击菜单新建</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 片段列表栏 -->
+    <div class="panel shot-panel">
+      <div class="panel-header">
+        <h3>片段</h3>
+        <div class="header-actions">
+          <button id="new-shot-btn" class="icon-btn" disabled>+</button>
+          <button id="delete-shot-btn" class="icon-btn" disabled>×</button>
+        </div>
+      </div>
+      <div class="panel-content">
+        <div id="shot-list" class="item-list">
+          <div class="placeholder-text">请选择项目</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 镜头列表栏 -->
+    <div class="panel scene-panel">
+      <div class="panel-header">
+        <h3>镜头</h3>
+        <div class="header-actions">
+          <button id="view-toggle-btn" class="icon-btn">□</button>
+          <button id="new-scene-btn" class="icon-btn" disabled>+</button>
+          <button id="delete-scene-btn" class="icon-btn" disabled>×</button>
+        </div>
+      </div>
+      <div class="panel-content">
+        <div id="scene-list" class="item-list">
+          <div class="placeholder-text">请选择片段</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 提示词预览栏 -->
+    <div class="panel prompt-panel">
+      <div class="panel-header">
+        <h3>提示词</h3>
+        <div class="header-actions">
+          <button id="copy-prompt-btn" class="icon-btn" disabled>📋</button>
+          <button id="export-prompt-btn" class="icon-btn" disabled>↓</button>
+          <button id="clear-prompt-btn" class="icon-btn" disabled>✕</button>
+        </div>
+      </div>
+      <div class="panel-content">
+        <div id="prompt-preview" class="prompt-area">
+          <div class="placeholder-text">请选中项目 > 片段 > 镜头，自动生成提示词</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部属性面板 -->
+    <div id="bottom-panel" class="bottom-panel collapsed">
+      <div class="panel-header" id="panel-toggle-header">
+        <h3>属性</h3>
+        <div class="header-actions">
+          <button id="panel-toggle-btn" class="icon-btn">▲</button>
+        </div>
+      </div>
+      <div class="panel-content">
+        <div id="property-form" class="property-form">
+          <div class="placeholder-text">请选择项目、片段或镜头以编辑属性</div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- 设置面板 -->
+  <div id="settings-modal" class="modal" style="display: none;">
+    <div class="modal-content settings-modal">
+      <div class="modal-header">
+        <h3>设置</h3>
+        <button id="close-settings-btn" class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- 主题设置 -->
+        <div class="settings-section">
+          <h4>主题设置</h4>
+          <div class="setting-item">
+            <label>当前主题</label>
+            <div class="theme-toggle-group">
+              <button class="theme-toggle-btn active" data-theme="light">
+                <span class="theme-icon">☀️</span>
+                <span>浅色</span>
+              </button>
+              <button class="theme-toggle-btn" data-theme="dark">
+                <span class="theme-icon">🌙</span>
+                <span>深色</span>
+              </button>
+            </div>
+          </div>
+        </div>
+
+        <!-- 存储路径 -->
+        <div class="settings-section">
+          <h4>存储路径</h4>
+          <div class="setting-item">
+            <label>项目存储位置</label>
+            <div class="path-input-group">
+              <input type="text" id="storage-path" readonly value="">
+              <button id="change-path-btn" class="form-btn">浏览</button>
+            </div>
+            <small class="setting-hint">默认：文档/KimStoryboard</small>
+          </div>
+        </div>
+
+        <!-- 大模型 API 设置 -->
+        <div class="settings-section">
+          <h4>大模型 API 设置</h4>
+          <div class="setting-item">
+            <label>选择提供商</label>
+            <select id="api-provider-select">
+              <option value="deepseek">DeepSeek</option>
+              <option value="doubao">豆包 (字节)</option>
+              <option value="qianwen">通义千问 (阿里)</option>
+            </select>
+          </div>
+
+          <!-- DeepSeek 配置 -->
+          <div id="deepseek-config" class="provider-config">
+            <div class="setting-item">
+              <label>API Key</label>
+              <div class="api-key-group">
+                <input type="password" id="deepseek-api-key" placeholder="请输入 DeepSeek API Key">
+                <button id="toggle-deepseek-key" class="icon-btn small">👁</button>
+              </div>
+            </div>
+            <div class="setting-item">
+              <label>模型名称</label>
+              <input type="text" id="deepseek-model" value="deepseek-chat">
+            </div>
+            <div class="setting-item">
+              <button id="test-deepseek-btn" class="form-btn">测试连接</button>
+              <span id="deepseek-status" class="connection-status"></span>
+            </div>
+          </div>
+
+          <!-- 豆包配置 -->
+          <div id="doubao-config" class="provider-config" style="display: none;">
+            <div class="setting-item">
+              <label>API Key</label>
+              <div class="api-key-group">
+                <input type="password" id="doubao-api-key" placeholder="请输入豆包 API Key">
+                <button id="toggle-doubao-key" class="icon-btn small">👁</button>
+              </div>
+            </div>
+            <div class="setting-item">
+              <label>模型名称</label>
+              <input type="text" id="doubao-model" value="doubao-pro-4k">
+            </div>
+            <div class="setting-item">
+              <button id="test-doubao-btn" class="form-btn">测试连接</button>
+              <span id="doubao-status" class="connection-status"></span>
+            </div>
+          </div>
+
+          <!-- 千问配置 -->
+          <div id="qianwen-config" class="provider-config" style="display: none;">
+            <div class="setting-item">
+              <label>API Key</label>
+              <div class="api-key-group">
+                <input type="password" id="qianwen-api-key" placeholder="请输入通义千问 API Key">
+                <button id="toggle-qianwen-key" class="icon-btn small">👁</button>
+              </div>
+            </div>
+            <div class="setting-item">
+              <label>模型名称</label>
+              <input type="text" id="qianwen-model" value="qwen-turbo">
+            </div>
+            <div class="setting-item">
+              <button id="test-qianwen-btn" class="form-btn">测试连接</button>
+              <span id="qianwen-status" class="connection-status"></span>
+            </div>
+          </div>
+        </div>
+
+        <!-- 自动保存 -->
+        <div class="settings-section">
+          <h4>自动保存</h4>
+          <div class="setting-item">
+            <label>自动保存间隔（分钟）</label>
+            <input type="number" id="auto-save-interval" value="5" min="1" max="60">
+          </div>
+        </div>
+
+        <!-- 模板数据管理 -->
+        <div class="settings-section">
+          <h4>模板数据管理</h4>
+          <div class="setting-item">
+            <label>存储位置</label>
+            <div class="path-input-group">
+              <input type="text" id="template-storage-path" readonly value="加载中...">
+              <button id="open-template-folder-btn" class="form-btn">打开文件夹</button>
+            </div>
+          </div>
+          <div class="setting-item">
+            <div class="form-buttons">
+              <button id="backup-templates-btn" class="form-btn">备份模板</button>
+              <button id="restore-templates-btn" class="form-btn">恢复模板</button>
+            </div>
+            <small class="setting-hint">模板数据独立保存，清除浏览器缓存不会丢失</small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="save-settings-btn" class="form-btn primary">保存</button>
+        <button id="cancel-settings-btn" class="form-btn">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 新建项目弹窗 -->
+  <div id="new-project-modal" class="modal" style="display: none;">
+    <div class="modal-content new-project-modal">
+      <div class="modal-header">
+        <h3>新建项目</h3>
+        <button id="close-new-project-btn" class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <!-- 模式切换 -->
+        <div class="project-mode-tabs">
+          <button class="mode-tab active" data-mode="manual">手动创建</button>
+          <button class="mode-tab" data-mode="ai">AI 生成</button>
+        </div>
+
+        <!-- 手动创建模式 -->
+        <div id="manual-mode" class="project-mode-content active">
+          <div class="form-group">
+            <label for="manual-project-name">项目名称 *</label>
+            <input type="text" id="manual-project-name" placeholder="请输入项目名称">
+          </div>
+          <div class="form-group">
+            <label for="manual-project-desc">项目描述</label>
+            <textarea id="manual-project-desc" placeholder="请输入项目描述"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="manual-project-ratio">默认画幅</label>
+            <select id="manual-project-ratio">
+              <option value="16:9">16:9 (横屏)</option>
+              <option value="9:16">9:16 (竖屏)</option>
+              <option value="1:1">1:1 (正方形)</option>
+              <option value="4:3">4:3</option>
+              <option value="3:4">3:4</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label>
+              <span>项目剧本 *</span>
+              <button id="copy-template-btn" class="form-btn small-btn" type="button">复制模板</button>
+            </label>
+            <textarea id="manual-project-script" class="script-input" placeholder="请输入剧本内容，例如：&#10;&#10;产品名称：智能运动手表&#10;产品卖点：心率监测、GPS 定位、50 米防水、续航 7 天&#10;视频类型：商品介绍&#10;目标受众：运动爱好者、健身人群&#10;&#10;或者直接输入完整剧本描述..."></textarea>
+            <small class="setting-hint">输入产品或视频的基本信息，用于生成结构化分镜数据</small>
+          </div>
+          <div class="form-group">
+            <label for="manual-project-json">结构化 JSON 数据 *</label>
+            <textarea id="manual-project-json" class="json-input" placeholder='请粘贴符合 project.json 格式的结构化数据...'></textarea>
+            <small class="setting-hint">需要包含 project 和 shots 字段的完整 JSON 结构</small>
+          </div>
+        </div>
+
+        <!-- AI 生成模式 -->
+        <div id="ai-mode" class="project-mode-content">
+          <div class="ai-notice">
+            <p>📝 AI 将基于您的剧本描述生成完整的分镜脚本结构</p>
+          </div>
+          <div class="form-group">
+            <label for="ai-project-name">项目名称 *</label>
+            <input type="text" id="ai-project-name" placeholder="请输入项目名称">
+          </div>
+          <div class="form-group">
+            <label for="ai-project-script">项目剧本 *</label>
+            <textarea id="ai-project-script" class="script-input ai-prompt-input" placeholder="请输入剧本内容，例如：&#10;&#10;产品名称：智能运动手表&#10;产品卖点：心率监测、GPS 定位、50 米防水、续航 7 天&#10;视频类型：商品介绍&#10;目标受众：运动爱好者、健身人群&#10;&#10;或者直接输入完整剧本描述..."></textarea>
+          </div>
+          <div class="form-group">
+            <label for="ai-project-ratio">默认画幅</label>
+            <select id="ai-project-ratio">
+              <option value="16:9">16:9 (横屏)</option>
+              <option value="9:16">9:16 (竖屏)</option>
+              <option value="1:1">1:1 (正方形)</option>
+              <option value="4:3">4:3</option>
+              <option value="3:4">3:4</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="ai-provider">选择 AI 提供商</label>
+            <select id="ai-provider">
+              <option value="deepseek">DeepSeek</option>
+              <option value="doubao">豆包 (字节)</option>
+              <option value="qianwen">通义千问 (阿里)</option>
+            </select>
+          </div>
+          
+          <!-- 生成提示词按钮 -->
+          <div class="form-group">
+            <button id="generate-prompt-btn" class="form-btn primary" type="button">✨ 生成提示词</button>
+          </div>
+          
+          <!-- API 返回数据预览 -->
+          <div class="form-group">
+            <label for="ai-response-preview">AI 返回数据预览</label>
+            <textarea id="ai-response-preview" class="json-input" placeholder="点击"生成提示词"按钮后，AI 返回的结构化数据将显示在这里..." readonly></textarea>
+            <small class="setting-hint">预览返回的 JSON 数据，确认无误后点击"创建"按钮</small>
+          </div>
+          
+          <div class="ai-status">
+            <div class="status-item">
+              <span class="status-label">API 状态:</span>
+              <span id="ai-api-status" class="status-value">未检测</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="create-project-btn" class="form-btn primary">创建项目</button>
+        <button id="cancel-new-project-btn" class="form-btn">取消</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 模板库管理弹窗 -->
+  <div id="template-library-modal" class="modal" style="display: none;">
+    <div class="modal-content template-library-modal">
+      <div class="modal-header">
+        <h3>模板库管理</h3>
+        <button id="close-template-btn" class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="template-toolbar">
+          <button id="add-template-btn" class="form-btn primary">+ 添加模板</button>
+        </div>
+        <div class="template-list-container">
+          <div id="template-list" class="template-list">
+            <!-- 模板列表将由 JavaScript 渲染 -->
+          </div>
+        </div>
+        <div class="template-editor" id="template-editor" style="display: none;">
+          <div class="form-group">
+            <label for="template-name">模板名称 *</label>
+            <input type="text" id="template-name" placeholder="请输入模板名称">
+          </div>
+          <div class="form-group">
+            <label for="template-description">模板描述</label>
+            <textarea id="template-description" placeholder="模板用途说明"></textarea>
+          </div>
+          <div class="form-group">
+            <label for="template-content">模板内容 *</label>
+            <textarea id="template-content" class="template-content-input" placeholder="模板内容，使用 {剧本内容} 作为占位符"></textarea>
+            <small class="setting-hint">使用 {剧本内容} 作为占位符，用户输入剧本时会自动替换</small>
+          </div>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="save-template-btn" class="form-btn primary" style="display: none;">保存模板</button>
+        <button id="cancel-template-btn" class="form-btn" style="display: none;">取消编辑</button>
+        <button id="close-template-lib-btn" class="form-btn">关闭</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- 加载提示 -->
+  <div id="loading-overlay" class="loading-overlay" style="display: none;">
+    <div class="loading-spinner"></div>
+    <div class="loading-text" id="loading-text">正在处理...</div>
+  </div>
+
+  <script src="./src/renderer.js"></script>
+</body>
+</html>
