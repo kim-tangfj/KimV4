@@ -1733,48 +1733,92 @@ function renderCustomOptionsList(options) {
   });
 }
 
-// 显示添加自定义选项表单
-function showAddCustomOptionForm() {
-  if (elements.customOptionsEditor) {
-    elements.customOptionsEditor.style.display = 'block';
+// 显示添加自定义选项表单（弹窗）
+async function showAddCustomOptionForm() {
+  if (!elements.customOptionEditModal) return;
+
+  // 设置标题
+  if (elements.customOptionEditTitle) {
+    elements.customOptionEditTitle.textContent = '添加自定义选项';
   }
-  if (elements.saveCustomOptionBtn) {
-    elements.saveCustomOptionBtn.style.display = 'inline-block';
-  }
-  if (elements.cancelCustomOptionBtn) {
-    elements.cancelCustomOptionBtn.style.display = 'inline-block';
-  }
-  
+
   // 清空表单
-  if (elements.customOptionId) elements.customOptionId.value = '';
-  if (elements.customOptionGroup) elements.customOptionGroup.value = '';
-  if (elements.customOptionType) elements.customOptionType.value = '';
-  if (elements.customOptionStyle) elements.customOptionStyle.value = '';
-  if (elements.customOptionDescription) elements.customOptionDescription.value = '';
+  if (elements.editCustomOptionId) elements.editCustomOptionId.value = '';
+  if (elements.editCustomOptionGroup) elements.editCustomOptionGroup.value = '';
+  if (elements.editCustomOptionType) elements.editCustomOptionType.value = '';
+  if (elements.editCustomOptionStyle) elements.editCustomOptionStyle.value = '';
+  if (elements.editCustomOptionDescription) elements.editCustomOptionDescription.value = '';
+
+  // 动态加载组别列表
+  await loadGroupFilterForEditForm();
+
+  // 显示下拉框，隐藏输入框
+  if (elements.editCustomOptionGroup) elements.editCustomOptionGroup.style.display = 'block';
+  if (elements.editCustomOptionGroupInput) elements.editCustomOptionGroupInput.style.display = 'none';
+
+  // 显示弹窗
+  elements.customOptionEditModal.style.display = 'flex';
 }
 
-// 显示编辑自定义选项表单
-function showEditCustomOptionForm(option) {
-  showAddCustomOptionForm();
-  
+// 显示编辑自定义选项表单（弹窗）
+async function showEditCustomOptionForm(option) {
+  if (!elements.customOptionEditModal) return;
+
+  // 设置标题
+  if (elements.customOptionEditTitle) {
+    elements.customOptionEditTitle.textContent = '编辑自定义选项';
+  }
+
   // 填充表单数据
-  if (elements.customOptionId) elements.customOptionId.value = option.id;
-  if (elements.customOptionGroup) elements.customOptionGroup.value = option.group;
-  if (elements.customOptionType) elements.customOptionType.value = option.type;
-  if (elements.customOptionStyle) elements.customOptionStyle.value = option.style;
-  if (elements.customOptionDescription) elements.customOptionDescription.value = option.description;
+  if (elements.editCustomOptionId) elements.editCustomOptionId.value = option.id;
+  if (elements.editCustomOptionGroup) elements.editCustomOptionGroup.value = option.group;
+  if (elements.editCustomOptionType) elements.editCustomOptionType.value = option.type;
+  if (elements.editCustomOptionStyle) elements.editCustomOptionStyle.value = option.style;
+  if (elements.editCustomOptionDescription) elements.editCustomOptionDescription.value = option.description;
+
+  // 动态加载组别列表
+  await loadGroupFilterForEditForm();
+
+  // 显示下拉框，隐藏输入框
+  if (elements.editCustomOptionGroup) elements.editCustomOptionGroup.style.display = 'block';
+  if (elements.editCustomOptionGroupInput) elements.editCustomOptionGroupInput.style.display = 'none';
+
+  // 显示弹窗
+  elements.customOptionEditModal.style.display = 'flex';
 }
 
-// 隐藏自定义选项表单
-function hideCustomOptionForm() {
-  if (elements.customOptionsEditor) {
-    elements.customOptionsEditor.style.display = 'none';
-  }
-  if (elements.saveCustomOptionBtn) {
-    elements.saveCustomOptionBtn.style.display = 'none';
-  }
-  if (elements.cancelCustomOptionBtn) {
-    elements.cancelCustomOptionBtn.style.display = 'none';
+// 加载组别下拉框（编辑表单用）
+async function loadGroupFilterForEditForm() {
+  if (!useElectronAPI || !elements.editCustomOptionGroup) return;
+
+  try {
+    const result = await window.electronAPI.getGroups();
+    if (result.success && result.groups) {
+      // 清空选项
+      elements.editCustomOptionGroup.innerHTML = '<option value="">请选择组别</option>';
+      elements.editCustomOptionGroup.innerHTML += '<option value="__new__">-- 新建组别 --</option>';
+
+      // 添加所有组别
+      result.groups.forEach(group => {
+        const option = document.createElement('option');
+        option.value = group;
+        option.textContent = group;
+        elements.editCustomOptionGroup.appendChild(option);
+      });
+
+      // 添加切换逻辑
+      elements.editCustomOptionGroup.onchange = () => {
+        if (elements.editCustomOptionGroup.value === '__new__') {
+          // 选择"新建组别"，显示输入框
+          elements.editCustomOptionGroup.style.display = 'none';
+          elements.editCustomOptionGroupInput.style.display = 'block';
+          elements.editCustomOptionGroupInput.value = '';
+          elements.editCustomOptionGroupInput.focus();
+        }
+      };
+    }
+  } catch (error) {
+    console.error('加载组别失败:', error);
   }
 }
 
@@ -2689,7 +2733,7 @@ function generateShotPrompt(shot) {
     .map(scene => generateScenePrompt(scene))
     .join('\n\n');
   
-  return `【片段名称】${shot.name} 【总时长���${shot.duration}秒 【画幅】${shot.aspectRatio} 【风格】${shot.style} 【情绪】${shot.mood}\n\n${scenesPrompt}`;
+  return `【片段名称】${shot.name} 【总时长】${shot.duration}秒 【画幅】${shot.aspectRatio} 【风格】${shot.style} 【情绪】${shot.mood}\n\n${scenesPrompt}`;
 }
 
 function generateProjectPrompt(project) {
@@ -2705,7 +2749,7 @@ function generateProjectPrompt(project) {
 function renderPromptWithHighlight(prompt) {
   if (!prompt) return prompt;
   
-  const keywords = ['镜头类型', '拍��角度', '时长', '情绪', '内容', '片段名称', '总��长', '画�����', '风格', '项目名称', '状态', '默认��幅'];
+  const keywords = ['镜头类型', '拍摄角度', '时长', '情绪', '内容', '片段名称', '总时长', '画幅', '风格', '项目名称', '状态', '默认画幅'];
   
   let highlighted = prompt;
   keywords.forEach(keyword => {
@@ -3555,7 +3599,7 @@ async function updateShotStatus(shot, newStatus) {
     if (shotIndex === -1) {
       console.error('片段未找到，shot.id:', shot.id, 'shot.name:', shot.name);
       console.error('可用片段:', loadResult.projectJson.shots?.map(s => ({ id: s.id, name: s.name })));
-      alert('片段未找到，请检查数据一致性');
+      alert('片��未找到，请检查数据一致性');
       return;
     }
     
