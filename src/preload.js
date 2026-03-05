@@ -45,6 +45,9 @@ contextBridge.exposeInMainWorld('electronAPI', {
   backupOptions: () => ipcRenderer.invoke('options:backup'),
   restoreOptions: () => ipcRenderer.invoke('options:restore'),
   openOptionsFolder: () => ipcRenderer.invoke('options:openFolder'),
+  // 选项使用统计
+  incrementOptionUsage: (optionId) => ipcRenderer.invoke('options:incrementUsage', optionId),
+  checkOptionUsage: (optionId) => ipcRenderer.invoke('options:checkUsage', optionId),
   
   // 监听来自主进程的消息
   onSettingsOpen: (callback) => {

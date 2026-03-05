@@ -343,16 +343,18 @@ body.dark-theme {
 .property-form {
   padding: 15px;
   overflow-y: auto;
+  overflow-x: hidden;
   height: 100%;
 }
 
 .assets-list {
   padding: 10px;
   overflow-y: auto;
+  overflow-x: hidden;
   height: 100%;
 }
 
-/* 优化滚动条 - 更细 */
+/* 细滚动条 */
 .property-form::-webkit-scrollbar,
 .assets-list::-webkit-scrollbar {
   width: 6px;
@@ -426,6 +428,144 @@ body.dark-theme .assets-list::-webkit-scrollbar-thumb:hover {
 
 .form-group label span {
   flex: 1;
+}
+
+/* ========== 片段属性多列布局 ========== */
+.shot-properties-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+  padding: 4px;
+  /* 隐藏自身滚动条，滚动由父容器 property-form 处理 */
+  overflow: visible;
+}
+
+/* 两列布局 */
+.shot-properties-2cols {
+  grid-template-columns: repeat(2, 1fr);
+}
+
+.property-column {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  padding: 12px;
+  background-color: var(--panel-bg);
+  border-radius: 6px;
+  border: 1px solid var(--border-color);
+}
+
+.property-column.full-width {
+  grid-column: 1 / -1;
+}
+
+.property-section-title {
+  margin: 0 0 8px 0;
+  padding-bottom: 8px;
+  border-bottom: 2px solid var(--border-color);
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.property-column .form-group {
+  margin-bottom: 0;
+}
+
+/* 标签带按钮 */
+.form-group label .add-option-btn {
+  margin-left: auto;
+}
+
+.form-group label {
+  display: flex;
+  align-items: center;
+}
+
+/* 带搜索的下拉框（集成在一个控件内） */
+.select-with-search {
+  position: relative;
+  display: block;
+  margin-bottom: 4px;
+}
+
+.select-with-search .select-search-input {
+  width: 100%;
+  padding: 6px 8px;
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 13px;
+  box-sizing: border-box;
+  cursor: text;
+}
+
+.select-with-search .select-search-input:focus {
+  outline: none;
+  border-color: #888;
+}
+
+/* 下拉框：默认完全隐藏 */
+.select-with-search select {
+  display: none !important;  /* 强制隐藏 */
+}
+
+/* size>1 时：显示为下拉列表 */
+.select-with-search select[size]:not([size="1"]) {
+  display: block !important;  /* 强制显示 */
+  position: absolute;
+  top: 100%;
+  left: 0;
+  right: 0;
+  z-index: 1000;
+  max-height: 250px;
+  overflow-y: auto;
+  cursor: pointer;
+  margin-top: 2px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.15);
+  border: 1px solid var(--border-color);
+  border-radius: 4px;
+  background-color: var(--bg-color);
+  color: var(--text-color);
+  font-size: 13px;
+  box-sizing: border-box;
+  padding: 6px 8px;
+}
+
+.select-with-search select option[value="__new__"] {
+  border-top: 1px dashed var(--border-color);
+  font-style: italic;
+  color: #666;
+  margin-top: 4px;
+}
+
+.select-with-search select option {
+  padding: 6px 8px;
+  cursor: pointer;
+}
+
+.select-with-search select option:hover {
+  background-color: var(--hover-bg);
+}
+
+/* 快速添加弹窗 */
+.quick-add-modal {
+  max-width: 450px;
+  width: 90%;
+}
+
+/* 响应式布局 */
+@media (max-width: 1200px) {
+  .shot-properties-grid {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media (max-width: 800px) {
+  .shot-properties-grid {
+    grid-template-columns: 1fr;
+  }
 }
 
 .small-btn {
@@ -508,15 +648,30 @@ body.dark-theme .form-btn.primary {
 }
 
 /* 自定义选项管理弹窗 */
-.custom-options-modal {
-  max-width: 900px;
-  max-height: 85vh;
+.modal-content.custom-options-modal {
+  max-width: 900px !important;
+  width: 90% !important;
+  max-height: 85vh !important;
+}
+
+/* 添加/编辑自定义选项弹窗 */
+.modal-content.custom-option-edit-modal {
+  max-width: 550px !important;
+  width: 90% !important;
 }
 
 .custom-options-toolbar {
   margin-bottom: 16px;
   display: flex;
   gap: 10px;
+  align-items: center;
+}
+
+.custom-toolbar {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 10px;
+  align-items: center;
 }
 
 .custom-options-filter {
@@ -540,12 +695,76 @@ body.dark-theme .form-btn.primary {
   font-size: 13px;
 }
 
+/* 自定义选项两栏布局 */
+.custom-options-columns {
+  display: flex;
+  gap: 16px;
+  margin-bottom: 16px;
+  height: 50vh;
+  min-height: 400px;
+}
+
+.custom-options-column {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  min-width: 0;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  padding: 12px;
+  background-color: var(--bg-color);
+}
+
+.custom-options-column-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  margin-bottom: 12px;
+  padding-bottom: 10px;
+  border-bottom: 2px solid var(--border-color);
+}
+
+.column-title-group {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.column-title-group h4 {
+  margin: 0;
+  font-size: 14px;
+  font-weight: 600;
+  color: var(--text-color);
+}
+
+.column-count {
+  padding: 2px 8px;
+  background-color: var(--selected-bg);
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.column-actions {
+  display: flex;
+  gap: 6px;
+  align-items: center;
+}
+
 .custom-options-list-container {
-  max-height: 300px;
+  flex: 1;
   overflow-y: auto;
   border: 1px solid var(--border-color);
   border-radius: 4px;
-  margin-bottom: 16px;
+  background-color: var(--panel-bg);
+}
+
+.custom-options-list-container.builtin-container,
+.custom-options-list-container.custom-container {
+  background-color: var(--panel-bg);
+  min-height: 150px;
 }
 
 .custom-options-list {
@@ -554,12 +773,13 @@ body.dark-theme .form-btn.primary {
 }
 
 .custom-option-item {
-  padding: 12px 16px;
+  padding: 10px 12px;
   border-bottom: 1px solid var(--border-color);
   cursor: pointer;
   display: flex;
   justify-content: space-between;
-  align-items: center;
+  align-items: flex-start;
+  gap: 12px;
   transition: background-color 0.2s ease;
 }
 
@@ -572,16 +792,18 @@ body.dark-theme .form-btn.primary {
 }
 
 .custom-option-item.builtin {
-  opacity: 0.6;
-  cursor: not-allowed;
+  opacity: 0.5;
+  cursor: default;
+  background-color: var(--panel-bg);
 }
 
 .custom-option-item.builtin:hover {
-  background-color: var(--bg-color);
+  background-color: var(--panel-bg);
 }
 
 .custom-option-item-info {
   flex: 1;
+  min-width: 0;
 }
 
 .custom-option-item-header {
@@ -589,6 +811,7 @@ body.dark-theme .form-btn.primary {
   align-items: center;
   gap: 8px;
   margin-bottom: 4px;
+  flex-wrap: wrap;
 }
 
 .custom-option-group-tag {
@@ -597,6 +820,7 @@ body.dark-theme .form-btn.primary {
   font-size: 11px;
   background-color: var(--selected-bg);
   color: var(--text-color);
+  white-space: nowrap;
 }
 
 .custom-option-item-title {
@@ -608,11 +832,31 @@ body.dark-theme .form-btn.primary {
 .custom-option-item-subtitle {
   font-size: 12px;
   color: #888;
+  line-height: 1.4;
+  word-break: break-word;
 }
 
 .custom-option-item-actions {
   display: flex;
-  gap: 8px;
+  gap: 4px;
+  flex-shrink: 0;
+}
+
+.custom-option-item-actions .icon-btn {
+  width: 22px;
+  height: 22px;
+  font-size: 12px;
+}
+
+/* 使用次数徽章 */
+.usage-count-badge {
+  padding: 2px 6px;
+  background-color: var(--selected-bg);
+  border-radius: 10px;
+  font-size: 11px;
+  color: var(--text-color);
+  font-weight: 500;
+  margin-left: 6px;
 }
 
 .custom-options-editor {

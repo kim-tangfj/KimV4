@@ -52,8 +52,12 @@ function loadCustomOptions() {
     if (fs.existsSync(customOptionsPath)) {
       const data = fs.readFileSync(customOptionsPath, 'utf8');
       const config = JSON.parse(data);
-      // 标记为自定义选项
-      return (config.customOptions || []).map(opt => ({ ...opt, builtin: false }));
+      // 标记为自定义选项，确保有 usageCount 字段
+      return (config.customOptions || []).map(opt => ({ 
+        ...opt, 
+        builtin: false,
+        usageCount: opt.usageCount || 0 
+      }));
     }
   } catch (error) {
     console.error('加载自定义选项失败:', error);
@@ -172,23 +176,67 @@ function initOptionsIPC() {
     try {
       const customOptions = loadCustomOptions();
       const index = customOptions.findIndex(opt => opt.id === optionId);
-      
+
       if (index === -1) {
         return { success: false, error: '选项不存在' };
       }
-      
+
       // 不允许修改 builtin 字段
       delete updates.builtin;
       delete updates.id;
-      
+
       customOptions[index] = { ...customOptions[index], ...updates };
-      
+
       const result = saveCustomOptions(customOptions);
       if (result.success) {
         return { success: true, option: customOptions[index] };
       } else {
         return result;
       }
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 增加选项使用次数
+  ipcMain.handle('options:incrementUsage', async (event, optionId) => {
+    try {
+      const customOptions = loadCustomOptions();
+      const index = customOptions.findIndex(opt => opt.id === optionId);
+
+      if (index === -1) {
+        return { success: false, error: '选项不存在' };
+      }
+
+      customOptions[index].usageCount = (customOptions[index].usageCount || 0) + 1;
+
+      const result = saveCustomOptions(customOptions);
+      if (result.success) {
+        return { success: true, usageCount: customOptions[index].usageCount };
+      } else {
+        return result;
+      }
+    } catch (error) {
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 检查选项是否被使用
+  ipcMain.handle('options:checkUsage', async (event, optionId) => {
+    try {
+      const customOptions = loadCustomOptions();
+      const option = customOptions.find(opt => opt.id === optionId);
+      
+      if (!option) {
+        return { success: false, error: '选项不存在' };
+      }
+
+      return { 
+        success: true, 
+        usageCount: option.usageCount || 0,
+        style: option.style,
+        type: option.type
+      };
     } catch (error) {
       return { success: false, error: error.message };
     }
