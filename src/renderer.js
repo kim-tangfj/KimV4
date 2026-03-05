@@ -1916,7 +1916,7 @@ async function loadProjects() {
         renderProjectList([]);
       }
     } catch (error) {
-      console.error('加�����项目异常:', error);
+      console.error('加���������项目异常:', error);
       appState.projects = [];
       renderProjectList([]);
     }
@@ -2593,14 +2593,19 @@ function autoSaveShotProperties(shot) {
 
 async function saveShotProperties(shot, isAutoSave = false) {
   const name = document.getElementById('shotName')?.value;
-  const duration = parseInt(document.getElementById('shotDuration')?.value) || 10;
+  const description = document.getElementById('shotDescription')?.value;
   const style = document.getElementById('shotStyle')?.value;
   const mood = document.getElementById('shotMood')?.value;
-  const description = document.getElementById('shotDescription')?.value;
+  const characters = document.getElementById('shotCharacters')?.value;
+  const sceneSetting = document.getElementById('shotSceneSetting')?.value;
   const aspectRatio = document.getElementById('shotAspectRatio')?.value;
+  const duration = parseInt(document.getElementById('shotDuration')?.value) || 10;
   const musicStyle = document.getElementById('shotMusicStyle')?.value;
   const soundEffect = document.getElementById('shotSoundEffect')?.value;
-  const notes = document.getElementById('shotNotes')?.value;
+  const imageRef = document.getElementById('shotImageRef')?.value;
+  const videoRef = document.getElementById('shotVideoRef')?.value;
+  const audioRef = document.getElementById('shotAudioRef')?.value;
+  const customPrompt = document.getElementById('shotCustomPrompt')?.value;
 
   if (useElectronAPI && appState.currentProject.projectDir) {
     try {
@@ -2609,17 +2614,54 @@ async function saveShotProperties(shot, isAutoSave = false) {
 
       const shotIndex = loadResult.projectJson.shots?.findIndex(s => s.id === shot.id);
       if (shotIndex !== -1) {
+        const oldShot = loadResult.projectJson.shots[shotIndex];
+        
+        // 检查选项是否变更，如果变更则增加使用次数
+        if (style && oldShot && style !== oldShot.style) {
+          const styleOptions = await loadOptionsByGroup('风格');
+          const selectedOption = styleOptions.find(opt => opt.style === style);
+          if (selectedOption && !selectedOption.builtin) {
+            await window.electronAPI.incrementOptionUsage(selectedOption.id);
+          }
+        }
+        if (mood && oldShot && mood !== oldShot.mood) {
+          const moodOptions = await loadOptionsByGroup('情绪氛围');
+          const selectedOption = moodOptions.find(opt => opt.style === mood);
+          if (selectedOption && !selectedOption.builtin) {
+            await window.electronAPI.incrementOptionUsage(selectedOption.id);
+          }
+        }
+        if (musicStyle && oldShot && musicStyle !== oldShot.musicStyle) {
+          const musicOptions = await loadOptionsByGroup('配乐风格');
+          const selectedOption = musicOptions.find(opt => opt.style === musicStyle);
+          if (selectedOption && !selectedOption.builtin) {
+            await window.electronAPI.incrementOptionUsage(selectedOption.id);
+          }
+        }
+        if (soundEffect && oldShot && soundEffect !== oldShot.soundEffect) {
+          const soundOptions = await loadOptionsByGroup('音效');
+          const selectedOption = soundOptions.find(opt => opt.style === soundEffect);
+          if (selectedOption && !selectedOption.builtin) {
+            await window.electronAPI.incrementOptionUsage(selectedOption.id);
+          }
+        }
+
         loadResult.projectJson.shots[shotIndex] = {
           ...loadResult.projectJson.shots[shotIndex],
-          name,
-          duration,
-          style,
-          mood,
-          description,
-          aspectRatio,
-          musicStyle,
-          soundEffect,
-          notes,
+          name: name || '',
+          description: description || '',
+          style: style || '',
+          mood: mood || '',
+          characters: characters !== undefined ? characters : (oldShot.characters || ''),
+          sceneSetting: sceneSetting !== undefined ? sceneSetting : (oldShot.sceneSetting || ''),
+          aspectRatio: aspectRatio || '',
+          duration: duration || 10,
+          musicStyle: musicStyle !== undefined ? musicStyle : (oldShot.musicStyle || ''),
+          soundEffect: soundEffect !== undefined ? soundEffect : (oldShot.soundEffect || ''),
+          imageRef: imageRef !== undefined ? imageRef : (oldShot.imageRef || ''),
+          videoRef: videoRef !== undefined ? videoRef : (oldShot.videoRef || ''),
+          audioRef: audioRef !== undefined ? audioRef : (oldShot.audioRef || ''),
+          customPrompt: customPrompt !== undefined ? customPrompt : (oldShot.customPrompt || ''),
           updatedAt: new Date().toISOString()
         };
 
@@ -2632,16 +2674,20 @@ async function saveShotProperties(shot, isAutoSave = false) {
           appState.currentShot = {
             ...shot,
             name,
-            duration,
+            description,
             style,
             mood,
-            description,
+            characters: characters !== undefined ? characters : shot.characters,
+            sceneSetting: sceneSetting !== undefined ? sceneSetting : shot.sceneSetting,
             aspectRatio,
-            musicStyle,
-            soundEffect,
-            notes
+            duration,
+            musicStyle: musicStyle !== undefined ? musicStyle : shot.musicStyle,
+            soundEffect: soundEffect !== undefined ? soundEffect : shot.soundEffect,
+            imageRef: imageRef !== undefined ? imageRef : shot.imageRef,
+            videoRef: videoRef !== undefined ? videoRef : shot.videoRef,
+            audioRef: audioRef !== undefined ? audioRef : shot.audioRef,
+            customPrompt: customPrompt !== undefined ? customPrompt : shot.customPrompt
           };
-          // 更新标题
           if (elements.bottomPanelTitle) {
             elements.bottomPanelTitle.textContent = `${name || '片段'} 属性`;
           }
@@ -2787,6 +2833,7 @@ function autoSaveSceneProperties(scene) {
 
 async function saveSceneProperties(scene, isAutoSave = false) {
   const name = document.getElementById('sceneName')?.value;
+  const image = document.getElementById('sceneImage')?.value;
   const shotType = document.getElementById('sceneShotType')?.value;
   const angle = document.getElementById('sceneAngle')?.value;
   const camera = document.getElementById('sceneCamera')?.value;
@@ -2805,17 +2852,43 @@ async function saveSceneProperties(scene, isAutoSave = false) {
       if (shot && shot.scenes) {
         const sceneIndex = shot.scenes.findIndex(s => s.id === scene.id);
         if (sceneIndex !== -1) {
+          const oldScene = shot.scenes[sceneIndex];
+          
+          // 检查选项是否变更，如果变更则增加使用次数
+          if (shotType && oldScene && shotType !== oldScene.shotType) {
+            const shotTypeOptions = await loadOptionsByGroup('景别');
+            const selectedOption = shotTypeOptions.find(opt => opt.style === shotType);
+            if (selectedOption && !selectedOption.builtin) {
+              await window.electronAPI.incrementOptionUsage(selectedOption.id);
+            }
+          }
+          if (angle && oldScene && angle !== oldScene.angle) {
+            const angleOptions = await loadOptionsByGroup('镜头角度');
+            const selectedOption = angleOptions.find(opt => opt.style === angle);
+            if (selectedOption && !selectedOption.builtin) {
+              await window.electronAPI.incrementOptionUsage(selectedOption.id);
+            }
+          }
+          if (camera && oldScene && camera !== oldScene.camera) {
+            const cameraOptions = await loadOptionsByGroup('运镜');
+            const selectedOption = cameraOptions.find(opt => opt.style === camera);
+            if (selectedOption && !selectedOption.builtin) {
+              await window.electronAPI.incrementOptionUsage(selectedOption.id);
+            }
+          }
+
           shot.scenes[sceneIndex] = {
             ...shot.scenes[sceneIndex],
-            name,
-            shotType,
-            angle,
-            camera,
-            duration,
-            content,
-            dialogue,
-            emotion,
-            notes,
+            name: name || '',
+            image: image !== undefined ? image : (oldScene.image || ''),
+            shotType: shotType || '',
+            angle: angle || '',
+            camera: camera || '',
+            duration: duration || 2,
+            content: content || '',
+            dialogue: dialogue || '',
+            emotion: emotion || '',
+            notes: notes || '',
             updatedAt: new Date().toISOString()
           };
 
@@ -2828,6 +2901,7 @@ async function saveSceneProperties(scene, isAutoSave = false) {
             appState.currentScene = {
               ...scene,
               name,
+              image: image !== undefined ? image : scene.image,
               shotType,
               angle,
               camera,
@@ -2837,7 +2911,6 @@ async function saveSceneProperties(scene, isAutoSave = false) {
               emotion,
               notes
             };
-            // 更新标题
             if (elements.bottomPanelTitle) {
               elements.bottomPanelTitle.textContent = `${name || '镜头'} 属性`;
             }
