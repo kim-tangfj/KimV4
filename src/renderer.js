@@ -124,6 +124,7 @@ function cacheDOMElements() {
 
   // AI 模式
   elements.aiProjectName = document.getElementById('ai-project-name');
+  elements.aiProjectDesc = document.getElementById('ai-project-desc');
   elements.aiProjectScript = document.getElementById('ai-project-script');
   elements.aiProjectRatio = document.getElementById('ai-project-ratio');
   elements.aiProvider = document.getElementById('ai-provider');
@@ -583,21 +584,31 @@ async function testApiConnection(provider) {
     alert('请在 Electron 环境中使用此功能');
     return;
   }
-  
-  const apiKey = settings.apiKeys[provider];
-  const model = settings.models[provider];
-  
+
+  // 直接从 DOM 获取 API Key，确保获取到最新输入的值
+  let apiKey, model;
+  if (provider === 'deepseek') {
+    apiKey = elements.deepseekApiKey?.value.trim() || '';
+    model = elements.deepseekModel?.value.trim() || 'deepseek-chat';
+  } else if (provider === 'doubao') {
+    apiKey = elements.doubaoApiKey?.value.trim() || '';
+    model = elements.doubaoModel?.value.trim() || 'doubao-pro-4k';
+  } else if (provider === 'qianwen') {
+    apiKey = elements.qianwenApiKey?.value.trim() || '';
+    model = elements.qianwenModel?.value.trim() || 'qwen-turbo';
+  }
+
   if (!apiKey) {
     alert('请先输入 API Key');
     return;
   }
-  
+
   showLoading('正在测试连接...');
-  
+
   try {
     const result = await window.electronAPI.testApiConnection(provider, apiKey, model);
     const statusEl = document.getElementById(`${provider}-status`);
-    
+
     if (result.success) {
       if (statusEl) {
         statusEl.textContent = '✓ 连接成功';
@@ -687,7 +698,7 @@ function hideSettingsModal() {
 // 显示新建项目弹窗
 function showNewProjectModal() {
   if (!elements.newProjectModal) return;
-  
+
   // 清空输入
   if (elements.manualProjectName) elements.manualProjectName.value = '';
   if (elements.manualProjectDesc) elements.manualProjectDesc.value = '';
@@ -696,16 +707,16 @@ function showNewProjectModal() {
   if (elements.aiProjectName) elements.aiProjectName.value = '';
   if (elements.aiProjectDesc) elements.aiProjectDesc.value = '';
   if (elements.aiProjectRatio) elements.aiProjectRatio.value = '16:9';
-  
+
   // 切换到手动模式
   elements.modeTabs.forEach(tab => {
     tab.classList.toggle('active', tab.dataset.mode === 'manual');
   });
   if (elements.manualMode) elements.manualMode.classList.add('active');
   if (elements.aiMode) elements.aiMode.classList.remove('active');
-  
+
   elements.newProjectModal.style.display = 'flex';
-  
+
   setTimeout(() => {
     if (elements.manualProjectName) elements.manualProjectName.focus();
   }, 100);
@@ -891,34 +902,33 @@ async function createProjectManual() {
 // 显示输入错误提示（不阻塞）
 function showInputError(input, message) {
   if (!input) return;
-  
+
   // 聚焦到输入框
   input.focus();
-  
+
   // 添加错误样式
   input.style.borderColor = '#d32f2f';
   input.style.backgroundColor = '#ffebee';
-  
-  // 创建错误提示
+
+  // 检查是否已存在错误提示
+  const existingError = input.parentElement.querySelector('.input-error-message');
+  if (existingError) {
+    existingError.remove();
+  }
+
+  // 创建错误提示（显示在输入框下方）
   const errorDiv = document.createElement('div');
   errorDiv.className = 'input-error-message';
   errorDiv.textContent = message;
   errorDiv.style.cssText = `
-    position: fixed;
-    top: 50%;
-    left: 50%;
-    transform: translate(-50%, -50%);
-    background-color: #d32f2f;
-    color: white;
-    padding: 12px 24px;
-    border-radius: 6px;
-    font-size: 14px;
-    z-index: 10000;
-    box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    color: #d32f2f;
+    font-size: 12px;
+    margin-top: 4px;
+    padding: 4px 0;
   `;
-  
-  document.body.appendChild(errorDiv);
-  
+
+  input.parentElement.appendChild(errorDiv);
+
   // 2 秒后移除
   setTimeout(() => {
     input.style.borderColor = '';
@@ -1401,10 +1411,11 @@ async function openTemplateFolder() {
     alert('请在 Electron 环境中使用此功能');
     return;
   }
-  
+
   try {
     const result = await window.electronAPI.getTemplatesPath();
     if (result.success) {
+      // 打开配置文件夹而不是文件
       await window.electronAPI.openPath(result.path);
     }
   } catch (error) {
@@ -1417,10 +1428,11 @@ async function showTemplateStoragePath() {
   if (!useElectronAPI) {
     return;
   }
-  
+
   try {
     const result = await window.electronAPI.getTemplatesPath();
     if (result.success && elements.templateStoragePath) {
+      // 显示文件夹路径
       elements.templateStoragePath.value = result.path;
     }
   } catch (error) {
@@ -1933,7 +1945,7 @@ function generateShotPrompt(shot) {
     .map(scene => generateScenePrompt(scene))
     .join('\n\n');
   
-  return `【片段名称】${shot.name} 【总时长】${shot.duration}秒 【画幅】${shot.aspectRatio} 【风格】${shot.style} 【情绪】${shot.mood}\n\n${scenesPrompt}`;
+  return `【片段名称】${shot.name} 【总时长���${shot.duration}秒 【画幅】${shot.aspectRatio} 【风格】${shot.style} 【情绪】${shot.mood}\n\n${scenesPrompt}`;
 }
 
 function generateProjectPrompt(project) {
@@ -1949,7 +1961,7 @@ function generateProjectPrompt(project) {
 function renderPromptWithHighlight(prompt) {
   if (!prompt) return prompt;
   
-  const keywords = ['镜头类型', '拍摄角度', '时长', '情绪', '内容', '片段名称', '总时长', '画幅', '风格', '项目名称', '状态', '默认画幅'];
+  const keywords = ['镜头类型', '拍��角度', '时长', '情绪', '内容', '片段名称', '总��长', '画�����', '风格', '项目名称', '状态', '默认��幅'];
   
   let highlighted = prompt;
   keywords.forEach(keyword => {

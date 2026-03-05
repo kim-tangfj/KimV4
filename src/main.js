@@ -768,6 +768,7 @@ ipcMain.handle('template:restore', async () => {
 ipcMain.handle('template:getPath', async () => {
   return {
     success: true,
-    path: templatesConfigPath
+    path: configDir, // 返回配置文件夹路径而不是文件路径
+    filePath: templatesConfigPath // 同时返回文件路径供备份恢复使用
   };
 });

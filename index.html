@@ -271,15 +271,15 @@
           <div class="form-group">
             <label>
               <span>项目剧本 *</span>
-              <button id="copy-template-btn" class="form-btn small-btn" type="button">复制模板</button>
+              <button id="copy-template-btn" class="form-btn small-btn" type="button">生成提问模板</button>
             </label>
             <textarea id="manual-project-script" class="script-input" placeholder="请输入剧本内容，例如：&#10;&#10;产品名称：智能运动手表&#10;产品卖点：心率监测、GPS 定位、50 米防水、续航 7 天&#10;视频类型：商品介绍&#10;目标受众：运动爱好者、健身人群&#10;&#10;或者直接输入完整剧本描述..."></textarea>
             <small class="setting-hint">输入产品或视频的基本信息，用于生成结构化分镜数据</small>
           </div>
           <div class="form-group">
-            <label for="manual-project-json">结构化 JSON 数据 *</label>
+            <label for="manual-project-json">AI 提示词 *</label>
             <textarea id="manual-project-json" class="json-input" placeholder='请粘贴符合 project.json 格式的结构化数据...'></textarea>
-            <small class="setting-hint">需要包含 project 和 shots 字段的完整 JSON 结构</small>
+            <small class="setting-hint">请前往DeepSeek、豆包等工具，粘贴 AI 生成的格式提示词，系统将自动组合成完整的项目结构</small>
           </div>
         </div>
 
@@ -291,6 +291,10 @@
           <div class="form-group">
             <label for="ai-project-name">项目名称 *</label>
             <input type="text" id="ai-project-name" placeholder="请输入项目名称">
+          </div>
+          <div class="form-group">
+            <label for="ai-project-desc">项目描述</label>
+            <textarea id="ai-project-desc" placeholder="请输入项目描述（可选）"></textarea>
           </div>
           <div class="form-group">
             <label for="ai-project-script">项目剧本 *</label>
@@ -314,19 +318,19 @@
               <option value="qianwen">通义千问 (阿里)</option>
             </select>
           </div>
-          
+
           <!-- 生成提示词按钮 -->
           <div class="form-group">
             <button id="generate-prompt-btn" class="form-btn primary" type="button">✨ 生成提示词</button>
           </div>
-          
+
           <!-- API 返回数据预览 -->
           <div class="form-group">
             <label for="ai-response-preview">AI 返回数据预览</label>
             <textarea id="ai-response-preview" class="json-input" placeholder="点击"生成提示词"按钮后，AI 返回的结构化数据将显示在这里..." readonly></textarea>
             <small class="setting-hint">预览返回的 JSON 数据，确认无误后点击"创建"按钮</small>
           </div>
-          
+
           <div class="ai-status">
             <div class="status-item">
               <span class="status-label">API 状态:</span>
