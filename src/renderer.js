@@ -1916,7 +1916,7 @@ async function loadProjects() {
         renderProjectList([]);
       }
     } catch (error) {
-      console.error('加载项目异常:', error);
+      console.error('加�����项目异常:', error);
       appState.projects = [];
       renderProjectList([]);
     }
@@ -2409,7 +2409,8 @@ function renderPromptWithHighlight(prompt) {
 
 // ========== 属性面板 ==========
 
-function showShotProperties(shot) {
+// 显示片段属性表单（两列布局）
+async function showShotProperties(shot) {
   if (!elements.propertyForm) return;
 
   // 更新底部面板标题
@@ -2417,48 +2418,155 @@ function showShotProperties(shot) {
     elements.bottomPanelTitle.textContent = `${shot.name || '片段'} 属性`;
   }
 
+  // 加载自定义选项
+  const styleOptions = await loadOptionsByGroup('风格');
+  const moodOptions = await loadOptionsByGroup('情绪氛围');
+  const ratioOptions = [
+    { style: '16:9', description: '横屏视频，适合 YouTube、B 站等平台' },
+    { style: '9:16', description: '竖屏视频，适合抖音、快手、Reels 等平台' },
+    { style: '1:1', description: '正方形视频，适合 Instagram 等社交平台' },
+    { style: '4:3', description: '传统电视比例' },
+    { style: '3:4', description: '竖版照片比例' }
+  ];
+  const musicOptions = await loadOptionsByGroup('配乐风格');
+  const soundOptions = await loadOptionsByGroup('音效');
+
   elements.propertyForm.innerHTML = `
-    <div class="form-group">
-      <label for="shotName">片段名称</label>
-      <input type="text" id="shotName" value="${shot.name || ''}" placeholder="输入片段名称" data-autosave="true">
-    </div>
-    <div class="form-group">
-      <label for="shotDuration">时长（秒）</label>
-      <input type="number" id="shotDuration" value="${shot.duration || 10}" min="1" step="0.5" data-autosave="true">
-    </div>
-    <div class="form-group">
-      <label for="shotStyle">风格</label>
-      <input type="text" id="shotStyle" value="${shot.style || ''}" placeholder="如：简约清新、科技感" data-autosave="true">
-    </div>
-    <div class="form-group">
-      <label for="shotMood">情绪</label>
-      <input type="text" id="shotMood" value="${shot.mood || ''}" placeholder="如：舒缓、治愈、紧张" data-autosave="true">
-    </div>
-    <div class="form-group">
-      <label for="shotDescription">描述</label>
-      <textarea id="shotDescription" rows="3" placeholder="输入片段描述" data-autosave="true">${shot.description || ''}</textarea>
-    </div>
-    <div class="form-group">
-      <label for="shotAspectRatio">画幅</label>
-      <select id="shotAspectRatio" data-autosave="true">
-        <option value="16:9" ${shot.aspectRatio === '16:9' ? 'selected' : ''}>16:9（横屏）</option>
-        <option value="9:16" ${shot.aspectRatio === '9:16' ? 'selected' : ''}>9:16（竖屏）</option>
-        <option value="1:1" ${shot.aspectRatio === '1:1' ? 'selected' : ''}>1:1（正方形）</option>
-        <option value="4:3" ${shot.aspectRatio === '4:3' ? 'selected' : ''}>4:3（传统）</option>
-        <option value="3:4" ${shot.aspectRatio === '3:4' ? 'selected' : ''}>3:4（竖版）</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label for="shotMusicStyle">音乐风格</label>
-      <input type="text" id="shotMusicStyle" value="${shot.musicStyle || ''}" placeholder="如：轻快、悲伤、悬疑" data-autosave="true">
-    </div>
-    <div class="form-group">
-      <label for="shotSoundEffect">音效</label>
-      <input type="text" id="shotSoundEffect" value="${shot.soundEffect || ''}" placeholder="如：风声、雨声、爆炸声" data-autosave="true">
-    </div>
-    <div class="form-group">
-      <label for="shotNotes">备注</label>
-      <textarea id="shotNotes" rows="2" placeholder="输入备注信息" data-autosave="true">${shot.notes || ''}</textarea>
+    <div class="shot-properties-grid shot-properties-2cols">
+      <!-- 第一列 -->
+      <div class="property-column">
+        <h4 class="property-section-title">基本信息</h4>
+        <div class="form-group">
+          <label for="shotName">片段名称</label>
+          <input type="text" id="shotName" value="${shot.name || ''}" placeholder="输入片段名称" data-autosave="true">
+        </div>
+        <div class="form-group">
+          <label for="shotDescription">片段描述</label>
+          <textarea id="shotDescription" rows="3" placeholder="输入片段描述" data-autosave="true">${shot.description || ''}</textarea>
+        </div>
+        
+        <h4 class="property-section-title" style="margin-top: 16px;">角色与场景</h4>
+        <div class="form-group">
+          <label for="shotCharacters">角色</label>
+          <textarea id="shotCharacters" rows="2" placeholder="描述角色信息" data-autosave="true">${shot.characters || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label for="shotSceneSetting">场景设定</label>
+          <input type="text" id="shotSceneSetting" value="${shot.sceneSetting || ''}" placeholder="如：室内演播室" data-autosave="true">
+        </div>
+        
+        <h4 class="property-section-title" style="margin-top: 16px;">参考素材</h4>
+        <div class="form-group">
+          <label for="shotImageRef">图片参考（≤9 张）</label>
+          <textarea id="shotImageRef" rows="2" placeholder="例如：@图片 1 作为首帧" data-autosave="true">${shot.imageRef || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label for="shotVideoRef">视频参考（≤3 个）</label>
+          <textarea id="shotVideoRef" rows="2" placeholder="例如：@视频 1 作为参考运镜" data-autosave="true">${shot.videoRef || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label for="shotAudioRef">音频参考（≤3 个）</label>
+          <textarea id="shotAudioRef" rows="2" placeholder="例如：@音频 1 作为整体配乐" data-autosave="true">${shot.audioRef || ''}</textarea>
+        </div>
+        <small class="setting-hint" style="color: #f59e0b;">！最多 12 个文件，视频/音频总时长≤15 秒</small>
+      </div>
+
+      <!-- 第二列 -->
+      <div class="property-column">
+        <h4 class="property-section-title">风格设定</h4>
+        <div class="form-group">
+          <label for="shotStyle">
+            风格
+            <button type="button" class="icon-btn small add-option-btn" data-field="shotStyle" data-group="风格" title="添加新选项">+</button>
+          </label>
+          <select id="shotStyle" data-autosave="true">
+            <option value="">请选择风格</option>
+            ${styleOptions.map(opt => `
+              <option value="${opt.style}" ${shot.style === opt.style ? 'selected' : ''} 
+                data-description="${opt.description || ''}">
+                ${opt.style} - ${opt.type}
+              </option>
+            `).join('')}
+          </select>
+          <small class="setting-hint" id="shotStyleHint">${styleOptions.find(o => o.style === shot.style)?.description || '选择风格'}</small>
+        </div>
+        <div class="form-group">
+          <label for="shotMood">
+            情绪氛围
+            <button type="button" class="icon-btn small add-option-btn" data-field="shotMood" data-group="情绪氛围" title="添加新选项">+</button>
+          </label>
+          <select id="shotMood" data-autosave="true">
+            <option value="">请选择情绪氛围</option>
+            ${moodOptions.map(opt => `
+              <option value="${opt.style}" ${shot.mood === opt.style ? 'selected' : ''}
+                data-description="${opt.description || ''}">
+                ${opt.style} - ${opt.type}
+              </option>
+            `).join('')}
+          </select>
+          <small class="setting-hint" id="shotMoodHint">${moodOptions.find(o => o.style === shot.mood)?.description || '选择情绪'}</small>
+        </div>
+        
+        <h4 class="property-section-title" style="margin-top: 16px;">视频参数</h4>
+        <div class="form-group">
+          <label for="shotAspectRatio">画幅比例</label>
+          <select id="shotAspectRatio" data-autosave="true">
+            <option value="">请选择画幅</option>
+            ${ratioOptions.map(opt => `
+              <option value="${opt.style}" ${shot.aspectRatio === opt.style ? 'selected' : ''}
+                data-description="${opt.description || ''}">
+                ${opt.style}
+              </option>
+            `).join('')}
+          </select>
+          <small class="setting-hint" id="shotAspectRatioHint">${ratioOptions.find(o => o.style === shot.aspectRatio)?.description || '选择画幅'}</small>
+        </div>
+        <div class="form-group">
+          <label for="shotDuration">视频时长（秒）</label>
+          <input type="number" id="shotDuration" value="${shot.duration || 10}" min="1" max="15" step="0.5" data-autosave="true">
+          <small class="setting-hint">每个片段最长 15 秒</small>
+        </div>
+        
+        <h4 class="property-section-title" style="margin-top: 16px;">声音设计</h4>
+        <div class="form-group">
+          <label for="shotMusicStyle">
+            配乐风格
+            <button type="button" class="icon-btn small add-option-btn" data-field="shotMusicStyle" data-group="配乐风格" title="添加新选项">+</button>
+          </label>
+          <select id="shotMusicStyle" data-autosave="true">
+            <option value="">请选择配乐风格</option>
+            ${musicOptions.map(opt => `
+              <option value="${opt.style}" ${shot.musicStyle === opt.style ? 'selected' : ''}
+                data-description="${opt.description || ''}">
+                ${opt.style} - ${opt.type}
+              </option>
+            `).join('')}
+          </select>
+          <small class="setting-hint" id="shotMusicStyleHint">${musicOptions.find(o => o.style === shot.musicStyle)?.description || '选择配乐'}</small>
+        </div>
+        <div class="form-group">
+          <label for="shotSoundEffect">
+            音效需求
+            <button type="button" class="icon-btn small add-option-btn" data-field="shotSoundEffect" data-group="音效" title="添加新选项">+</button>
+          </label>
+          <select id="shotSoundEffect" data-autosave="true">
+            <option value="">请选择音效</option>
+            ${soundOptions.map(opt => `
+              <option value="${opt.style}" ${shot.soundEffect === opt.style ? 'selected' : ''}
+                data-description="${opt.description || ''}">
+                ${opt.style} - ${opt.type}
+              </option>
+            `).join('')}
+          </select>
+          <small class="setting-hint" id="shotSoundEffectHint">${soundOptions.find(o => o.style === shot.soundEffect)?.description || '选择音效'}</small>
+        </div>
+        
+        <h4 class="property-section-title" style="margin-top: 16px;">自定义提示词</h4>
+        <div class="form-group">
+          <label for="shotCustomPrompt">补充提示词</label>
+          <textarea id="shotCustomPrompt" rows="3" placeholder="输入额外的提示词或要求" data-autosave="true">${shot.customPrompt || ''}</textarea>
+        </div>
+      </div>
     </div>
   `;
 
@@ -2466,6 +2574,12 @@ function showShotProperties(shot) {
   document.querySelectorAll('#property-form [data-autosave="true"]').forEach(input => {
     input.addEventListener('blur', () => autoSaveShotProperties(shot));
   });
+
+  // 为选项下拉框添加变化时更新提示
+  setupOptionHintListeners(shot);
+
+  // 绑定添加选项按钮事件
+  setupAddOptionButtons(shot);
 }
 
 // 自动保存片段属性
@@ -2543,7 +2657,8 @@ async function saveShotProperties(shot, isAutoSave = false) {
   }
 }
 
-function showSceneProperties(scene) {
+// 显示镜头属性表单（两列布局）
+async function showSceneProperties(scene) {
   if (!elements.propertyForm) return;
 
   // 更新底部面板标题
@@ -2551,75 +2666,101 @@ function showSceneProperties(scene) {
     elements.bottomPanelTitle.textContent = `${scene.name || '镜头'} 属性`;
   }
 
+  // 加载自定义选项
+  const shotTypeOptions = await loadOptionsByGroup('景别');
+  const angleOptions = await loadOptionsByGroup('镜头角度');
+  const cameraOptions = await loadOptionsByGroup('运镜');
+
   elements.propertyForm.innerHTML = `
-    <div class="form-group">
-      <label for="sceneName">镜头名称</label>
-      <input type="text" id="sceneName" value="${scene.name || ''}" placeholder="输入镜头名称" data-autosave="true">
-    </div>
-    <div class="form-group">
-      <label for="sceneShotType">镜头类型</label>
-      <select id="sceneShotType" data-autosave="true">
-        <option value="" ${!scene.shotType ? 'selected' : ''}>请选择</option>
-        <option value="特写" ${scene.shotType === '特写' ? 'selected' : ''}>特写</option>
-        <option value="近景" ${scene.shotType === '近景' ? 'selected' : ''}>近景</option>
-        <option value="中景" ${scene.shotType === '中景' ? 'selected' : ''}>中景</option>
-        <option value="全景" ${scene.shotType === '全景' ? 'selected' : ''}>全景</option>
-        <option value="远景" ${scene.shotType === '远景' ? 'selected' : ''}>远景</option>
-        <option value="大远景" ${scene.shotType === '大远景' ? 'selected' : ''}>大远景</option>
-        <option value="中近景" ${scene.shotType === '中近景' ? 'selected' : ''}>中近景</option>
-        <option value="中远景" ${scene.shotType === '中远景' ? 'selected' : ''}>中远景</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label for="sceneAngle">拍摄角度</label>
-      <select id="sceneAngle" data-autosave="true">
-        <option value="" ${!scene.angle ? 'selected' : ''}>请选择</option>
-        <option value="平视" ${scene.angle === '平视' ? 'selected' : ''}>平视</option>
-        <option value="俯视" ${scene.angle === '俯视' ? 'selected' : ''}>俯视</option>
-        <option value="仰视" ${scene.angle === '仰视' ? 'selected' : ''}>仰视</option>
-        <option value="低角度" ${scene.angle === '低角度' ? 'selected' : ''}>低角度</option>
-        <option value="高角度" ${scene.angle === '高角度' ? 'selected' : ''}>高角度</option>
-        <option value="鸟瞰" ${scene.angle === '鸟瞰' ? 'selected' : ''}>鸟瞰</option>
-        <option value="虫视" ${scene.angle === '虫视' ? 'selected' : ''}>虫视</option>
-        <option value="过肩" ${scene.angle === '过肩' ? 'selected' : ''}>过肩</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label for="sceneCamera">运镜方式</label>
-      <select id="sceneCamera" data-autosave="true">
-        <option value="" ${!scene.camera ? 'selected' : ''}>请选择</option>
-        <option value="固定" ${scene.camera === '固定' ? 'selected' : ''}>固定</option>
-        <option value="推" ${scene.camera === '推' ? 'selected' : ''}>推（Dolly In）</option>
-        <option value="拉" ${scene.camera === '拉' ? 'selected' : ''}>拉（Dolly Out）</option>
-        <option value="摇" ${scene.camera === '摇' ? 'selected' : ''}>摇（Pan）</option>
-        <option value="移" ${scene.camera === '移' ? 'selected' : ''}>移（Truck）</option>
-        <option value="跟" ${scene.camera === '跟' ? 'selected' : ''}>跟（Follow）</option>
-        <option value="升" ${scene.camera === '升' ? 'selected' : ''}>升（Pedestal Up）</option>
-        <option value="降" ${scene.camera === '降' ? 'selected' : ''}>降（Pedestal Down）</option>
-        <option value="变焦" ${scene.camera === '变焦' ? 'selected' : ''}>变焦（Zoom）</option>
-        <option value="环绕" ${scene.camera === '环绕' ? 'selected' : ''}>环绕（Arc）</option>
-        <option value="手持" ${scene.camera === '手持' ? 'selected' : ''}>手持</option>
-      </select>
-    </div>
-    <div class="form-group">
-      <label for="sceneDuration">时长（秒）</label>
-      <input type="number" id="sceneDuration" value="${scene.duration || 2}" min="1" step="0.5" data-autosave="true">
-    </div>
-    <div class="form-group">
-      <label for="sceneContent">内容</label>
-      <textarea id="sceneContent" rows="3" placeholder="输入镜头内容描述" data-autosave="true">${scene.content || ''}</textarea>
-    </div>
-    <div class="form-group">
-      <label for="sceneDialogue">台词/旁白</label>
-      <textarea id="sceneDialogue" rows="2" placeholder="输入台词或旁白" data-autosave="true">${scene.dialogue || ''}</textarea>
-    </div>
-    <div class="form-group">
-      <label for="sceneEmotion">情绪</label>
-      <input type="text" id="sceneEmotion" value="${scene.emotion || ''}" placeholder="如：紧张、温馨、悲伤" data-autosave="true">
-    </div>
-    <div class="form-group">
-      <label for="sceneNotes">备注</label>
-      <textarea id="sceneNotes" rows="2" placeholder="输入备注信息" data-autosave="true">${scene.notes || ''}</textarea>
+    <div class="shot-properties-grid shot-properties-2cols">
+      <!-- 第一列：基本信息 -->
+      <div class="property-column">
+        <h4 class="property-section-title">基本信息</h4>
+        <div class="form-group">
+          <label for="sceneName">镜头名称</label>
+          <input type="text" id="sceneName" value="${scene.name || ''}" placeholder="输入镜头名称" data-autosave="true">
+        </div>
+        <div class="form-group">
+          <label for="sceneImage">分镜图片</label>
+          <textarea id="sceneImage" rows="2" placeholder="点击上传或拖放图片，支持多张图片" data-autosave="true">${scene.image || ''}</textarea>
+          <small class="setting-hint">支持上传和拖放图片</small>
+        </div>
+        
+        <h4 class="property-section-title" style="margin-top: 16px;">镜头信息</h4>
+        <div class="form-group">
+          <label for="sceneShotType">
+            景别
+            <button type="button" class="icon-btn small add-option-btn" data-field="sceneShotType" data-group="景别" title="添加新选项">+</button>
+          </label>
+          <select id="sceneShotType" data-autosave="true">
+            <option value="">请选择景别</option>
+            ${shotTypeOptions.map(opt => `
+              <option value="${opt.style}" ${scene.shotType === opt.style ? 'selected' : ''}
+                data-description="${opt.description || ''}">
+                ${opt.style} - ${opt.type}
+              </option>
+            `).join('')}
+          </select>
+          <small class="setting-hint" id="sceneShotTypeHint">${shotTypeOptions.find(o => o.style === scene.shotType)?.description || '选择景别'}</small>
+        </div>
+        <div class="form-group">
+          <label for="sceneAngle">
+            镜头角度
+            <button type="button" class="icon-btn small add-option-btn" data-field="sceneAngle" data-group="镜头角度" title="添加新选项">+</button>
+          </label>
+          <select id="sceneAngle" data-autosave="true">
+            <option value="">请选择镜头角度</option>
+            ${angleOptions.map(opt => `
+              <option value="${opt.style}" ${scene.angle === opt.style ? 'selected' : ''}
+                data-description="${opt.description || ''}">
+                ${opt.style} - ${opt.type}
+              </option>
+            `).join('')}
+          </select>
+          <small class="setting-hint" id="sceneAngleHint">${angleOptions.find(o => o.style === scene.angle)?.description || '选择镜头角度'}</small>
+        </div>
+        <div class="form-group">
+          <label for="sceneCamera">
+            运镜方式
+            <button type="button" class="icon-btn small add-option-btn" data-field="sceneCamera" data-group="运镜" title="添加新选项">+</button>
+          </label>
+          <select id="sceneCamera" data-autosave="true">
+            <option value="">请选择运镜方式</option>
+            ${cameraOptions.map(opt => `
+              <option value="${opt.style}" ${scene.camera === opt.style ? 'selected' : ''}
+                data-description="${opt.description || ''}">
+                ${opt.style} - ${opt.type}
+              </option>
+            `).join('')}
+          </select>
+          <small class="setting-hint" id="sceneCameraHint">${cameraOptions.find(o => o.style === scene.camera)?.description || '选择运镜方式'}</small>
+        </div>
+      </div>
+
+      <!-- 第二列：详细信息 -->
+      <div class="property-column">
+        <h4 class="property-section-title">镜头信息</h4>
+        <div class="form-group">
+          <label for="sceneDuration">时长（秒）</label>
+          <input type="number" id="sceneDuration" value="${scene.duration || 2}" min="1" step="0.5" data-autosave="true">
+        </div>
+        <div class="form-group">
+          <label for="sceneContent">内容描述</label>
+          <textarea id="sceneContent" rows="4" placeholder="输入镜头内容描述" data-autosave="true">${scene.content || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label for="sceneDialogue">对白内容</label>
+          <textarea id="sceneDialogue" rows="3" placeholder="输入台词或旁白" data-autosave="true">${scene.dialogue || ''}</textarea>
+        </div>
+        <div class="form-group">
+          <label for="sceneEmotion">情绪描述</label>
+          <input type="text" id="sceneEmotion" value="${scene.emotion || ''}" placeholder="如：紧张、温馨、悲伤" data-autosave="true">
+        </div>
+        <div class="form-group">
+          <label for="sceneNotes">其他备注</label>
+          <textarea id="sceneNotes" rows="3" placeholder="输入备注信息" data-autosave="true">${scene.notes || ''}</textarea>
+        </div>
+      </div>
     </div>
   `;
 
@@ -2627,6 +2768,12 @@ function showSceneProperties(scene) {
   document.querySelectorAll('#property-form [data-autosave="true"]').forEach(input => {
     input.addEventListener('blur', () => autoSaveSceneProperties(scene));
   });
+
+  // 为选项下拉框添加变化时更新提示
+  setupSceneOptionHintListeners(scene);
+
+  // 绑定添加选项按钮事件
+  setupAddOptionButtons(scene);
 }
 
 // 自动保存镜头属性

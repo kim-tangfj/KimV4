@@ -1,4 +1,31 @@
-# 项目摘要
+用户要求我根据对话历史生成一个综合的项目摘要。让我分析整个对话的内容：
+
+1. **项目背景**: Kim 多级分镜提示词助手 - 一个 Electron 桌面应用
+2. **主要开发内容**:
+   - 片段属性表单（两列布局，14 个字段）
+   - 镜头属性表单（两列布局，10 个字段）
+   - 自定义选项管理系统
+   - 选项使用统计和验证功能
+
+3. **最近完成的工作**:
+   - 修复 `setupOptionHintListeners` 未定义错误
+   - 修复下拉框同时显示问题
+   - 修改排版（补充提示词不单独占一行）
+   - 取消模糊查询，改回单选下拉框
+   - 创建新选项按钮添加到标题右侧
+   - 排版改为两列
+   - 恢复细滚动条
+   - 镜头属性表单开发
+   - 选项使用统计和验证功能
+   - 被使用选项不允许删除
+   - 修复字段不一致问题
+
+4. **待完成任务**:
+   - 分镜图片上传功能（P0）
+   - 参考素材文件管理（P0）
+   - 响应式布局（P1）
+
+让我生成一个完整的中文摘要。# 项目摘要
 
 ## 总体目标
 开发"Kim 多级分镜提示词助手"，一款面向视频创作者和 AI 内容生成师的 Electron 桌面应用，提供多级分镜管理、提示词自动化生成和自定义选项系统。
@@ -18,7 +45,7 @@ e:\AI\KimV4\
 ├── src/
 │   ├── main.js              # Electron 主进程入口
 │   ├── preload.js           # 预加载脚本（IPC 桥接）
-│   ├── renderer.js          # 渲染进程（UI 逻辑，约 3700 行）
+│   ├── renderer.js          # 渲染进程（UI 逻辑，约 3800 行）
 │   ├── handlers/            # IPC 处理器
 │   │   ├── project.js       # 项目管理
 │   │   ├── api.js           # LLM API 调用
@@ -30,21 +57,21 @@ e:\AI\KimV4\
 │   ├── default-templates.json  # 默认模板（3 个）
 │   └── options.json            # 默认自定义选项（100+ 条）
 ├── index.html, styles.css
-└── work/dev-log.md            # 开发日志
+└── work/                      # 开发文档和日志
 ```
 
 ### 自定义选项系统
 - **组别**: 风格、情绪氛围、配乐风格、音效、景别、镜头角度、运镜
-- **数据结构**: `{ group, type, style, description, builtin }`
+- **数据结构**: `{ id, group, type, style, description, builtin, usageCount }`
 - **存储路径**: `%APPDATA%/kim-storyboard-assistant/config/options-custom.json`
-- **API**: `getOptionsByGroup()`, `addCustomOption()`, `deleteCustomOption()`, `updateCustomOption()`
+- **API**: `getOptionsByGroup()`, `addCustomOption()`, `deleteCustomOption()`, `updateCustomOption()`, `incrementOptionUsage()`, `checkOptionUsage()`
 
-### 开发规范（来自 work/rules.md）
+### 开发规范
 1. Electron 安全：禁用 nodeIntegration，启用 contextIsolation
 2. IPC 调用需要参数验证
 3. 文件操作仅在主进程实现
-4. CSS: BEM 命名，2 空格缩进，px/rem 单位，黑白灰配色
-5. JavaScript: ES6+，优先 const/let，异步用 async/await
+4. CSS: BEM 命名，2 空格缩进，黑白灰配色，细滚动条（6px）
+5. JavaScript: ES6+，优先 const/let，异步用 async/await，禁用 var
 6. 所有开发工作记录到 `work/dev-log.md`
 
 ### 构建和运行命令
@@ -69,7 +96,7 @@ npm run dev          # 开发模式（自动打开 DevTools）
 - [x] 删除选项后自动刷新属性表单
 
 #### 2. 片段属性表单 [100%]
-- [x] 14 个字段严格按 `attribute-field-description.md` 开发
+- [x] 14 个字段严格按文档开发
 - [x] 两列网格布局
 - [x] 选项字段集成自定义选项（风格、情绪氛围、配乐风格、音效）
 - [x] 每个选项字段旁有"+"添加按钮
@@ -78,14 +105,26 @@ npm run dev          # 开发模式（自动打开 DevTools）
 - [x] 细滚动条（6px 宽度）
 
 #### 3. 镜头属性表单 [80%]
-- [x] 10 个字段严格按 `attribute-field-description.md` 开发
+- [x] 10 个字段严格按文档开发
 - [x] 两列网格布局
 - [x] 选项字段集成（景别、镜头角度、运镜）
 - [x] "+"添加按钮功能
 - [x] 失焦自动保存
 - [x] 选项描述提示
-- [x] 分镜图片字段（文本占位符）
-- [ ] 图片上传功能（待完成）
+- [ ] 分镜图片上传功能（待完成）
+
+#### 4. 选项使用统计和验证 [100%]
+- [x] 数据结构新增 `usageCount` 字段
+- [x] 后端 IPC 新增 `incrementUsage` 和 `checkUsage` 接口
+- [x] 保存属性时自动增加选项使用次数
+- [x] 删除时检查使用情况，被使用的选项不允许删除
+- [x] 管理面板按使用次数降序排序
+- [x] 显示使用次数徽章（如"15 次"）
+
+#### 5. 字段一致性修复 [100%]
+- [x] 更新默认模板（`default-templates.json`）
+- [x] 统一 HTML 表单 ID、变量名、JSON 字段名
+- [x] 创建字段说明文档（`work/字段不一致问题修复说明.md`）
 
 ### 关键实现细节
 
@@ -116,20 +155,36 @@ npm run dev          # 开发模式（自动打开 DevTools）
 <small class="setting-hint">描述信息</small>
 ```
 
-#### 自动保存模式
+#### 删除验证逻辑
 ```javascript
-input.addEventListener('blur', () => {
-  setTimeout(async () => {
-    await saveShotProperties(shot, true);
-  }, 500);
-});
+async function deleteCustomOption(optionId) {
+  const usageResult = await checkOptionUsage(optionId);
+  if (usageResult.usageCount > 0) {
+    alert(`该选项已被使用 ${usageResult.usageCount} 次，无法删除。`);
+    return;
+  }
+  if (!confirm('确定要删除该自定义选项吗？')) return;
+  // 执行删除
+}
+```
+
+#### 使用次数统计
+```javascript
+// 保存时检查选项变更
+if (style && style !== oldShot.style) {
+  const styleOptions = await loadOptionsByGroup('风格');
+  const selectedOption = styleOptions.find(opt => opt.style === style);
+  if (selectedOption && !selectedOption.builtin) {
+    await incrementOptionUsage(selectedOption.id);
+  }
+}
 ```
 
 ## 当前计划
 
 ### 优先任务
 
-#### 1. [待完成] 分镜图片上传（P0 优先级）
+#### 1. [TODO] 分镜图片上传（P0 优先级）
 **位置**: 镜头属性表单 - 分镜图片字段
 **需求**:
 - 点击图片上传
@@ -138,7 +193,7 @@ input.addEventListener('blur', () => {
 - 支持多张图片（≤9 张）
 **预计**: 4 小时
 
-#### 2. [待完成] 参考素材文件管理（P0 优先级）
+#### 2. [TODO] 参考素材文件管理（P0 优先级）
 **位置**: 片段属性表单 - 图片/视频/音频参考字段
 **需求**:
 - 文件选择器集成
@@ -148,14 +203,7 @@ input.addEventListener('blur', () => {
 - 时长限制（视频/音频总计≤15 秒）
 **预计**: 6 小时
 
-#### 3. [待完成] 选项字段验证（P1 优先级）
-**需求**:
-- 删除前检查选项是否被使用
-- 提示用户替换为其他选项
-- 跟踪每个选项的使用次数
-**预计**: 2 小时
-
-#### 4. [待完成] 响应式布局（P1 优先级）
+#### 3. [TODO] 响应式布局（P1 优先级）
 **需求**:
 - 小屏幕：单列
 - 中屏幕：双列
@@ -163,48 +211,33 @@ input.addEventListener('blur', () => {
 **CSS 实现**:
 ```css
 @media (max-width: 800px) {
-  .shot-properties-2cols {
-    grid-template-columns: 1fr;
-  }
+  .shot-properties-2cols { grid-template-columns: 1fr; }
 }
 @media (min-width: 1200px) {
-  .shot-properties-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
+  .shot-properties-grid { grid-template-columns: repeat(3, 1fr); }
 }
 ```
 **预计**: 2 小时
 
-#### 5. [待完成] 选项使用统计（P2 优先级）
-**需求**:
-- 在 `options-custom.json` 中跟踪选项使用次数
-- 在管理面板显示使用次数
-- 支持按频率排序
-**数据结构**:
-```json
-{
-  "id": "custom_123",
-  "group": "风格",
-  "type": "写实风格",
-  "style": "照片写实",
-  "description": "...",
-  "usageCount": 15
-}
-```
-**预计**: 3 小时
-
 ### 进度汇总
 ```
-自定义选项管理：████████████████████ 100%
-片段属性表单：    ████████████████████ 100%
-镜头属性表单：    ████████████████░░░░  80% (缺少图片上传)
-总体进度：        ████████████████░░░░  85%
+自定义选项管理：    ████████████████████ 100%
+片段属性表单：      ████████████████████ 100%
+镜头属性表单：      ████████████████░░░░  80% (缺少图片上传)
+选项使用统计：      ████████████████████ 100%
+字段一致性修复：    ████████████████████ 100%
+总体进度：          ████████████████░░░░  88%
 ```
 
 ### 剩余工作总量
-P0-P2 优先级任务预计约 17 小时。
+P0-P1 优先级任务预计约 12 小时。
 
 ---
 
 ## 摘要元数据
-**更新时间**: 2026-03-05T16:30:45.248Z
+**更新时间**: 2026-03-06
+
+---
+
+## Summary Metadata
+**Update time**: 2026-03-05T18:11:55.186Z 
