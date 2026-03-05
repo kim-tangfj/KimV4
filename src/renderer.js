@@ -162,7 +162,13 @@ function cacheDOMElements() {
   elements.addCustomOptionBtn = document.getElementById('add-custom-option-btn');
   elements.refreshCustomOptionsBtn = document.getElementById('refresh-custom-options-btn');
   elements.customOptionsGroupFilter = document.getElementById('custom-options-group-filter');
+  elements.builtinOptionsList = document.getElementById('builtin-options-list');
   elements.customOptionsList = document.getElementById('custom-options-list');
+  elements.builtinCount = document.getElementById('builtin-count');
+  elements.customCount = document.getElementById('custom-count');
+  elements.refreshBuiltinBtn = document.getElementById('refresh-builtin-btn');
+  elements.addCustomOptionColumnBtn = document.getElementById('add-custom-option-column-btn');
+  elements.refreshCustomColumnBtn = document.getElementById('refresh-custom-column-btn');
   elements.customOptionsEditor = document.getElementById('custom-options-editor');
   elements.saveCustomOptionBtn = document.getElementById('save-custom-option-btn');
   elements.cancelCustomOptionBtn = document.getElementById('cancel-custom-option-btn');
@@ -171,6 +177,19 @@ function cacheDOMElements() {
   elements.customOptionStyle = document.getElementById('custom-option-style');
   elements.customOptionDescription = document.getElementById('custom-option-description');
   elements.customOptionId = document.getElementById('custom-option-id');
+
+  // 编辑自定义选项弹窗
+  elements.customOptionEditModal = document.getElementById('custom-option-edit-modal');
+  elements.customOptionEditTitle = document.getElementById('custom-option-edit-title');
+  elements.closeCustomOptionEditBtn = document.getElementById('close-custom-option-edit-btn');
+  elements.saveCustomOptionEditBtn = document.getElementById('save-custom-option-edit-btn');
+  elements.cancelCustomOptionEditBtn = document.getElementById('cancel-custom-option-edit-btn');
+  elements.editCustomOptionGroup = document.getElementById('edit-custom-option-group');
+  elements.editCustomOptionGroupInput = document.getElementById('edit-custom-option-group-input');
+  elements.editCustomOptionType = document.getElementById('edit-custom-option-type');
+  elements.editCustomOptionStyle = document.getElementById('edit-custom-option-style');
+  elements.editCustomOptionDescription = document.getElementById('edit-custom-option-description');
+  elements.editCustomOptionId = document.getElementById('edit-custom-option-id');
 
   // 底部面板
   elements.assetsList = document.getElementById('assets-list');
@@ -614,7 +633,17 @@ function setupEventListeners() {
     elements.addCustomOptionBtn.addEventListener('click', showAddCustomOptionForm);
   }
   if (elements.refreshCustomOptionsBtn) {
-    elements.refreshCustomOptionsBtn.addEventListener('click', loadCustomOptionsList);
+    elements.refreshCustomOptionsBtn.addEventListener('click', () => loadCustomOptionsList('all'));
+  }
+  // 分栏按钮事件
+  if (elements.refreshBuiltinBtn) {
+    elements.refreshBuiltinBtn.addEventListener('click', () => loadCustomOptionsList('all'));
+  }
+  if (elements.addCustomOptionColumnBtn) {
+    elements.addCustomOptionColumnBtn.addEventListener('click', showAddCustomOptionForm);
+  }
+  if (elements.refreshCustomColumnBtn) {
+    elements.refreshCustomColumnBtn.addEventListener('click', () => loadCustomOptionsList('all'));
   }
   if (elements.saveCustomOptionBtn) {
     elements.saveCustomOptionBtn.addEventListener('click', saveCustomOption);
@@ -626,6 +655,17 @@ function setupEventListeners() {
     elements.customOptionsGroupFilter.addEventListener('change', () => {
       loadCustomOptionsList(elements.customOptionsGroupFilter.value);
     });
+  }
+
+  // 编辑弹窗事件绑定
+  if (elements.closeCustomOptionEditBtn) {
+    elements.closeCustomOptionEditBtn.addEventListener('click', hideCustomOptionEditModal);
+  }
+  if (elements.saveCustomOptionEditBtn) {
+    elements.saveCustomOptionEditBtn.addEventListener('click', saveCustomOptionEdit);
+  }
+  if (elements.cancelCustomOptionEditBtn) {
+    elements.cancelCustomOptionEditBtn.addEventListener('click', hideCustomOptionEditModal);
   }
 }
 
