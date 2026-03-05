@@ -7,6 +7,7 @@
 3. 开发环境限定：Windows 系统、VS Code 编辑器、PowerShell 命令；
 4. 回答全程使用中文，代码示例需明确标注「主进程/渲染进程/HTML/CSS/JS」模块及用途。
 5. 每一次的对话开发完成，都记录到 work/dev-log.md 开发日志文件中
+6. 每一次对话开发完成,都git提交
 
 # ========== 1. Electron 核心规则 ==========
 1. 代码优先使用 TypeScript/原生 JS 编写，严格区分主进程/渲染进程/preload 脚本；

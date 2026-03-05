@@ -1553,75 +1553,144 @@ async function loadGroupFilter() {
   }
 }
 
-// 加载自定义选项列表
+// 加载自定义选项列表（两栏显示）
 async function loadCustomOptionsList(filterGroup = 'all') {
-  if (!useElectronAPI || !elements.customOptionsList) return;
-  
-  elements.customOptionsList.innerHTML = '<div class="placeholder-text">加载中...</div>';
-  
+  if (!useElectronAPI) return;
+
+  const builtinList = elements.builtinOptionsList;
+  const customList = elements.customOptionsList;
+
+  if (!builtinList || !customList) return;
+
+  builtinList.innerHTML = '<div class="placeholder-text">加载中...</div>';
+  customList.innerHTML = '<div class="placeholder-text">加载中...</div>';
+
   try {
     const result = await window.electronAPI.getAllOptions();
     if (result.success && result.options) {
       let options = result.options;
-      
+
       // 按组别筛选
       if (filterGroup !== 'all') {
         options = options.filter(opt => opt.group === filterGroup);
       }
-      
-      if (options.length === 0) {
-        elements.customOptionsList.innerHTML = '<div class="placeholder-text">暂无选项</div>';
-        return;
+
+      // 分离内置选项和自定义选项
+      const builtinOptions = options.filter(opt => opt.builtin);
+      const customOptions = options.filter(opt => !opt.builtin);
+
+      // 更新数量统计
+      if (elements.builtinCount) {
+        elements.builtinCount.textContent = builtinOptions.length;
       }
-      
-      elements.customOptionsList.innerHTML = '';
-      
-      options.forEach(option => {
-        const itemElement = document.createElement('div');
-        itemElement.className = 'custom-option-item' + (option.builtin ? ' builtin' : '');
-        
-        itemElement.innerHTML = `
-          <div class="custom-option-item-info">
-            <div class="custom-option-item-header">
-              <span class="custom-option-group-tag">${option.group}</span>
-              <span class="custom-option-item-title">${option.type} - ${option.style}</span>
-              ${option.builtin ? '<span style="font-size:11px;color:#888;">(系统)</span>' : ''}
-            </div>
-            <div class="custom-option-item-subtitle">${option.description || ''}</div>
-          </div>
-          ${!option.builtin ? `
-            <div class="custom-option-item-actions">
-              <button class="form-btn small-btn edit-option-btn" data-id="${option.id}">编辑</button>
-              <button class="form-btn small-btn delete-option-btn" data-id="${option.id}">删除</button>
-            </div>
-          ` : ''}
-        `;
-        
-        // 绑定编辑按钮事件
-        const editBtn = itemElement.querySelector('.edit-option-btn');
-        if (editBtn) {
-          editBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            showEditCustomOptionForm(option);
-          });
-        }
-        
-        // 绑定删除按钮事件
-        const deleteBtn = itemElement.querySelector('.delete-option-btn');
-        if (deleteBtn) {
-          deleteBtn.addEventListener('click', (e) => {
-            e.stopPropagation();
-            deleteCustomOption(option.id);
-          });
-        }
-        
-        elements.customOptionsList.appendChild(itemElement);
-      });
+      if (elements.customCount) {
+        elements.customCount.textContent = customOptions.length;
+      }
+
+      // 渲染内置选项列表
+      renderBuiltinOptionsList(builtinOptions);
+
+      // 渲染自定义选项列表
+      renderCustomOptionsList(customOptions);
+    } else {
+      builtinList.innerHTML = '<div class="placeholder-text">加载失败</div>';
+      customList.innerHTML = '<div class="placeholder-text">加载失败</div>';
     }
   } catch (error) {
     console.error('加载选项列表失败:', error);
-    elements.customOptionsList.innerHTML = '<div class="placeholder-text">加载失败</div>';
+    builtinList.innerHTML = '<div class="placeholder-text">加载失败</div>';
+    customList.innerHTML = '<div class="placeholder-text">加载失败</div>';
   }
+}
+
+// 渲染内置选项列表
+function renderBuiltinOptionsList(options) {
+  const builtinList = elements.builtinOptionsList;
+  if (!builtinList) return;
+
+  if (options.length === 0) {
+    builtinList.innerHTML = '<div class="placeholder-text">暂无内置选项</div>';
+    return;
+  }
+
+  builtinList.innerHTML = '';
+
+  options.forEach(option => {
+    const itemElement = document.createElement('div');
+    itemElement.className = 'custom-option-item builtin';
+
+    itemElement.innerHTML = `
+      <div class="custom-option-item-info">
+        <div class="custom-option-item-header">
+          <span class="custom-option-group-tag">${option.group}</span>
+          <span class="custom-option-item-title">${option.type} - ${option.style}</span>
+        </div>
+        <div class="custom-option-item-subtitle">${option.description || ''}</div>
+      </div>
+    `;
+
+    builtinList.appendChild(itemElement);
+  });
+}
+
+// 渲染自定义选项列表
+function renderCustomOptionsList(options) {
+  const customList = elements.customOptionsList;
+  if (!customList) return;
+
+  if (options.length === 0) {
+    customList.innerHTML = '<div class="placeholder-text">暂无自定义选项</div>';
+    return;
+  }
+
+  // 按使用次数排序（降序）
+  const sortedOptions = [...options].sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
+
+  customList.innerHTML = '';
+
+  sortedOptions.forEach(option => {
+    const itemElement = document.createElement('div');
+    itemElement.className = 'custom-option-item';
+
+    const usageBadge = option.usageCount > 0 
+      ? `<span class="usage-count-badge" title="使用次数">${option.usageCount}次</span>` 
+      : '';
+
+    itemElement.innerHTML = `
+      <div class="custom-option-item-info">
+        <div class="custom-option-item-header">
+          <span class="custom-option-group-tag">${option.group}</span>
+          <span class="custom-option-item-title">${option.type} - ${option.style}</span>
+          ${usageBadge}
+        </div>
+        <div class="custom-option-item-subtitle">${option.description || ''}</div>
+      </div>
+      <div class="custom-option-item-actions">
+        <button class="icon-btn small edit-option-btn" data-id="${option.id}" title="编辑">✎</button>
+        <button class="icon-btn small delete-option-btn" data-id="${option.id}" title="删除">×</button>
+      </div>
+    `;
+
+    // 绑定编辑按钮事件
+    const editBtn = itemElement.querySelector('.edit-option-btn');
+    if (editBtn) {
+      editBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        showEditCustomOptionForm(option);
+      });
+    }
+
+    // 绑定删除按钮事件
+    const deleteBtn = itemElement.querySelector('.delete-option-btn');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteCustomOption(option.id);
+      });
+    }
+
+    customList.appendChild(itemElement);
+  });
 }
 
 // 显示添加自定义选项表单
