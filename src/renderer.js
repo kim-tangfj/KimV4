@@ -1567,7 +1567,6 @@ function hideCustomOptionsModal() {
   if (elements.customOptionsModal) {
     elements.customOptionsModal.style.display = 'none';
   }
-  hideCustomOptionForm();
 }
 
 // 加载组别筛选器
