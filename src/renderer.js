@@ -151,6 +151,27 @@ function cacheDOMElements() {
   elements.backupTemplatesBtn = document.getElementById('backup-templates-btn');
   elements.restoreTemplatesBtn = document.getElementById('restore-templates-btn');
 
+  // 自定义选项管理
+  elements.manageCustomOptionsBtn = document.getElementById('manage-custom-options-btn');
+  elements.backupOptionsBtn = document.getElementById('backup-options-btn');
+  elements.restoreOptionsBtn = document.getElementById('restore-options-btn');
+  elements.openOptionsFolderBtn = document.getElementById('open-options-folder-btn');
+  elements.customOptionsModal = document.getElementById('custom-options-modal');
+  elements.closeCustomOptionsBtn = document.getElementById('close-custom-options-btn');
+  elements.closeCustomOptionsModalBtn = document.getElementById('close-custom-options-modal-btn');
+  elements.addCustomOptionBtn = document.getElementById('add-custom-option-btn');
+  elements.refreshCustomOptionsBtn = document.getElementById('refresh-custom-options-btn');
+  elements.customOptionsGroupFilter = document.getElementById('custom-options-group-filter');
+  elements.customOptionsList = document.getElementById('custom-options-list');
+  elements.customOptionsEditor = document.getElementById('custom-options-editor');
+  elements.saveCustomOptionBtn = document.getElementById('save-custom-option-btn');
+  elements.cancelCustomOptionBtn = document.getElementById('cancel-custom-option-btn');
+  elements.customOptionGroup = document.getElementById('custom-option-group');
+  elements.customOptionType = document.getElementById('custom-option-type');
+  elements.customOptionStyle = document.getElementById('custom-option-style');
+  elements.customOptionDescription = document.getElementById('custom-option-description');
+  elements.customOptionId = document.getElementById('custom-option-id');
+
   // 底部面板
   elements.assetsList = document.getElementById('assets-list');
   elements.assetsPanel = document.getElementById('assets-panel');
@@ -517,6 +538,7 @@ function setupEventListeners() {
     window.electronAPI.onSettingsOpen(() => showSettingsModal());
     window.electronAPI.onThemeToggle(() => toggleTheme());
     window.electronAPI.onTemplateLibraryOpen(() => showTemplateLibraryModal());
+    window.electronAPI.onCustomOptionsOpen(() => showCustomOptionsModal());
   }
 
   // 模态框背景点击关闭
@@ -567,6 +589,43 @@ function setupEventListeners() {
   }
   if (elements.openTemplateFolderBtn) {
     elements.openTemplateFolderBtn.addEventListener('click', openTemplateFolder);
+  }
+
+  // 自定义选项管理事件
+  if (elements.manageCustomOptionsBtn) {
+    elements.manageCustomOptionsBtn.addEventListener('click', showCustomOptionsModal);
+  }
+  if (elements.backupOptionsBtn) {
+    elements.backupOptionsBtn.addEventListener('click', backupOptions);
+  }
+  if (elements.restoreOptionsBtn) {
+    elements.restoreOptionsBtn.addEventListener('click', restoreOptions);
+  }
+  if (elements.openOptionsFolderBtn) {
+    elements.openOptionsFolderBtn.addEventListener('click', openOptionsFolder);
+  }
+  if (elements.closeCustomOptionsBtn) {
+    elements.closeCustomOptionsBtn.addEventListener('click', hideCustomOptionsModal);
+  }
+  if (elements.closeCustomOptionsModalBtn) {
+    elements.closeCustomOptionsModalBtn.addEventListener('click', hideCustomOptionsModal);
+  }
+  if (elements.addCustomOptionBtn) {
+    elements.addCustomOptionBtn.addEventListener('click', showAddCustomOptionForm);
+  }
+  if (elements.refreshCustomOptionsBtn) {
+    elements.refreshCustomOptionsBtn.addEventListener('click', loadCustomOptionsList);
+  }
+  if (elements.saveCustomOptionBtn) {
+    elements.saveCustomOptionBtn.addEventListener('click', saveCustomOption);
+  }
+  if (elements.cancelCustomOptionBtn) {
+    elements.cancelCustomOptionBtn.addEventListener('click', hideCustomOptionForm);
+  }
+  if (elements.customOptionsGroupFilter) {
+    elements.customOptionsGroupFilter.addEventListener('change', () => {
+      loadCustomOptionsList(elements.customOptionsGroupFilter.value);
+    });
   }
 }
 
@@ -1441,9 +1500,287 @@ async function openTemplateFolder() {
   try {
     const result = await window.electronAPI.getTemplatesPath();
     if (result.success) {
-      // 打开配置文件夹而不是文件
       await window.electronAPI.openPath(result.path);
     }
+  } catch (error) {
+    alert('打开文件夹失败：' + error.message);
+  }
+}
+
+// ========== 自定义选项管理 ==========
+
+// 显示自定义选项管理弹窗
+async function showCustomOptionsModal() {
+  if (!elements.customOptionsModal) return;
+  
+  // 加载组别筛选器
+  await loadGroupFilter();
+  
+  // 加载自定义选项列表
+  await loadCustomOptionsList();
+  
+  elements.customOptionsModal.style.display = 'flex';
+}
+
+// 隐藏自定义选项管理弹窗
+function hideCustomOptionsModal() {
+  if (elements.customOptionsModal) {
+    elements.customOptionsModal.style.display = 'none';
+  }
+  hideCustomOptionForm();
+}
+
+// 加载组别筛选器
+async function loadGroupFilter() {
+  if (!useElectronAPI || !elements.customOptionsGroupFilter) return;
+  
+  try {
+    const result = await window.electronAPI.getGroups();
+    if (result.success && result.groups) {
+      // 保留"全部组别"选项
+      elements.customOptionsGroupFilter.innerHTML = '<option value="all">全部组别</option>';
+      
+      // 添加所有组别
+      result.groups.forEach(group => {
+        const option = document.createElement('option');
+        option.value = group;
+        option.textContent = group;
+        elements.customOptionsGroupFilter.appendChild(option);
+      });
+    }
+  } catch (error) {
+    console.error('加载组别失败:', error);
+  }
+}
+
+// 加载自定义选项列表
+async function loadCustomOptionsList(filterGroup = 'all') {
+  if (!useElectronAPI || !elements.customOptionsList) return;
+  
+  elements.customOptionsList.innerHTML = '<div class="placeholder-text">加载中...</div>';
+  
+  try {
+    const result = await window.electronAPI.getAllOptions();
+    if (result.success && result.options) {
+      let options = result.options;
+      
+      // 按组别筛选
+      if (filterGroup !== 'all') {
+        options = options.filter(opt => opt.group === filterGroup);
+      }
+      
+      if (options.length === 0) {
+        elements.customOptionsList.innerHTML = '<div class="placeholder-text">暂无选项</div>';
+        return;
+      }
+      
+      elements.customOptionsList.innerHTML = '';
+      
+      options.forEach(option => {
+        const itemElement = document.createElement('div');
+        itemElement.className = 'custom-option-item' + (option.builtin ? ' builtin' : '');
+        
+        itemElement.innerHTML = `
+          <div class="custom-option-item-info">
+            <div class="custom-option-item-header">
+              <span class="custom-option-group-tag">${option.group}</span>
+              <span class="custom-option-item-title">${option.type} - ${option.style}</span>
+              ${option.builtin ? '<span style="font-size:11px;color:#888;">(系统)</span>' : ''}
+            </div>
+            <div class="custom-option-item-subtitle">${option.description || ''}</div>
+          </div>
+          ${!option.builtin ? `
+            <div class="custom-option-item-actions">
+              <button class="form-btn small-btn edit-option-btn" data-id="${option.id}">编辑</button>
+              <button class="form-btn small-btn delete-option-btn" data-id="${option.id}">删除</button>
+            </div>
+          ` : ''}
+        `;
+        
+        // 绑定编辑按钮事件
+        const editBtn = itemElement.querySelector('.edit-option-btn');
+        if (editBtn) {
+          editBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            showEditCustomOptionForm(option);
+          });
+        }
+        
+        // 绑定删除按钮事件
+        const deleteBtn = itemElement.querySelector('.delete-option-btn');
+        if (deleteBtn) {
+          deleteBtn.addEventListener('click', (e) => {
+            e.stopPropagation();
+            deleteCustomOption(option.id);
+          });
+        }
+        
+        elements.customOptionsList.appendChild(itemElement);
+      });
+    }
+  } catch (error) {
+    console.error('加载选项列表失败:', error);
+    elements.customOptionsList.innerHTML = '<div class="placeholder-text">加载失败</div>';
+  }
+}
+
+// 显示添加自定义选项表单
+function showAddCustomOptionForm() {
+  if (elements.customOptionsEditor) {
+    elements.customOptionsEditor.style.display = 'block';
+  }
+  if (elements.saveCustomOptionBtn) {
+    elements.saveCustomOptionBtn.style.display = 'inline-block';
+  }
+  if (elements.cancelCustomOptionBtn) {
+    elements.cancelCustomOptionBtn.style.display = 'inline-block';
+  }
+  
+  // 清空表单
+  if (elements.customOptionId) elements.customOptionId.value = '';
+  if (elements.customOptionGroup) elements.customOptionGroup.value = '';
+  if (elements.customOptionType) elements.customOptionType.value = '';
+  if (elements.customOptionStyle) elements.customOptionStyle.value = '';
+  if (elements.customOptionDescription) elements.customOptionDescription.value = '';
+}
+
+// 显示编辑自定义选项表单
+function showEditCustomOptionForm(option) {
+  showAddCustomOptionForm();
+  
+  // 填充表单数据
+  if (elements.customOptionId) elements.customOptionId.value = option.id;
+  if (elements.customOptionGroup) elements.customOptionGroup.value = option.group;
+  if (elements.customOptionType) elements.customOptionType.value = option.type;
+  if (elements.customOptionStyle) elements.customOptionStyle.value = option.style;
+  if (elements.customOptionDescription) elements.customOptionDescription.value = option.description;
+}
+
+// 隐藏自定义选项表单
+function hideCustomOptionForm() {
+  if (elements.customOptionsEditor) {
+    elements.customOptionsEditor.style.display = 'none';
+  }
+  if (elements.saveCustomOptionBtn) {
+    elements.saveCustomOptionBtn.style.display = 'none';
+  }
+  if (elements.cancelCustomOptionBtn) {
+    elements.cancelCustomOptionBtn.style.display = 'none';
+  }
+}
+
+// 保存自定义选项
+async function saveCustomOption() {
+  if (!useElectronAPI) {
+    alert('请在 Electron 环境中使用此功能');
+    return;
+  }
+  
+  const optionId = elements.customOptionId?.value;
+  const group = elements.customOptionGroup?.value;
+  const type = elements.customOptionType?.value;
+  const style = elements.customOptionStyle?.value;
+  const description = elements.customOptionDescription?.value;
+  
+  if (!group || !type || !style || !description) {
+    alert('请填写所有必填字段');
+    return;
+  }
+  
+  try {
+    const optionData = { group, type, style, description };
+    
+    let result;
+    if (optionId) {
+      // 更新
+      result = await window.electronAPI.updateCustomOption(optionId, optionData);
+    } else {
+      // 新增
+      result = await window.electronAPI.addCustomOption(optionData);
+    }
+    
+    if (result.success) {
+      hideCustomOptionForm();
+      await loadCustomOptionsList();
+      showUpdateNotification();
+    } else {
+      alert('保存失败：' + result.error);
+    }
+  } catch (error) {
+    console.error('保存选项失败:', error);
+    alert('保存失败：' + error.message);
+  }
+}
+
+// 删除自定义选项
+async function deleteCustomOption(optionId) {
+  if (!useElectronAPI) {
+    alert('请在 Electron 环境中使用此功能');
+    return;
+  }
+  
+  if (!confirm('确定要删除该自定义选项吗？')) {
+    return;
+  }
+  
+  try {
+    const result = await window.electronAPI.deleteCustomOption(optionId);
+    if (result.success) {
+      await loadCustomOptionsList();
+      showUpdateNotification();
+    } else {
+      alert('删除失败：' + result.error);
+    }
+  } catch (error) {
+    console.error('删除选项失败:', error);
+    alert('删除失败：' + error.message);
+  }
+}
+
+// 备份自定义选项
+async function backupOptions() {
+  if (!useElectronAPI) {
+    alert('请在 Electron 环境中使用此功能');
+    return;
+  }
+  
+  const result = await window.electronAPI.backupOptions();
+  if (result.success) {
+    alert('选项备份成功！\n文件已保存到：' + result.filePath);
+  } else if (!result.canceled) {
+    alert('备份失败：' + result.error);
+  }
+}
+
+// 恢复自定义选项
+async function restoreOptions() {
+  if (!useElectronAPI) {
+    alert('请在 Electron 环境中使用此功能');
+    return;
+  }
+  
+  if (!confirm('恢复选项将覆盖当前的自定义选项配置，确定继续吗？')) {
+    return;
+  }
+  
+  const result = await window.electronAPI.restoreOptions();
+  if (result.success) {
+    alert('选项恢复成功！请重新打开管理窗口以查看恢复的选项。');
+    hideCustomOptionsModal();
+  } else if (!result.canceled) {
+    alert('恢复失败：' + result.error);
+  }
+}
+
+// 打开选项文件夹
+async function openOptionsFolder() {
+  if (!useElectronAPI) {
+    alert('请在 Electron 环境中使用此功能');
+    return;
+  }
+  
+  try {
+    await window.electronAPI.openOptionsFolder();
   } catch (error) {
     alert('打开文件夹失败：' + error.message);
   }

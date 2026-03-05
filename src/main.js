@@ -9,6 +9,7 @@ const path = require('path');
 const { initProjectIPC } = require('./handlers/project');
 const { initApiIPC } = require('./handlers/api');
 const { initTemplateIPC } = require('./handlers/template');
+const { initOptionsIPC, initializeCustomOptions } = require('./handlers/options');
 
 // 导入工具模块
 const { setMainMenu, initializeLogFiles } = require('./utils/menu');
@@ -46,11 +47,15 @@ app.whenReady().then(() => {
 
   // 初始化默认模板
   initializeDefaultTemplates();
+  
+  // 初始化自定义选项
+  initializeCustomOptions();
 
   // 初始化 IPC 处理器
   initProjectIPC(mainWindow);
   initApiIPC();
   initTemplateIPC();
+  initOptionsIPC();
 
   createWindow();
 

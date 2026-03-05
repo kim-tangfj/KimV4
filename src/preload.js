@@ -33,6 +33,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   backupTemplates: () => ipcRenderer.invoke('template:backup'),
   restoreTemplates: () => ipcRenderer.invoke('template:restore'),
   getTemplatesPath: () => ipcRenderer.invoke('template:getPath'),
+
+  // 自定义选项 API
+  getAllOptions: () => ipcRenderer.invoke('options:getAll'),
+  getOptionsByGroup: (group) => ipcRenderer.invoke('options:getByGroup', group),
+  getGroups: () => ipcRenderer.invoke('options:getGroups'),
+  addCustomOption: (option) => ipcRenderer.invoke('options:addCustom', option),
+  deleteCustomOption: (optionId) => ipcRenderer.invoke('options:deleteCustom', optionId),
+  updateCustomOption: (optionId, updates) => ipcRenderer.invoke('options:updateCustom', optionId, updates),
+  getCustomList: () => ipcRenderer.invoke('options:getCustomList'),
+  backupOptions: () => ipcRenderer.invoke('options:backup'),
+  restoreOptions: () => ipcRenderer.invoke('options:restore'),
+  openOptionsFolder: () => ipcRenderer.invoke('options:openFolder'),
   
   // 监听来自主进程的消息
   onSettingsOpen: (callback) => {
@@ -46,5 +58,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onTemplateLibraryOpen: (callback) => {
     ipcRenderer.on('open-template-library', callback);
+  },
+  onCustomOptionsOpen: (callback) => {
+    ipcRenderer.on('open-custom-options', callback);
   }
 });

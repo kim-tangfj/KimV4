@@ -404,6 +404,69 @@
     </div>
   </div>
 
+  <!-- 自定义选项管理弹窗 -->
+  <div id="custom-options-modal" class="modal" style="display: none;">
+    <div class="modal-content custom-options-modal">
+      <div class="modal-header">
+        <h3>自定义选项管理</h3>
+        <button id="close-custom-options-btn" class="modal-close">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="custom-options-toolbar">
+          <button id="add-custom-option-btn" class="form-btn primary">+ 添加自定义选项</button>
+          <button id="refresh-custom-options-btn" class="form-btn">刷新</button>
+        </div>
+        
+        <!-- 组别筛选 -->
+        <div class="custom-options-filter">
+          <label>按组别筛选：</label>
+          <select id="custom-options-group-filter">
+            <option value="all">全部组别</option>
+          </select>
+        </div>
+        
+        <!-- 自定义选项列表 -->
+        <div class="custom-options-list-container">
+          <div id="custom-options-list" class="custom-options-list">
+            <!-- 选项列表将由 JavaScript 渲染 -->
+          </div>
+        </div>
+        
+        <!-- 编辑表单 -->
+        <div class="custom-options-editor" id="custom-options-editor" style="display: none;">
+          <h4 style="margin-bottom: 15px; font-size: 14px;">编辑选项</h4>
+          <div class="form-group">
+            <label for="custom-option-group">组别 *</label>
+            <select id="custom-option-group">
+              <option value="">请选择组别</option>
+              <option value="风格">风格</option>
+              <option value="情绪氛围">情绪氛围</option>
+              <option value="配乐风格">配乐风格</option>
+            </select>
+          </div>
+          <div class="form-group">
+            <label for="custom-option-type">类型 *</label>
+            <input type="text" id="custom-option-type" placeholder="如：写实风格、清新治愈">
+          </div>
+          <div class="form-group">
+            <label for="custom-option-style">风格名称 *</label>
+            <input type="text" id="custom-option-style" placeholder="如：照片写实、日系清新">
+          </div>
+          <div class="form-group">
+            <label for="custom-option-description">描述 *</label>
+            <textarea id="custom-option-description" rows="3" placeholder="描述该风格的特点和适用场景"></textarea>
+          </div>
+          <input type="hidden" id="custom-option-id">
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button id="save-custom-option-btn" class="form-btn primary" style="display: none;">保存选项</button>
+        <button id="cancel-custom-option-btn" class="form-btn" style="display: none;">取消编辑</button>
+        <button id="close-custom-options-modal-btn" class="form-btn">关闭</button>
+      </div>
+    </div>
+  </div>
+
   <!-- 加载提示 -->
   <div id="loading-overlay" class="loading-overlay" style="display: none;">
     <div class="loading-spinner"></div>

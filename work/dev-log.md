@@ -4,6 +4,315 @@
 
 ---
 
+## 2026-03-05 - 自定义选项功能（菜单入口优化）
+
+### 修改内容
+
+#### 1. 功能入口位置调整
+**修改前**: 设置面板 → 自定义选项管理  
+**修改后**: 原生菜单 → 系统 → 自定义选项管理
+
+#### 2. menu.js 修改
+```javascript
+{
+  label: '系统',
+  submenu: [
+    {
+      label: '自定义选项管理',  // 新增菜单项
+      click: () => {
+        mainWindow.webContents.send('open-custom-options');
+      }
+    },
+    // ... 其他菜单项
+  ]
+}
+```
+
+#### 3. preload.js 修改
+```javascript
+onCustomOptionsOpen: (callback) => {
+  ipcRenderer.on('open-custom-options', callback);
+}
+```
+
+#### 4. renderer.js 修改
+```javascript
+// Electron API 事件监听
+window.electronAPI.onCustomOptionsOpen(() => showCustomOptionsModal());
+```
+
+### 使用方式
+```
+系统菜单 → 自定义选项管理
+  ↓
+打开自定义选项管理弹窗
+  ↓
+查看/添加/编辑/删除自定义选项
+```
+
+---
+
+## 2026-03-05 - 自定义选项功能（前端实现）
+
+### 完成内容
+
+#### 1. 打开管理弹窗
+**函数**: `showCustomOptionsModal()`
+
+**流程**:
+```javascript
+async function showCustomOptionsModal() {
+  // 1. 加载组别筛选器
+  await loadGroupFilter();
+  
+  // 2. 加载自定义选项列表
+  await loadCustomOptionsList();
+  
+  // 3. 显示弹窗
+  elements.customOptionsModal.style.display = 'flex';
+}
+```
+
+#### 2. 选项列表渲染
+**函数**: `loadCustomOptionsList(filterGroup)`
+
+**功能**:
+- 调用 `window.electronAPI.getAllOptions()` 获取所有选项（内置 + 自定义）
+- 支持按组别筛选
+- 内置选项标记为灰色、不可编辑
+- 自定义选项显示编辑/删除按钮
+
+**列表项结构**:
+```html
+<div class="custom-option-item builtin">
+  <div class="custom-option-item-info">
+    <div class="custom-option-item-header">
+      <span class="custom-option-group-tag">风格</span>
+      <span class="custom-option-item-title">写实风格 - 照片写实</span>
+      <span>(系统)</span>
+    </div>
+    <div class="custom-option-item-subtitle">高度还原现实光影...</div>
+  </div>
+</div>
+
+<div class="custom-option-item">
+  <div class="custom-option-item-info">...</div>
+  <div class="custom-option-item-actions">
+    <button class="edit-option-btn">编辑</button>
+    <button class="delete-option-btn">删除</button>
+  </div>
+</div>
+```
+
+#### 3. 组别筛选器
+**函数**: `loadGroupFilter()`
+
+**功能**:
+- 调用 `window.electronAPI.getGroups()` 获取所有组别
+- 动态填充下拉选项
+- 支持"全部组别"选项
+
+#### 4. 添加/编辑表单
+**函数**:
+- `showAddCustomOptionForm()` - 显示添加表单
+- `showEditCustomOptionForm(option)` - 显示编辑表单并填充数据
+- `hideCustomOptionForm()` - 隐藏表单
+
+**表单字段**:
+- 组别（下拉选择：风格/情绪氛围/配乐风格）
+- 类型（文本输入）
+- 风格名称（文本输入）
+- 描述（多行文本）
+
+#### 5. 保存功能
+**函数**: `saveCustomOption()`
+
+**逻辑**:
+```javascript
+async function saveCustomOption() {
+  const optionId = elements.customOptionId.value;
+  const optionData = { group, type, style, description };
+  
+  if (optionId) {
+    // 更新
+    result = await window.electronAPI.updateCustomOption(optionId, optionData);
+  } else {
+    // 新增
+    result = await window.electronAPI.addCustomOption(optionData);
+  }
+  
+  if (result.success) {
+    hideCustomOptionForm();
+    await loadCustomOptionsList();
+    showUpdateNotification();
+  }
+}
+```
+
+#### 6. 删除功能
+**函数**: `deleteCustomOption(optionId)`
+
+**逻辑**:
+- 确认对话框
+- 调用 API 删除
+- 刷新列表
+
+#### 7. 备份/恢复功能
+**函数**:
+- `backupOptions()` - 备份自定义选项
+- `restoreOptions()` - 恢复自定义选项
+- `openOptionsFolder()` - 打开选项文件夹
+
+### 事件绑定
+```javascript
+// 打开管理弹窗
+elements.manageCustomOptionsBtn.addEventListener('click', showCustomOptionsModal);
+
+// 组别筛选
+elements.customOptionsGroupFilter.addEventListener('change', () => {
+  loadCustomOptionsList(elements.customOptionsGroupFilter.value);
+});
+
+// 添加选项
+elements.addCustomOptionBtn.addEventListener('click', showAddCustomOptionForm);
+
+// 保存选项
+elements.saveCustomOptionBtn.addEventListener('click', saveCustomOption);
+
+// 编辑选项（动态绑定）
+editBtn.addEventListener('click', () => showEditCustomOptionForm(option));
+
+// 删除选项（动态绑定）
+deleteBtn.addEventListener('click', () => deleteCustomOption(option.id));
+```
+
+### 待完成功能
+- [ ] 组别下拉框动态加载所有可用组别（目前硬编码）
+- [ ] 与片段/镜头属性表单集成（使用选项数据填充下拉框）
+- [ ] 批量导入/导出功能
+
+---
+
+## 2026-03-05 - 自定义选项功能（基础框架）
+
+### 需求
+1. 读取 `assets/default/options.json` 作为系统初始选项（只读）
+2. 自定义选项独立存储，与系统选项合并使用
+3. 提供管理界面：添加、编辑、删除自定义选项
+4. 支持备份/恢复功能
+
+### 数据结构
+
+**内置选项** (`assets/default/options.json`)：
+```json
+[
+  {
+    "group": "风格",
+    "type": "写实风格",
+    "style": "照片写实",
+    "description": "高度还原现实光影..."
+  }
+]
+```
+
+**自定义选项** (用户数据目录 `options-custom.json`)：
+```json
+{
+  "version": "1.0",
+  "customOptions": [
+    {
+      "id": "custom_1234567890",
+      "group": "风格",
+      "type": "自定义类型",
+      "style": "自定义风格",
+      "description": "描述...",
+      "builtin": false
+    }
+  ]
+}
+```
+
+### 后端实现
+
+#### 新增模块 `src/handlers/options.js`
+**功能**：
+- `loadDefaultOptions()` - 加载内置选项（只读）
+- `loadCustomOptions()` - 加载自定义选项
+- `saveCustomOptions()` - 保存自定义选项
+- `getAllOptions()` - 获取所有选项（内置 + 自定义）
+- `getOptionsByGroup()` - 按组别获取选项
+- `getAllGroups()` - 获取所有组别
+
+**IPC 接口**：
+- `options:getAll` - 获取所有选项
+- `options:getByGroup` - 按组别获取
+- `options:getGroups` - 获取所有组别
+- `options:addCustom` - 添加自定义选项
+- `options:deleteCustom` - 删除自定义选项
+- `options:updateCustom` - 更新自定义选项
+- `options:getCustomList` - 获取自定义列表
+- `options:backup` - 备份自定义选项
+- `options:restore` - 恢复自定义选项
+- `options:openFolder` - 打开选项文件夹
+
+#### main.js 更新
+```javascript
+const { initOptionsIPC, initializeCustomOptions } = require('./handlers/options');
+
+// 初始化
+initializeCustomOptions();
+initOptionsIPC();
+```
+
+#### preload.js 更新
+新增 API 暴露：
+- `getAllOptions()`
+- `getOptionsByGroup(group)`
+- `getGroups()`
+- `addCustomOption(option)`
+- `deleteCustomOption(optionId)`
+- `updateCustomOption(optionId, updates)`
+- `getCustomList()`
+- `backupOptions()`
+- `restoreOptions()`
+- `openOptionsFolder()`
+
+### 前端 UI
+
+#### 设置面板新增
+```html
+<!-- 自定义选项管理 -->
+<div class="settings-section">
+  <h4>自定义选项管理</h4>
+  <div class="setting-item">
+    <label>系统初始选项</label>
+    <input type="text" value="assets/default/options.json" readonly>
+    <button id="open-options-folder-btn">打开文件夹</button>
+  </div>
+  <div class="setting-item">
+    <button id="manage-custom-options-btn">管理自定义选项</button>
+    <button id="backup-options-btn">备份选项</button>
+    <button id="restore-options-btn">恢复选项</button>
+  </div>
+</div>
+```
+
+#### 管理弹窗
+- 工具栏：添加选项、刷新
+- 组别筛选器
+- 选项列表（显示内置 + 自定义，内置标记为只读）
+- 编辑表单：组别、类型、风格名称、描述
+
+### 待完成功能
+- [ ] 前端 JavaScript 逻辑实现
+- [ ] 选项列表渲染
+- [ ] 添加/编辑/删除功能
+- [ ] 组别筛选功能
+- [ ] 备份/恢复功能
+- [ ] 与片段/镜头属性表单集成（使用选项数据）
+
+---
+
 ## 2026-03-05 - 底部面板分割线优化
 
 ### 需求

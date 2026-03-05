@@ -70,6 +70,13 @@ function setMainMenu(mainWindow) {
         },
         { type: 'separator' },
         {
+          label: '自定义选项管理',
+          click: () => {
+            mainWindow.webContents.send('open-custom-options');
+          }
+        },
+        { type: 'separator' },
+        {
           label: '日志',
           submenu: [
             {
@@ -85,12 +92,6 @@ function setMainMenu(mainWindow) {
               }
             }
           ]
-        },
-        { type: 'separator' },
-        {
-          label: '自定义选项',
-          enabled: false,
-          toolTip: '功能开发中...'
         }
       ]
     }
