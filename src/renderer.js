@@ -1771,13 +1771,17 @@ async function showEditCustomOptionForm(option) {
 
   // 填充表单数据
   if (elements.editCustomOptionId) elements.editCustomOptionId.value = option.id;
-  if (elements.editCustomOptionGroup) elements.editCustomOptionGroup.value = option.group;
   if (elements.editCustomOptionType) elements.editCustomOptionType.value = option.type;
   if (elements.editCustomOptionStyle) elements.editCustomOptionStyle.value = option.style;
   if (elements.editCustomOptionDescription) elements.editCustomOptionDescription.value = option.description;
 
   // 动态加载组别列表
   await loadGroupFilterForEditForm();
+
+  // 设置组别值（必须在加载组别列表后）
+  if (elements.editCustomOptionGroup) {
+    elements.editCustomOptionGroup.value = option.group;
+  }
 
   // 显示下拉框，隐藏输入框
   if (elements.editCustomOptionGroup) elements.editCustomOptionGroup.style.display = 'block';
