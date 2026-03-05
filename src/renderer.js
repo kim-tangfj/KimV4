@@ -1718,15 +1718,39 @@ async function deleteCustomOption(optionId) {
     alert('请在 Electron 环境中使用此功能');
     return;
   }
-  
-  if (!confirm('确定要删除该自定义选项吗？')) {
-    return;
-  }
-  
+
   try {
+    // 先检查使用情况
+    const usageResult = await window.electronAPI.checkOptionUsage(optionId);
+    if (!usageResult.success) {
+      alert('检查失败：' + usageResult.error);
+      return;
+    }
+
+    if (usageResult.usageCount > 0) {
+      // 选项正在被使用，不允许删除
+      alert(
+        `该选项已被使用 ${usageResult.usageCount} 次，无法删除。\n\n` +
+        `请先到片段或镜头中修改使用该选项的内容，然后再尝试删除。`
+      );
+      return;
+    }
+
+    // 未被使用，简单确认
+    if (!confirm('确定要删除该自定义选项吗？')) {
+      return;
+    }
+
     const result = await window.electronAPI.deleteCustomOption(optionId);
     if (result.success) {
       await loadCustomOptionsList();
+      await loadGroupFilter();
+      
+      // 刷新当前片段属性表单的选项
+      if (appState.currentShot) {
+        await showShotProperties(appState.currentShot);
+      }
+      
       showUpdateNotification();
     } else {
       alert('删除失败：' + result.error);
@@ -1778,12 +1802,133 @@ async function openOptionsFolder() {
     alert('请在 Electron 环境中使用此功能');
     return;
   }
-  
+
   try {
     await window.electronAPI.openOptionsFolder();
   } catch (error) {
     alert('打开文件夹失败：' + error.message);
   }
+}
+
+// 设置选项提示监听
+function setupOptionHintListeners(shot) {
+  const hintMap = {
+    'shotStyle': 'shotStyleHint',
+    'shotMood': 'shotMoodHint',
+    'shotMusicStyle': 'shotMusicStyleHint',
+    'shotSoundEffect': 'shotSoundEffectHint'
+  };
+
+  Object.entries(hintMap).forEach(([selectId, hintId]) => {
+    const select = document.getElementById(selectId);
+    const hint = document.getElementById(hintId);
+    if (select && hint) {
+      select.addEventListener('change', () => {
+        const selectedOption = select.options[select.selectedIndex];
+        const description = selectedOption.dataset.description || '选择该项';
+        hint.textContent = description;
+        if (shot) {
+          autoSaveShotProperties(shot);
+        }
+      });
+    }
+  });
+}
+
+// 设置镜头选项提示监听
+function setupSceneOptionHintListeners(scene) {
+  const hintMap = {
+    'sceneShotType': 'sceneShotTypeHint',
+    'sceneAngle': 'sceneAngleHint',
+    'sceneCamera': 'sceneCameraHint'
+  };
+
+  Object.entries(hintMap).forEach(([selectId, hintId]) => {
+    const select = document.getElementById(selectId);
+    const hint = document.getElementById(hintId);
+    if (select && hint) {
+      select.addEventListener('change', () => {
+        const selectedOption = select.options[select.selectedIndex];
+        const description = selectedOption.dataset.description || '选择该项';
+        hint.textContent = description;
+        if (scene) {
+          autoSaveSceneProperties(scene);
+        }
+      });
+    }
+  });
+}
+
+// 设置添加选项按钮事件
+function setupAddOptionButtons(context) {
+  document.querySelectorAll('.add-option-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const field = btn.dataset.field;
+      const group = btn.dataset.group;
+      showQuickAddOptionModal(group, field, context);
+    });
+  });
+}
+
+// 显示快速添加选项弹窗
+async function showQuickAddOptionModal(group, field, context, defaultValue = '') {
+  const modal = document.createElement('div');
+  modal.className = 'modal';
+  modal.style.display = 'flex';
+  modal.innerHTML = `
+    <div class="modal-content quick-add-modal">
+      <div class="modal-header">
+        <h3>添加"${group}"新选项</h3>
+        <button class="modal-close" onclick="this.closest('.modal').remove()">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="form-group">
+          <label>类型</label>
+          <input type="text" id="quick-option-type" placeholder="如：写实风格、清新治愈">
+        </div>
+        <div class="form-group">
+          <label>风格名称</label>
+          <input type="text" id="quick-option-style" placeholder="如：照片写实、日系清新" value="${defaultValue}">
+        </div>
+        <div class="form-group">
+          <label>描述</label>
+          <textarea id="quick-option-description" rows="3" placeholder="描述该选项的特点"></textarea>
+        </div>
+      </div>
+      <div class="modal-footer">
+        <button class="form-btn primary" id="quick-add-save">保存</button>
+        <button class="form-btn" onclick="this.closest('.modal').remove()">取消</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(modal);
+
+  const saveBtn = modal.querySelector('#quick-add-save');
+  saveBtn.addEventListener('click', async () => {
+    const type = document.getElementById('quick-option-type').value.trim();
+    const style = document.getElementById('quick-option-style').value.trim();
+    const description = document.getElementById('quick-option-description').value.trim();
+
+    if (!type || !style || !description) {
+      alert('请填写所有必填字段');
+      return;
+    }
+
+    try {
+      const result = await window.electronAPI.addCustomOption({ group, type, style, description });
+      if (result.success) {
+        await (context && context.scenes ? showSceneProperties(context) : showShotProperties(context));
+        modal.remove();
+        showUpdateNotification();
+      } else {
+        alert('添加失败：' + result.error);
+      }
+    } catch (error) {
+      console.error('添加选项失败:', error);
+      alert('添加失败：' + error.message);
+    }
+  });
 }
 
 // 显示模板存储路径
