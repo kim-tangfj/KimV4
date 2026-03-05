@@ -2554,6 +2554,18 @@ function renderPromptWithHighlight(prompt) {
 
 // ========== 属性面板 ==========
 
+// 加载指定组别的选项
+async function loadOptionsByGroup(group) {
+  if (!useElectronAPI) return [];
+  try {
+    const result = await window.electronAPI.getOptionsByGroup(group);
+    return result.success ? (result.options || []) : [];
+  } catch (error) {
+    console.error(`加载${group}选项失败:`, error);
+    return [];
+  }
+}
+
 // 显示片段属性表单（两列布局）
 async function showShotProperties(shot) {
   if (!elements.propertyForm) return;
