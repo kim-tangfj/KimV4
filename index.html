@@ -22,6 +22,7 @@
           <div class="placeholder-text">暂无项目，点击菜单新建</div>
         </div>
       </div>
+      <div class="panel-resizer" data-panel="project"></div>
     </div>
 
     <!-- 片段列表栏 -->
@@ -38,6 +39,7 @@
           <div class="placeholder-text">请选择项目</div>
         </div>
       </div>
+      <div class="panel-resizer" data-panel="shot"></div>
     </div>
 
     <!-- 镜头列表栏 -->
@@ -55,6 +57,7 @@
           <div class="placeholder-text">请选择片段</div>
         </div>
       </div>
+      <div class="panel-resizer" data-panel="scene"></div>
     </div>
 
     <!-- 提示词预览栏 -->
@@ -77,14 +80,29 @@
     <!-- 底部属性面板 -->
     <div id="bottom-panel" class="bottom-panel collapsed">
       <div class="panel-header" id="panel-toggle-header">
-        <h3>属性</h3>
+        <h3 id="bottom-panel-title">属性</h3>
         <div class="header-actions">
           <button id="panel-toggle-btn" class="icon-btn">▲</button>
         </div>
       </div>
       <div class="panel-content">
         <div id="property-form" class="property-form">
-          <div class="placeholder-text">请选择项目、片段或镜头以编辑属性</div>
+          <div class="placeholder-text">请选择片段或镜头以编辑属性</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- 底部项目素材面板 -->
+    <div id="assets-panel" class="assets-panel collapsed">
+      <div class="panel-header" id="assets-panel-toggle-header">
+        <h3>项目素材</h3>
+        <div class="header-actions">
+          <button id="assets-panel-toggle-btn" class="icon-btn" style="visibility: hidden;">▲</button>
+        </div>
+      </div>
+      <div class="panel-content">
+        <div id="assets-list" class="assets-list">
+          <div class="placeholder-text">请选择项目</div>
         </div>
       </div>
     </div>
