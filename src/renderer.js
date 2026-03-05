@@ -1778,6 +1778,63 @@ function hideCustomOptionForm() {
   }
 }
 
+// 隐藏自定义选项编辑弹窗
+function hideCustomOptionEditModal() {
+  if (elements.customOptionEditModal) {
+    elements.customOptionEditModal.style.display = 'none';
+  }
+}
+
+// 保存自定义选项编辑（弹窗版）
+async function saveCustomOptionEdit() {
+  if (!useElectronAPI) {
+    alert('请在 Electron 环境中使用此功能');
+    return;
+  }
+
+  const optionId = elements.editCustomOptionId?.value;
+
+  // 获取组别值（下拉框或输入框）
+  let group = elements.editCustomOptionGroup?.value;
+  if (elements.editCustomOptionGroupInput && elements.editCustomOptionGroupInput.style.display !== 'none') {
+    group = elements.editCustomOptionGroupInput.value.trim();
+  }
+
+  const type = elements.editCustomOptionType?.value;
+  const style = elements.editCustomOptionStyle?.value;
+  const description = elements.editCustomOptionDescription?.value;
+
+  if (!group || !type || !style || !description) {
+    alert('请填写所有必填字段');
+    return;
+  }
+
+  try {
+    const optionData = { group, type, style, description };
+
+    let result;
+    if (optionId) {
+      // 更新
+      result = await window.electronAPI.updateCustomOption(optionId, optionData);
+    } else {
+      // 新增
+      result = await window.electronAPI.addCustomOption(optionData);
+    }
+
+    if (result.success) {
+      hideCustomOptionEditModal();
+      await loadCustomOptionsList();
+      await loadGroupFilter();
+      showUpdateNotification();
+    } else {
+      alert('保存失败：' + result.error);
+    }
+  } catch (error) {
+    console.error('保存选项失败:', error);
+    alert('保存失败：' + error.message);
+  }
+}
+
 // 保存自定义选项
 async function saveCustomOption() {
   if (!useElectronAPI) {
