@@ -1,31 +1,4 @@
-用户要求我根据对话历史生成一个综合的项目摘要。让我分析整个对话的内容：
-
-1. **项目背景**: Kim 多级分镜提示词助手 - 一个 Electron 桌面应用
-2. **主要开发内容**:
-   - 片段属性表单（两列布局，14 个字段）
-   - 镜头属性表单（两列布局，10 个字段）
-   - 自定义选项管理系统
-   - 选项使用统计和验证功能
-
-3. **最近完成的工作**:
-   - 修复 `setupOptionHintListeners` 未定义错误
-   - 修复下拉框同时显示问题
-   - 修改排版（补充提示词不单独占一行）
-   - 取消模糊查询，改回单选下拉框
-   - 创建新选项按钮添加到标题右侧
-   - 排版改为两列
-   - 恢复细滚动条
-   - 镜头属性表单开发
-   - 选项使用统计和验证功能
-   - 被使用选项不允许删除
-   - 修复字段不一致问题
-
-4. **待完成任务**:
-   - 分镜图片上传功能（P0）
-   - 参考素材文件管理（P0）
-   - 响应式布局（P1）
-
-让我生成一个完整的中文摘要。# 项目摘要
+用户要求生成项目摘要，我需要基于对话历史创建一个全面的中文 markdown 摘要，包含总体目标、关键知识、近期工作和当前计划。# 项目摘要
 
 ## 总体目标
 开发"Kim 多级分镜提示词助手"，一款面向视频创作者和 AI 内容生成师的 Electron 桌面应用，提供多级分镜管理、提示词自动化生成和自定义选项系统。
@@ -70,7 +43,7 @@ e:\AI\KimV4\
 1. Electron 安全：禁用 nodeIntegration，启用 contextIsolation
 2. IPC 调用需要参数验证
 3. 文件操作仅在主进程实现
-4. CSS: BEM 命名，2 空格缩进，黑白灰配色，细滚动条（6px）
+4. CSS: BEM 命名，2 空格缩进，px/rem 单位，黑白灰配色，支持深色主题
 5. JavaScript: ES6+，优先 const/let，异步用 async/await，禁用 var
 6. 所有开发工作记录到 `work/dev-log.md`
 
@@ -86,45 +59,46 @@ npm run dev          # 开发模式（自动打开 DevTools）
 ### 已完成功能
 
 #### 1. 自定义选项管理模块 [100%]
-- [x] 后端 IPC 处理器（`src/handlers/options.js`）
-- [x] 预加载脚本 API 暴露
-- [x] 原生菜单入口（系统 → 自定义选项管理）
-- [x] 管理弹窗双栏布局（内置选项 vs 自定义选项）
-- [x] 独立编辑/添加弹窗
-- [x] 快速添加选项功能（属性表单中的"+"按钮）
-- [x] 备份/恢复功能
-- [x] 删除选项后自动刷新属性表单
+- ✅ 后端 IPC 处理器（`src/handlers/options.js`）
+- ✅ 预加载脚本 API 暴露
+- ✅ 原生菜单入口（系统 → 自定义选项管理）
+- ✅ 管理弹窗双栏布局（内置选项 vs 自定义选项）
+- ✅ 独立编辑/添加弹窗
+- ✅ 快速添加选项功能（属性表单中的"+"按钮）
+- ✅ 备份/恢复功能
+- ✅ 删除选项后自动刷新属性表单
 
-#### 2. 片段属性表单 [100%]
-- [x] 14 个字段严格按文档开发
-- [x] 两列网格布局
-- [x] 选项字段集成自定义选项（风格、情绪氛围、配乐风格、音效）
-- [x] 每个选项字段旁有"+"添加按钮
-- [x] 失焦自动保存（500ms 防抖）
-- [x] 选项描述提示
-- [x] 细滚动条（6px 宽度）
+#### 2. 选项使用统计和验证功能 [100%]
+- ✅ 数据结构新增 `usageCount` 字段
+- ✅ 新增 IPC 接口：`options:incrementUsage`, `options:checkUsage`
+- ✅ 保存属性时自动增加选项使用次数（片段：风格、情绪、配乐、音效；镜头：景别、角度、运镜）
+- ✅ 删除前检查使用情况，被使用的选项不允许删除
+- ✅ 管理面板按使用次数降序排序
+- ✅ 显示使用次数徽章（如"15 次"）
 
-#### 3. 镜头属性表单 [80%]
-- [x] 10 个字段严格按文档开发
-- [x] 两列网格布局
-- [x] 选项字段集成（景别、镜头角度、运镜）
-- [x] "+"添加按钮功能
-- [x] 失焦自动保存
-- [x] 选项描述提示
-- [ ] 分镜图片上传功能（待完成）
+#### 3. 片段属性表单 [100%]
+- ✅ 14 个字段严格按 `attribute-field-description.md` 开发
+- ✅ 两列网格布局
+- ✅ 选项字段集成自定义选项（风格、情绪氛围、配乐风格、音效）
+- ✅ 每个选项字段旁有"+"添加按钮
+- ✅ 失焦自动保存（500ms 防抖）
+- ✅ 选项描述提示
+- ✅ 细滚动条（6px 宽度）
 
-#### 4. 选项使用统计和验证 [100%]
-- [x] 数据结构新增 `usageCount` 字段
-- [x] 后端 IPC 新增 `incrementUsage` 和 `checkUsage` 接口
-- [x] 保存属性时自动增加选项使用次数
-- [x] 删除时检查使用情况，被使用的选项不允许删除
-- [x] 管理面板按使用次数降序排序
-- [x] 显示使用次数徽章（如"15 次"）
+#### 4. 镜头属性表单 [80%]
+- ✅ 10 个字段严格按 `attribute-field-description.md` 开发
+- ✅ 两列网格布局
+- ✅ 选项字段集成（景别、镜头角度、运镜）
+- ✅ "+"添加按钮功能
+- ✅ 失焦自动保存
+- ✅ 选项描述提示
+- ✅ 分镜图片字段（文本占位符）
+- ⏳ 图片上传功能（待完成）
 
 #### 5. 字段一致性修复 [100%]
-- [x] 更新默认模板（`default-templates.json`）
-- [x] 统一 HTML 表单 ID、变量名、JSON 字段名
-- [x] 创建字段说明文档（`work/字段不一致问题修复说明.md`）
+- ✅ 更新默认模板 (`assets/default/default-templates.json`)
+- ✅ 统一 HTML 表单 ID、变量名、JSON 字段名
+- ✅ 创建说明文档 `work/字段不一致问题修复说明.md`
 
 ### 关键实现细节
 
@@ -150,34 +124,40 @@ npm run dev          # 开发模式（自动打开 DevTools）
 </label>
 <select id="shotStyle" data-autosave="true">
   <option value="">请选择风格</option>
-  <!-- 来自自定义选项系统的动态选项 -->
+  <!-- 动态选项 -->
 </select>
 <small class="setting-hint">描述信息</small>
 ```
 
-#### 删除验证逻辑
+#### 使用统计逻辑
 ```javascript
-async function deleteCustomOption(optionId) {
-  const usageResult = await checkOptionUsage(optionId);
-  if (usageResult.usageCount > 0) {
-    alert(`该选项已被使用 ${usageResult.usageCount} 次，无法删除。`);
-    return;
+// 保存时增加使用次数
+if (style && style !== oldShot.style) {
+  const options = await loadOptionsByGroup('风格');
+  const option = options.find(opt => opt.style === style);
+  if (option && !option.builtin) {
+    await window.electronAPI.incrementOptionUsage(option.id);
   }
-  if (!confirm('确定要删除该自定义选项吗？')) return;
-  // 执行删除
+}
+
+// 删除时检查使用情况
+const usage = await window.electronAPI.checkOptionUsage(optionId);
+if (usage.usageCount > 0) {
+  alert(`该选项已被使用 ${usage.usageCount} 次，无法删除。`);
+  return;
 }
 ```
 
-#### 使用次数统计
+#### 管理面板显示
 ```javascript
-// 保存时检查选项变更
-if (style && style !== oldShot.style) {
-  const styleOptions = await loadOptionsByGroup('风格');
-  const selectedOption = styleOptions.find(opt => opt.style === style);
-  if (selectedOption && !selectedOption.builtin) {
-    await incrementOptionUsage(selectedOption.id);
-  }
-}
+// 按使用次数降序排序
+const sorted = [...options].sort(
+  (a, b) => (b.usageCount || 0) - (a.usageCount || 0)
+);
+// 显示徽章
+const badge = option.usageCount > 0 
+  ? `<span class="usage-count-badge">${option.usageCount}次</span>` 
+  : '';
 ```
 
 ## 当前计划
@@ -208,23 +188,14 @@ if (style && style !== oldShot.style) {
 - 小屏幕：单列
 - 中屏幕：双列
 - 大屏幕：三列（片段属性）
-**CSS 实现**:
-```css
-@media (max-width: 800px) {
-  .shot-properties-2cols { grid-template-columns: 1fr; }
-}
-@media (min-width: 1200px) {
-  .shot-properties-grid { grid-template-columns: repeat(3, 1fr); }
-}
-```
 **预计**: 2 小时
 
 ### 进度汇总
 ```
 自定义选项管理：    ████████████████████ 100%
+选项使用统计：      ████████████████████ 100%
 片段属性表单：      ████████████████████ 100%
 镜头属性表单：      ████████████████░░░░  80% (缺少图片上传)
-选项使用统计：      ████████████████████ 100%
 字段一致性修复：    ████████████████████ 100%
 总体进度：          ████████████████░░░░  88%
 ```
@@ -240,4 +211,4 @@ P0-P1 优先级任务预计约 12 小时。
 ---
 
 ## Summary Metadata
-**Update time**: 2026-03-05T18:11:55.186Z 
+**Update time**: 2026-03-05T18:59:44.222Z 
