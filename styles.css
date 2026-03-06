@@ -254,6 +254,7 @@ body.dark-theme {
   font-size: 13px;
   background-color: var(--bg-color);
   padding: 10px;
+  padding-bottom: 60px; /* 留出底部空间，避免被属性栏遮挡 */
   border-radius: 4px;
   min-height: 200px;
   height: auto;
