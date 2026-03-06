@@ -1284,11 +1284,11 @@ function renderTemplateList() {
       editTemplate(btn.dataset.id);
     });
   });
-  
+
   document.querySelectorAll('.template-delete-btn').forEach(btn => {
-    btn.addEventListener('click', (e) => {
+    btn.addEventListener('click', async (e) => {
       e.stopPropagation();
-      deleteTemplate(btn.dataset.id);
+      await deleteTemplate(btn.dataset.id);
     });
   });
 }
@@ -1325,12 +1325,13 @@ function editTemplate(templateId) {
 }
 
 // 删除模板
-function deleteTemplate(templateId) {
+async function deleteTemplate(templateId) {
   const template = settings.templates.find(t => t.id === templateId);
   if (!template) return;
-  
-  if (!confirm(`确定要删除模板 "${template.name}" 吗？`)) return;
-  
+
+  const confirmed = await showConfirm(`确定要删除模板 "${template.name}" 吗？`);
+  if (!confirmed) return;
+
   settings.templates = settings.templates.filter(t => t.id !== templateId);
   
   // 如果删除的是激活的模板，激活第一个模板
@@ -1545,16 +1546,17 @@ async function restoreTemplates() {
     alert('请在 Electron 环境中使用此功能');
     return;
   }
-  
-  if (!confirm('恢复模板将覆盖当前的模板配置，确定继续吗？')) {
+
+  const confirmed = await showConfirm('恢复模板将覆盖当前的模板配置，确定继续吗？');
+  if (!confirmed) {
     return;
   }
-  
+
   const result = await window.electronAPI.restoreTemplates();
   if (result.success) {
-    alert('模板恢复成功！请重启应用以加载恢复的模板。');
+    showToast('模板恢复成功！请重启应用以加载恢复的模板。');
   } else if (!result.canceled) {
-    alert('恢复失败：' + result.error);
+    showToast('恢复失败：' + result.error);
   }
 }
 
@@ -1978,7 +1980,8 @@ async function deleteCustomOption(optionId) {
     }
 
     // 未被使用，简单确认
-    if (!confirm('确定要删除该自定义选项吗？')) {
+    const confirmed = await showConfirm('确定要删除该自定义选项吗？');
+    if (!confirmed) {
       return;
     }
 
@@ -1986,15 +1989,15 @@ async function deleteCustomOption(optionId) {
     if (result.success) {
       await loadCustomOptionsList();
       await loadGroupFilter();
-      
+
       // 刷新当前片段属性表单的选项
       if (appState.currentShot) {
         await showShotProperties(appState.currentShot);
       }
-      
+
       showUpdateNotification();
     } else {
-      alert('删除失败：' + result.error);
+      showToast('删除失败：' + result.error);
     }
   } catch (error) {
     console.error('删除选项失败:', error);
@@ -2023,17 +2026,18 @@ async function restoreOptions() {
     alert('请在 Electron 环境中使用此功能');
     return;
   }
-  
-  if (!confirm('恢复选项将覆盖当前的自定义选项配置，确定继续吗？')) {
+
+  const confirmed = await showConfirm('恢复选项将覆盖当前的自定义选项配置，确定继续吗？');
+  if (!confirmed) {
     return;
   }
-  
+
   const result = await window.electronAPI.restoreOptions();
   if (result.success) {
-    alert('选项恢复成功！请重新打开管理窗口以查看恢复的选项。');
+    showToast('选项恢复成功！请重新打开管理窗口以查看恢复的选项。');
     hideCustomOptionsModal();
   } else if (!result.canceled) {
-    alert('恢复失败：' + result.error);
+    showToast('恢复失败：' + result.error);
   }
 }
 
@@ -2574,8 +2578,9 @@ async function deleteSelectedShot() {
     alert('请先选择一个片段');
     return;
   }
-  
-  if (!confirm(`确定要删除片段 "${appState.currentShot.name}" 吗？`)) return;
+
+  const confirmed = await showConfirm(`确定要删除片段 "${appState.currentShot.name}" 吗？`);
+  if (!confirmed) return;
   
   if (useElectronAPI && appState.currentProject.projectDir) {
     try {
@@ -2737,8 +2742,9 @@ async function deleteSelectedScene() {
     alert('请先选择一个镜头');
     return;
   }
-  
-  if (!confirm(`确定要删除镜头 "${appState.currentScene.name}" 吗？`)) return;
+
+  const confirmed = await showConfirm(`确定要删除镜头 "${appState.currentScene.name}" 吗？`);
+  if (!confirmed) return;
   
   if (useElectronAPI && appState.currentProject.projectDir) {
     try {
@@ -3866,11 +3872,6 @@ const originalConfirm = window.confirm;
 
 window.alert = function(message) {
   showToast(message);
-};
-
-window.confirm = function(message) {
-  // 保留原生 confirm 行为
-  return originalConfirm(message);
 };
 
 // 获取状态文本
