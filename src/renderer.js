@@ -1,6 +1,9 @@
-// 
+//
 // Kim 多级分镜提示词助手 - 渲染进程
-// 
+//
+
+// 导入提示词生成器
+const { generateShotPrompt, generateProjectPrompt, renderPromptWithHighlight } = require('./utils/promptGenerator');
 
 // 应用数据状态
 let appState = {
@@ -2796,63 +2799,20 @@ async function deleteSelectedScene() {
 
 function updatePromptPreview() {
   if (!elements.promptPreview) return;
-  
+
   let prompt = '';
-  
-  if (appState.currentScene) {
-    prompt = generateScenePrompt(appState.currentScene);
-  } else if (appState.currentShot) {
+
+  // 无论选中片段还是镜头，都显示片段级提示词
+  if (appState.currentShot) {
     prompt = generateShotPrompt(appState.currentShot);
   } else if (appState.currentProject) {
-    prompt = generateProjectPrompt(appState.currentProject);
+    prompt = generateProjectPrompt(appState.currentProject, getStatusText);
   } else {
-    elements.promptPreview.innerHTML = '<div class="placeholder-text">请选中项目 > 片段 > 镜头，自动���成提示词</div>';
+    elements.promptPreview.innerHTML = '<div class="placeholder-text">请选中项目 > 片段 > 镜头，自动生成提示词</div>';
     return;
   }
-  
+
   elements.promptPreview.innerHTML = renderPromptWithHighlight(prompt);
-}
-
-function generateScenePrompt(scene) {
-  if (!scene) return '';
-  return `【镜头类型】${scene.shotType} 【拍摄角度】${scene.angle} 【时长】${scene.duration}秒 【情绪】${scene.emotion} 【内容】${scene.content}`;
-}
-
-function generateShotPrompt(shot) {
-  if (!shot) return '';
-  
-  const scenesPrompt = (shot.scenes || [])
-    .filter(scene => scene.enabled !== false)
-    .map(scene => generateScenePrompt(scene))
-    .join('\n\n');
-  
-  return `【片段名称】${shot.name} 【总时长】${shot.duration}秒 【画幅】${shot.aspectRatio} 【风格】${shot.style} 【情绪】${shot.mood}\n\n${scenesPrompt}`;
-}
-
-function generateProjectPrompt(project) {
-  if (!project) return '';
-  
-  const shotsPrompt = (project.shots || [])
-    .map(shot => generateShotPrompt(shot))
-    .join('\n\n---\n\n');
-  
-  return `【项目名称】${project.name} 【状态】${getStatusText(project.status)} 【默认画幅】${project.aspectRatio}\n\n${shotsPrompt}`;
-}
-
-function renderPromptWithHighlight(prompt) {
-  if (!prompt) return prompt;
-  
-  const keywords = ['镜头类型', '拍摄角度', '时长', '情绪', '内容', '片段名称', '总时长', '画幅', '风格', '项目名称', '状态', '默认画幅'];
-  
-  let highlighted = prompt;
-  keywords.forEach(keyword => {
-    const regex = new RegExp(`(\\【${keyword}\\】)`, 'g');
-    highlighted = highlighted.replace(regex, '<span class="prompt-tag">$1</span>');
-  });
-  highlighted = highlighted.replace(/(---)/g, '<span class="prompt-separator">$1</span>');
-  highlighted = highlighted.replace(/(\\d+ 秒)/g, '<span class="prompt-value">$1</span>');
-  
-  return `<div class="prompt-content">${highlighted}</div>`;
 }
 
 // ========== 属性面板 ==========

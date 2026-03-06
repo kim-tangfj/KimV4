@@ -4,142 +4,530 @@
 
 ---
 
-## 2026-03-06 - 使用自定义提示框替代 alert/confirm（最终解决方案）
+## 2026-03-06 - 修复 selectScene 不从 project.json 读取最新数据的问题
 
-### 问题总结
+### 问题
 
-经过 8 次修复尝试后，确认 **alert/confirm 在 Electron 中有焦点问题**：
-- alert/confirm 关闭后，焦点会留在触发元素上
-- 即使强制 blur/focus，输入框仍然无法编辑
-- 打开控制台会触发重绘，问题暂时消失
+**镜头属性显示不一致**：
+- 修改镜头名称后，列表实时更新 ✅
+- 但切换镜头后再切换回来，属性面板中的镜头名称不是最新的 ❌
+- 列表显示是最新的，属性面板显示是旧的
 
-### 根本原因
+### 原因分析
 
-**Electron 的 alert/confirm 实现问题**:
-- Electron 的 alert/confirm 是原生对话框
-- 关闭后焦点恢复行为与浏览器不同
-- 可能导致渲染进程的焦点状态混乱
-
-### 解决方案
-
-**使用自定义模态框替代 alert/confirm**
-
-#### 1. HTML 新增组件
-
-**Toast 提示框** (替代 alert):
-```html
-<div id="toast-notification" class="toast-notification">
-  <div class="toast-content">
-    <span class="toast-icon">ℹ️</span>
-    <span class="toast-message"></span>
-  </div>
-</div>
-```
-
-**确认对话框** (替代 confirm):
-```html
-<div id="confirm-modal" class="modal">
-  <div class="modal-content confirm-modal">
-    <div class="modal-header"><h3>确认</h3></div>
-    <div class="modal-body"><p id="confirm-message"></p></div>
-    <div class="modal-footer">
-      <button id="confirm-cancel-btn">取消</button>
-      <button id="confirm-ok-btn">确认</button>
-    </div>
-  </div>
-</div>
-```
-
-#### 2. CSS 样式
-
-```css
-.toast-notification {
-  position: fixed;
-  top: 20px;
-  left: 50%;
-  transform: translateX(-50%);
-  background-color: #333;
-  color: #fff;
-  padding: 12px 24px;
-  border-radius: 8px;
-  z-index: 10000;
-  animation: slideDown 0.3s ease;
-}
-```
-
-#### 3. JavaScript 函数
-
-**showToast** (替代 alert):
-```javascript
-function showToast(message, duration = 2000) {
-  const toast = document.getElementById('toast-notification');
-  const toastMessage = document.getElementById('toast-message');
-  toastMessage.textContent = message;
-  toast.style.display = 'block';
-  setTimeout(() => {
-    toast.style.display = 'none';
-  }, duration);
-}
-```
-
-**showConfirm** (替代 confirm):
-```javascript
-function showConfirm(message) {
-  return new Promise((resolve) => {
-    // 显示对话框
-    // 绑定确认/取消按钮事件
-    // 返回 Promise
-  });
-}
-```
-
-#### 4. 替换调用
-
-**toggleSceneView**:
+**selectScene 函数问题**：
 ```javascript
 // 修改前
-alert('视图切换功能待实现');
-
-// 修改后
-showToast('视图切换功能待实现');
+function selectScene(scene) {
+  const shot = appState.currentShot;
+  const latestScene = shot.scenes?.find(s => s.id === scene.id);
+  // ❌ 使用的是 appState.currentShot.scenes 中的旧数据
+}
 ```
 
-**deleteCurrentProject**:
+**对比 selectShot 函数**：
+```javascript
+// selectShot 正确实现
+async function selectShot(shot) {
+  const loadResult = await window.electronAPI.loadProject(appState.currentProject.projectDir);
+  const latestShot = loadResult.projectJson.shots?.find(s => s.id === shot.id);
+  // ✅ 从 project.json 中读取最新数据
+}
+```
+
+### 修复方案
+
+**修改文件**: `src/renderer.js`
+
+**selectScene 修复** (第 2658 行):
 ```javascript
 // 修改前
-if (!confirm('确定要删除项目...')) return;
-alert('删除失败：' + result.error);
+function selectScene(scene) {
+  const shot = appState.currentShot;
+  const latestScene = shot.scenes?.find(s => s.id === scene.id);
+}
 
 // 修改后
-const confirmed = await showConfirm('确定要删除项目...');
-if (!confirmed) return;
-showToast('删除失败：' + result.error);
+async function selectScene(scene) {
+  // 从 project.json 中读取最新的镜头数据
+  const loadResult = await window.electronAPI.loadProject(appState.currentProject.projectDir);
+  const latestShot = loadResult.projectJson.shots?.find(s => s.id === appState.currentShot.id);
+  const latestScene = latestShot.scenes.find(s => s.id === scene.id);
+  appState.currentScene = latestScene;
+}
 ```
 
-### 优势
+**调用处修复** (第 2653 行):
+```javascript
+// 修改前
+sceneElement.addEventListener('click', () => selectScene(scene));
 
-1. **完全控制焦点** - 自定义模态框不会影响输入框焦点
-2. **更好的用户体验** - Toast 提示更友好，不阻塞操作
-3. **可定制样式** - 可以调整样式匹配应用主题
-4. **Promise 支持** - showConfirm 返回 Promise，支持 async/await
+// 修改后
+sceneElement.addEventListener('click', async () => { await selectScene(scene); });
+```
 
-### 修改文件
+### 效果
 
-- `index.html` - 添加 Toast 和确认对话框 HTML
-- `styles.css` - 添加 Toast 和确认对话框样式
-- `src/renderer.js` - 添加 showToast/showConfirm 函数，替换 alert/confirm 调用
+**修复前**:
+1. 修改镜头 1 名称 → 列表更新 ✅
+2. 切换镜头 2 → 切换回镜头 1
+3. **属性面板显示旧名称** ❌
 
-### 后续工作
+**修复后**:
+1. 修改镜头 1 名称 → 列表更新 ✅
+2. 切换镜头 2 → 切换回镜头 1
+3. **属性面板显示最新名称** ✅
 
-需要替换其他地方的 alert/confirm 调用：
-- [ ] 模板删除确认
-- [ ] 模板备份/恢复确认
-- [ ] 自定义选项删除确认
-- [ ] 其他错误提示
+### 统一实现
+
+现在 `selectShot` 和 `selectScene` 都使用相同的模式：
+1. 从 project.json 读取最新数据
+2. 更新 `appState.currentShot/currentScene`
+3. 使用 async/await 处理异步操作
+
+### 测试场景
+
+**场景 1**: 修改镜头名称后切换
+1. 选中镜头 1，修改名称
+2. 保存成功，列表更新
+3. 点击镜头 2
+4. 点击回镜头 1
+5. ✅ 属性面板显示最新的镜头 1 名称
+
+**场景 2**: 连续修改
+1. 选中镜头 1，修改名称
+2. 保存成功
+3. 再次修改镜头 1 名称
+4. 保存成功
+5. 切换到镜头 2，再切换回镜头 1
+6. ✅ 属性面板显示最后一次修改的名称
 
 ---
 
-## 2026-03-06 - 修复弹窗后表单失焦问题（第八次修复 - 强制重绘）
+## 2026-03-06 - 修复保存时表单被替换导致数据清空的严重 Bug
+
+### 原因分析
+
+**问题场景**:
+```
+时间线:
+0ms    - 用户修改片段 A 名称
+500ms  - saveShotProperties 执行
+510ms  - 保存成功，renderShotList 重新渲染
+520ms  - 用户点击镜头 A
+530ms  - showSceneProperties 执行，替换属性表单
+       - DOM 中 shotName 等元素被移除
+600ms  - 如果再次触发 saveShotProperties（或其他原因）
+       - document.getElementById('shotName') 返回 undefined
+       - name: name || '' → name: '' ❌
+       - 所有字段被覆盖为空字符串
+```
+
+**核心问题**:
+```javascript
+async function saveShotProperties() {
+  const name = document.getElementById('shotName')?.value; // undefined!
+  
+  loadResult.projectJson.shots[shotIndex] = {
+    ...oldShot,
+    name: name || '',  // ❌ 覆盖为 ''
+    description: description || '',  // ❌ 覆盖为 ''
+    // ...
+  };
+}
+```
+
+### 修复方案
+
+**修改文件**: `src/renderer.js`
+
+**saveShotProperties 修复** (第 3065 行):
+```javascript
+async function saveShotProperties(isAutoSave = false) {
+  const shot = appState.currentShot;
+  if (!shot) return;
+
+  // 检查是否切换了片段
+  if (savingShotId !== shot.id) {
+    return;
+  }
+
+  // 关键修复：检查表单元素是否存在
+  const nameElement = document.getElementById('shotName');
+  if (!nameElement) {
+    console.log('[saveShotProperties] 表单元素不存在，可能已切换，取消保存');
+    return;
+  }
+
+  const name = nameElement?.value;
+  // ... 保存逻辑
+}
+```
+
+**saveSceneProperties 修复** (第 3317 行):
+```javascript
+async function saveSceneProperties(isAutoSave = false) {
+  const scene = appState.currentScene;
+  if (!scene || !currentShot) return;
+
+  // 检查是否切换了镜头
+  if (savingSceneId !== scene.id) {
+    return;
+  }
+
+  // 关键修复：检查表单元素是否存在
+  const nameElement = document.getElementById('sceneName');
+  if (!nameElement) {
+    console.log('[saveSceneProperties] 表单元素不存在，可能已切换，取消保存');
+    return;
+  }
+
+  const name = nameElement?.value;
+  // ... 保存逻辑
+}
+```
+
+### 效果
+
+**修复前**:
+1. 修改片段 A → 保存成功 → 点击镜头 → **片段 A 数据被清空** ❌
+2. 修改镜头 1 → 保存成功 → 点击片段 → **镜头 1 数据被清空** ❌
+
+**修复后**:
+1. 修改片段 A → 保存成功 → 点击镜头 → **表单元素检查失败，取消保存** ✅
+2. 修改镜头 1 → 保存成功 → 点击片段 → **表单元素检查失败，取消保存** ✅
+
+### 四层保护机制
+
+1. **ID 追踪** - savingShotId/savingSceneId 记录正在保存的 ID
+2. **切换验证** - 保存时检查 ID 是否匹配
+3. **表单检查** - 保存前检查表单元素是否存在
+4. **切换清除** - selectShot/selectScene 清除待处理的保存
+
+### 测试场景
+
+**场景 1**: 保存后点击镜头
+1. 选中片段 A，修改名称
+2. 等待保存成功（显示"已更新"）
+3. 点击镜头 A
+4. ✅ 片段 A 数据完整，不会被清空
+
+**场景 2**: 保存后点击片段
+1. 选中镜头 1，修改名称
+2. 等待保存成功
+3. 点击片段 A
+4. ✅ 镜头 1 数据完整，不会被清空
+
+**场景 3**: 快速切换
+1. 修改片段 A
+2. 立即点击片段 B（在 500ms 内）
+3. ✅ 片段 A 的保存被取消，数据完整
+
+---
+
+## 2026-03-06 - 修复自动保存时切换片段/镜头导致数据丢失的严重 Bug
+
+**问题场景**:
+1. 修改片段 A 的名称
+2. 在 500ms 内点击片段 B（触发失焦自动保存）
+3. **片段 A 的数据丢失或被片段 B 覆盖**
+
+### 原因分析
+
+**竞态条件问题**:
+
+```
+时间线:
+0ms    - 用户修改片段 A
+100ms  - 用户点击片段 B
+150ms  - autoSaveShotProperties 触发，savingShotId = A.id
+200ms  - selectShot 执行，appState.currentShot = 片段 B
+650ms  - saveShotProperties 执行
+       - 读取 DOM 值（片段 B 的表单）
+       - 但 savingShotId = A.id
+       - 保存到片段 A，但使用的是片段 B 的数据 ❌
+```
+
+**核心问题**:
+1. `setTimeout` 延迟 500ms 执行保存
+2. 在延迟期间，用户切换了片段/镜头
+3. `appState.currentShot/currentScene` 被更新为新对象
+4. 但保存函数仍在使用旧数据，导致数据覆盖
+
+### 修复方案
+
+**修改文件**: `src/renderer.js`
+
+#### 1. 添加保存 ID 追踪
+
+```javascript
+let shotSaveTimeout = null;
+let savingShotId = null; // 正在保存的片段 ID
+
+let sceneSaveTimeout = null;
+let savingSceneId = null; // 正在保存的镜头 ID
+```
+
+#### 2. autoSaveShotProperties 记录当前 ID
+
+```javascript
+function autoSaveShotProperties() {
+  if (shotSaveTimeout) clearTimeout(shotSaveTimeout);
+  // 记录当前要保存的片段 ID
+  savingShotId = appState.currentShot?.id;
+  shotSaveTimeout = setTimeout(async () => {
+    await saveShotProperties(true);
+  }, 500);
+}
+```
+
+#### 3. saveShotProperties 检查 ID 是否匹配
+
+```javascript
+async function saveShotProperties(isAutoSave = false) {
+  const shot = appState.currentShot;
+  if (!shot) return;
+
+  // 关键修复：检查在保存过程中是否切换了片段
+  if (savingShotId !== shot.id) {
+    console.log('[saveShotProperties] 片段已切换，取消保存', savingShotId, '->', shot.id);
+    return;
+  }
+  
+  // ... 保存逻辑
+}
+```
+
+#### 4. selectShot 切换时清除待处理的自动保存
+
+```javascript
+async function selectShot(shot) {
+  // 关键修复：切换片段时清除待处理的自动保存
+  if (shotSaveTimeout) {
+    clearTimeout(shotSaveTimeout);
+    shotSaveTimeout = null;
+    savingShotId = null;
+    console.log('[selectShot] 清除待处理的自动保存');
+  }
+  
+  // ... 切换逻辑
+}
+```
+
+#### 5. selectScene 同样修复
+
+```javascript
+function selectScene(scene) {
+  // 切换镜头时清除待处理的自动保存
+  if (sceneSaveTimeout) {
+    clearTimeout(sceneSaveTimeout);
+    sceneSaveTimeout = null;
+    savingSceneId = null;
+  }
+  // ...
+}
+```
+
+### 效果
+
+**修复前**:
+1. 修改片段 A → 快速点击片段 B → **片段 A 数据丢失** ❌
+2. 修改镜头 1 → 快速点击镜头 2 → **镜头 1 数据丢失** ❌
+
+**修复后**:
+1. 修改片段 A → 快速点击片段 B → **待处理保存取消，数据安全** ✅
+2. 修改镜头 1 → 快速点击镜头 2 → **待处理保存取消，数据安全** ✅
+
+### 保护机制
+
+**三层保护**:
+1. **切换时清除** - selectShot/selectScene 清除待处理的保存
+2. **保存时验证** - saveShotProperties/saveSceneProperties 检查 ID 匹配
+3. **日志记录** - 控制台输出取消保存的原因，便于调试
+
+### 测试场景
+
+**场景 1**: 快速切换片段
+1. 选中片段 A，修改名称
+2. 立即点击片段 B（在 500ms 内）
+3. ✅ 片段 A 的待处理保存被取消
+4. ✅ 片段 B 正常显示
+5. ✅ 再次点击片段 A，数据完整
+
+**场景 2**: 快速切换镜头
+1. 选中镜头 1，修改名称
+2. 立即点击镜头 2（在 500ms 内）
+3. ✅ 镜头 1 的待处理保存被取消
+4. ✅ 镜头 2 正常显示
+5. ✅ 再次点击镜头 1，数据完整
+
+**场景 3**: 正常保存
+1. 选中片段，修改名称
+2. 等待 500ms 或点击其他地方
+3. ✅ 正常保存，显示"已更新"
+4. ✅ 片段列表实时更新
+
+---
+
+## 2026-03-06 - 修复自动保存后列表不实时更新问题
+1. 修改了表单内容（如：片段名称、风格等）
+2. 自动保存提示"已更新"
+3. **但片段列表该片段信息没有实时渲染，片段名称未发生变化**
+
+**镜头属性同样问题**：
+- 修改镜头名称后，镜头列表没有实时更新
+
+### 原因分析
+
+**saveShotProperties 函数**：
+```javascript
+if (saveResult.success) {
+  appState.currentShot = loadResult.projectJson.shots[shotIndex];
+  updatePromptPreview();
+  showUpdateNotification();
+  // ❌ 缺少：重新渲染片段列表
+}
+```
+
+**问题**：保存成功后只更新了 `appState.currentShot`，但没有调用 `renderShotList` 重新渲染片段列表。
+
+### 修复方案
+
+**修改文件**: `src/renderer.js`
+
+**saveShotProperties 修复** (第 3128 行):
+```javascript
+if (saveResult.success) {
+  appState.currentShot = loadResult.projectJson.shots[shotIndex];
+  updatePromptPreview();
+  // 新增：重新渲染片段列表，更新片段名称等信息
+  renderShotList(loadResult.projectJson.shots || []);
+  showUpdateNotification();
+}
+```
+
+**saveSceneProperties 修复** (第 3355 行):
+```javascript
+if (saveResult.success) {
+  appState.currentScene = shot.scenes[sceneIndex];
+  updatePromptPreview();
+  // 新增：重新渲染镜头列表，更新镜头名称等信息
+  renderSceneList(shot.scenes || []);
+  showUpdateNotification();
+}
+```
+
+### 效果
+
+**修改前**：
+1. 修改片段名称 → 保存成功 → 片段列表**不更新**
+2. 修改镜头名称 → 保存成功 → 镜头列表**不更新**
+
+**修改后**：
+1. 修改片段名称 → 保存成功 → 片段列表**立即更新** ✅
+2. 修改镜头名称 → 保存成功 → 镜头列表**立即更新** ✅
+
+### 测试场景
+
+**场景 1**: 修改片段名称
+1. 选中片段
+2. 修改片段名称
+3. 点击其他片段（触发失焦自动保存）
+4. ✅ 片段列表立即显示新名称
+
+**场景 2**: 修改镜头名称
+1. 选中镜头
+2. 修改镜头名称
+3. 点击其他镜头（触发失焦自动保存）
+4. ✅ 镜头列表立即显示新名称
+
+**场景 3**: 修改其他属性
+1. 修改风格、情绪、时长等
+2. 失焦自动保存
+3. ✅ 列表中的相关信息同步更新
+
+---
+
+## 2026-03-06 - 全部替换 confirm 为 await showConfirm
+
+1. **删除模板确认** (第 1331 行)
+   ```javascript
+   // 修改前
+   if (!confirm(`确定要删除模板 "${template.name}" 吗？`)) return;
+   
+   // 修改后
+   const confirmed = await showConfirm(`确定要删除模板 "${template.name}" 吗？`);
+   ```
+
+2. **恢复模板确认** (第 1550 行)
+   ```javascript
+   // 修改前
+   if (!confirm('恢复模板将覆盖当前的模板配置，确定继续吗？')) return;
+   alert('模板恢复成功！...');
+   
+   // 修改后
+   const confirmed = await showConfirm('恢复模板将覆盖...');
+   showToast('模板恢复成功！...');
+   ```
+
+3. **删除自定义选项确认** (第 1982 行)
+   ```javascript
+   // 修改前
+   if (!confirm('确定要删除该自定义选项吗？')) return;
+   alert('删除失败：...');
+   
+   // 修改后
+   const confirmed = await showConfirm('确定要删除该自定义选项吗？');
+   showToast('删除失败：...');
+   ```
+
+4. **恢复自定义选项确认** (第 2030 行)
+   ```javascript
+   // 修改前
+   if (!confirm('恢复选项将覆盖...')) return;
+   alert('选项恢复成功！...');
+   
+   // 修改后
+   const confirmed = await showConfirm('恢复选项将覆盖...');
+   showToast('选项恢复成功！...');
+   ```
+
+5. **删除片段确认** (第 2581 行)
+   ```javascript
+   const confirmed = await showConfirm(`确定要删除片段 "${name}" 吗？`);
+   ```
+
+6. **删除镜头确认** (第 2745 行)
+   ```javascript
+   const confirmed = await showConfirm(`确定要删除镜头 "${name}" 吗？`);
+   ```
+
+### 相关修改
+
+1. **deleteTemplate 函数改为 async**
+2. **事件监听器改为 async**
+3. **移除 window.confirm 重写代码**（不再需要）
+4. **相关 alert 替换为 showToast**
+
+### 效果
+
+- ✅ **所有 alert 调用** → 使用 Toast 提示
+- ✅ **所有 confirm 调用** → 使用自定义确认对话框
+- ✅ **不再有原生弹窗** → 完全控制焦点行为
+- ✅ **统一的提示方式** → 更好的用户体验
+
+### 测试
+
+现在项目中所有的提示弹框都使用自定义组件：
+- 错误提示 → Toast
+- 成功提示 → Toast
+- 确认对话框 → 自定义模态框
+
+重启应用后，任何操作都不会有原生弹窗，输入框焦点问题已完全解决。
+
+---
+
+## 2026-03-06 - 全局替换 alert 为 showToast（统一提示方式）
 
 ### 问题行为
 
@@ -2152,7 +2540,7 @@ deleteBtn.addEventListener('click', () => deleteCustomOption(option.id));
 ```
 
 ### 待完成功能
-- [ ] 组别下拉框动态加载所有可用组别（目前硬编码）
+- [ ] 组别下拉框动态加载所有可用组别（目前硬编码���
 - [ ] 与片段/镜头属性表单集成（使用选项数据填充下拉框）
 - [ ] 批量导入/导出功能
 

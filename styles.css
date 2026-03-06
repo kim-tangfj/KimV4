@@ -283,6 +283,18 @@ body.dark-theme {
   color: #999;
 }
 
+.prompt-scene-title {
+  display: block;
+  margin: 12px 0 8px 0;
+  padding: 4px 8px;
+  background-color: var(--panel-bg);
+  border-left: 3px solid var(--text-color);
+  border-radius: 4px;
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
 /* 底部属性面板 - 两栏独立布局 */
 .bottom-panel,
 .assets-panel {
