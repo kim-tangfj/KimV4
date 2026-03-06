@@ -12,8 +12,6 @@
  * @param {Function} onStatusClick - 状态标签点击回调
  */
 function renderProjectList(projects, elements, onSelectProject, onContextMenu, onStatusClick) {
-  console.log('[renderProjectList] 被调用，projects:', projects.length, 'onStatusClick:', typeof onStatusClick);
-  
   if (!elements.projectList) return;
 
   elements.projectList.innerHTML = '';
@@ -57,7 +55,6 @@ function renderProjectList(projects, elements, onSelectProject, onContextMenu, o
     if (statusTag) {
       statusTag.addEventListener('click', (e) => {
         e.stopPropagation();
-        console.log('[statusTag click] 被点击', project, onStatusClick);
         if (onStatusClick) onStatusClick(project, e);
       });
     }
@@ -161,8 +158,6 @@ function showProjectContextMenu(project, event, onSelectProject, onDeleteProject
  * @param {Function} onUpdateStatus - 更新状态回调
  */
 function showProjectStatusMenu(project, event, onUpdateStatus) {
-  console.log('[showProjectStatusMenu] 被调用', project, event.target);
-  
   const menu = document.getElementById('project-status-menu');
   if (menu) {
     menu.remove();
@@ -194,9 +189,8 @@ function showProjectStatusMenu(project, event, onUpdateStatus) {
 
   contextMenu.addEventListener('click', (e) => {
     const status = e.target.dataset.status;
-    console.log('[showProjectStatusMenu] 选择状态:', status);
     if (status && onUpdateStatus) {
-      onUpdateStatus(project, status); // 传递 project 和 newStatus
+      onUpdateStatus(project, status);
     }
     contextMenu.remove();
   });
@@ -252,15 +246,9 @@ function openProjectFolderByProject(project) {
  * @param {Function} showUpdateNotification - 显示更新提示回调
  */
 async function updateProjectStatus(project, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification) {
-  console.log('[updateProjectStatus] 被调用', project.name, newStatus);
-  console.log('[updateProjectStatus] useElectronAPI:', useElectronAPI);
-  console.log('[updateProjectStatus] project.projectDir:', project.projectDir);
-  
   if (useElectronAPI && project.projectDir) {
     try {
       const loadResult = await window.electronAPI.loadProject(project.projectDir);
-      console.log('[updateProjectStatus] loadProject 结果:', loadResult);
-      
       if (!loadResult.success) {
         alert('加载项目失败：' + loadResult.error);
         return;
@@ -271,8 +259,6 @@ async function updateProjectStatus(project, newStatus, appState, useElectronAPI,
       loadResult.projectJson.project.updatedAt = new Date().toISOString();
 
       const saveResult = await window.electronAPI.saveProject(project.projectDir, loadResult.projectJson);
-      console.log('[updateProjectStatus] saveProject 结果:', saveResult);
-      
       if (saveResult.success) {
         // 更新本地状态
         project.status = newStatus;
@@ -283,11 +269,9 @@ async function updateProjectStatus(project, newStatus, appState, useElectronAPI,
         alert('保存失败：' + saveResult.error);
       }
     } catch (error) {
-      console.error('[updateProjectStatus] 异常:', error);
+      console.error('更新项目状态异常:', error);
       alert('更新状态失败：' + error.message);
     }
-  } else {
-    console.warn('[updateProjectStatus] 条件不满足 useElectronAPI:', useElectronAPI, 'projectDir:', project.projectDir);
   }
 }
 
