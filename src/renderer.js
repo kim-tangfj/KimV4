@@ -2650,12 +2650,12 @@ function renderSceneList(scenes) {
         </div>
       </div>
     `;
-    sceneElement.addEventListener('click', () => selectScene(scene));
+    sceneElement.addEventListener('click', async () => { await selectScene(scene); });
     elements.sceneList.appendChild(sceneElement);
   });
 }
 
-function selectScene(scene) {
+async function selectScene(scene) {
   // 关键修复：切换镜头时清除待处理的自动保存
   if (sceneSaveTimeout) {
     clearTimeout(sceneSaveTimeout);
@@ -2667,10 +2667,15 @@ function selectScene(scene) {
   if (useElectronAPI && appState.currentProject.projectDir && appState.currentShot) {
     // 从 project.json 中读取最新的镜头数据
     try {
-      const shot = appState.currentShot;
-      const latestScene = shot.scenes?.find(s => s.id === scene.id);
-      if (latestScene) {
-        appState.currentScene = latestScene;
+      const loadResult = await window.electronAPI.loadProject(appState.currentProject.projectDir);
+      if (loadResult.success) {
+        const latestShot = loadResult.projectJson.shots?.find(s => s.id === appState.currentShot.id);
+        if (latestShot && latestShot.scenes) {
+          const latestScene = latestShot.scenes.find(s => s.id === scene.id);
+          if (latestScene) {
+            appState.currentScene = latestScene;
+          }
+        }
       }
     } catch (error) {
       console.error('加载最新镜头数据失败:', error);
