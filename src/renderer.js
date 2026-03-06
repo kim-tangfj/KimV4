@@ -4059,5 +4059,17 @@ function showUpdateNotification() {
 }
 
 // ========== 全局变量暴露（供模块使用）==========
-window.useElectronAPI = useElectronAPI;
-window.elements = elements;
+// 注意：必须在 initializeApp 之后调用，确保 useElectronAPI 已更新
+function exposeGlobals() {
+  window.useElectronAPI = useElectronAPI;
+  window.elements = elements;
+  window.appState = appState;
+}
+
+// 在 initializeApp 中调用暴露
+const originalInitializeApp = initializeApp;
+initializeApp = async function() {
+  await originalInitializeApp();
+  exposeGlobals();
+  console.log('[initializeApp] 全局变量已暴露，useElectronAPI:', useElectronAPI);
+};
