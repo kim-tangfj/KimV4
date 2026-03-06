@@ -1795,7 +1795,7 @@ async function showEditCustomOptionForm(option) {
 
   // 设置标题
   if (elements.customOptionEditTitle) {
-    elements.customOptionEditTitle.textContent = '编辑自定义���项';
+    elements.customOptionEditTitle.textContent = '编辑自定义选项';
   }
 
   // 填充表单数据
@@ -2309,7 +2309,7 @@ async function loadProjects() {
         renderProjectList([]);
       }
     } catch (error) {
-      console.error('加���������项目异常:', error);
+      console.error('加载项目异常:', error);
       appState.projects = [];
       renderProjectList([]);
     }
@@ -3802,9 +3802,9 @@ async function updateShotStatus(shot, newStatus) {
     }
     
     if (shotIndex === -1) {
-      console.error('片段未找到���shot.id:', shot.id, 'shot.name:', shot.name);
+      console.error('片段未找到:shot.id:', shot.id, 'shot.name:', shot.name);
       console.error('可用片段:', loadResult.projectJson.shots?.map(s => ({ id: s.id, name: s.name })));
-      alert('片��未找到，请检查数据一致性');
+      alert('片段未找到，请检查数据一致性');
       return;
     }
     
