@@ -15,8 +15,12 @@ const API_CONFIGS = {
     defaultModel: 'doubao-pro-4k'
   },
   qianwen: {
-    baseUrl: 'https://dashscope.aliyuncs.com/compatible-mode/v1',
+    baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
     defaultModel: 'qwen-turbo'
+  },
+  ailian: {
+    baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
+    defaultModel: 'qwen-plus'
   }
 };
 

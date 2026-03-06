@@ -156,6 +156,7 @@
               <option value="deepseek">DeepSeek</option>
               <option value="doubao">豆包 (字节)</option>
               <option value="qianwen">通义千问 (阿里)</option>
+              <option value="ailian">阿里百炼</option>
             </select>
           </div>
 
@@ -213,6 +214,26 @@
             <div class="setting-item">
               <button id="test-qianwen-btn" class="form-btn">测试连接</button>
               <span id="qianwen-status" class="connection-status"></span>
+            </div>
+          </div>
+
+          <!-- 阿里百炼配置 -->
+          <div id="ailian-config" class="provider-config" style="display: none;">
+            <div class="setting-item">
+              <label>API Key</label>
+              <div class="api-key-group">
+                <input type="password" id="ailian-api-key" placeholder="请输入阿里百炼 API Key">
+                <button id="toggle-ailian-key" class="icon-btn small">👁</button>
+              </div>
+            </div>
+            <div class="setting-item">
+              <label>模型名称</label>
+              <input type="text" id="ailian-model" value="qwen-plus">
+              <small class="setting-hint">阿里百炼支持模型：qwen-plus, qwen-max, qwen-turbo 等</small>
+            </div>
+            <div class="setting-item">
+              <button id="test-ailian-btn" class="form-btn">测试连接</button>
+              <span id="ailian-status" class="connection-status"></span>
             </div>
           </div>
         </div>
@@ -334,6 +355,7 @@
               <option value="deepseek">DeepSeek</option>
               <option value="doubao">豆包 (字节)</option>
               <option value="qianwen">通义千问 (阿里)</option>
+              <option value="ailian">阿里百炼</option>
             </select>
           </div>
 

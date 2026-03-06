@@ -18,12 +18,14 @@ let settings = {
   apiKeys: {
     deepseek: '',
     doubao: '',
-    qianwen: ''
+    qianwen: '',
+    ailian: ''
   },
   models: {
     deepseek: 'deepseek-chat',
     doubao: 'doubao-pro-4k',
-    qianwen: 'qwen-turbo'
+    qianwen: 'qwen-turbo',
+    ailian: 'qwen-plus'
   },
   templates: [],
   activeTemplateId: null
@@ -98,14 +100,21 @@ function cacheDOMElements() {
   elements.testDoubaoBtn = document.getElementById('test-doubao-btn');
   elements.doubaoStatus = document.getElementById('doubao-status');
   elements.toggleDoubaoKey = document.getElementById('toggle-doubao-key');
-  
+
   // 千问
   elements.qianwenApiKey = document.getElementById('qianwen-api-key');
   elements.qianwenModel = document.getElementById('qianwen-model');
   elements.testQianwenBtn = document.getElementById('test-qianwen-btn');
   elements.qianwenStatus = document.getElementById('qianwen-status');
   elements.toggleQianwenKey = document.getElementById('toggle-qianwen-key');
-  
+
+  // 阿里百炼
+  elements.ailianApiKey = document.getElementById('ailian-api-key');
+  elements.ailianModel = document.getElementById('ailian-model');
+  elements.testAilianBtn = document.getElementById('test-ailian-btn');
+  elements.ailianStatus = document.getElementById('ailian-status');
+  elements.toggleAilianKey = document.getElementById('toggle-ailian-key');
+
   // 新建项目弹窗元素
   elements.closeNewProjectBtn = document.getElementById('close-new-project-btn');
   elements.createProjectBtn = document.getElementById('create-project-btn');
@@ -277,6 +286,9 @@ async function loadSettings() {
   if (elements.qianwenApiKey) {
     elements.qianwenApiKey.value = settings.apiKeys.qianwen || '';
   }
+  if (elements.ailianApiKey) {
+    elements.ailianApiKey.value = settings.apiKeys.ailian || '';
+  }
   if (elements.deepseekModel) {
     elements.deepseekModel.value = settings.models.deepseek || 'deepseek-chat';
   }
@@ -285,6 +297,9 @@ async function loadSettings() {
   }
   if (elements.qianwenModel) {
     elements.qianwenModel.value = settings.models.qianwen || 'qwen-turbo';
+  }
+  if (elements.ailianModel) {
+    elements.ailianModel.value = settings.models.ailian || 'qwen-plus';
   }
 }
 
@@ -382,12 +397,14 @@ function saveSettings() {
   settings.apiKeys.deepseek = elements.deepseekApiKey?.value || '';
   settings.apiKeys.doubao = elements.doubaoApiKey?.value || '';
   settings.apiKeys.qianwen = elements.qianwenApiKey?.value || '';
+  settings.apiKeys.ailian = elements.ailianApiKey?.value || '';
   settings.models.deepseek = elements.deepseekModel?.value || 'deepseek-chat';
   settings.models.doubao = elements.doubaoModel?.value || 'doubao-pro-4k';
   settings.models.qianwen = elements.qianwenModel?.value || 'qwen-turbo';
+  settings.models.ailian = elements.ailianModel?.value || 'qwen-plus';
   settings.theme = currentTheme;
   settings.autoSaveInterval = parseInt(elements.autoSaveInterval?.value) || 5;
-  
+
   localStorage.setItem('kim_settings', JSON.stringify(settings));
   showUpdateNotification();
 }
@@ -494,6 +511,7 @@ function setupEventListeners() {
       if (elements.deepseekConfig) elements.deepseekConfig.style.display = provider === 'deepseek' ? 'block' : 'none';
       if (elements.doubaoConfig) elements.doubaoConfig.style.display = provider === 'doubao' ? 'block' : 'none';
       if (elements.qianwenConfig) elements.qianwenConfig.style.display = provider === 'qianwen' ? 'block' : 'none';
+      if (elements.ailianConfig) elements.ailianConfig.style.display = provider === 'ailian' ? 'block' : 'none';
     });
   }
   
@@ -507,7 +525,10 @@ function setupEventListeners() {
   if (elements.testQianwenBtn) {
     elements.testQianwenBtn.addEventListener('click', () => testApiConnection('qianwen'));
   }
-  
+  if (elements.testAilianBtn) {
+    elements.testAilianBtn.addEventListener('click', () => testApiConnection('ailian'));
+  }
+
   // 切换 API Key 可见性
   if (elements.toggleDeepseekKey) {
     elements.toggleDeepseekKey.addEventListener('click', () => toggleApiKeyVisibility(elements.deepseekApiKey));
@@ -517,6 +538,9 @@ function setupEventListeners() {
   }
   if (elements.toggleQianwenKey) {
     elements.toggleQianwenKey.addEventListener('click', () => toggleApiKeyVisibility(elements.qianwenApiKey));
+  }
+  if (elements.toggleAilianKey) {
+    elements.toggleAilianKey.addEventListener('click', () => toggleApiKeyVisibility(elements.ailianApiKey));
   }
   
   // 模式切换
@@ -718,6 +742,9 @@ async function testApiConnection(provider) {
   } else if (provider === 'qianwen') {
     apiKey = elements.qianwenApiKey?.value.trim() || '';
     model = elements.qianwenModel?.value.trim() || 'qwen-turbo';
+  } else if (provider === 'ailian') {
+    apiKey = elements.ailianApiKey?.value.trim() || '';
+    model = elements.ailianModel?.value.trim() || 'qwen-plus';
   }
 
   if (!apiKey) {
@@ -803,7 +830,8 @@ function showSettingsModal() {
   if (elements.deepseekConfig) elements.deepseekConfig.style.display = provider === 'deepseek' ? 'block' : 'none';
   if (elements.doubaoConfig) elements.doubaoConfig.style.display = provider === 'doubao' ? 'block' : 'none';
   if (elements.qianwenConfig) elements.qianwenConfig.style.display = provider === 'qianwen' ? 'block' : 'none';
-  
+  if (elements.ailianConfig) elements.ailianConfig.style.display = provider === 'ailian' ? 'block' : 'none';
+
   // 显示模板存储路径
   showTemplateStoragePath();
 
