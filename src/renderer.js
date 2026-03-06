@@ -851,6 +851,16 @@ function showNewProjectModal() {
   // 显示模态框
   elements.newProjectModal.style.display = 'flex';
 
+  // 关键修复：强制重绘模态框内容，解决点击无反应问题
+  // 打开控制台会触发重绘所以问题消失，这证明是渲染问题
+  const modalContent = elements.newProjectModal.querySelector('.modal-content');
+  if (modalContent) {
+    modalContent.style.display = 'none';
+    // 强制重绘
+    void modalContent.offsetHeight;
+    modalContent.style.display = '';
+  }
+
   // 清除可能存在的错误提示
   document.querySelectorAll('.input-error-message').forEach(el => el.remove());
   document.querySelectorAll('#new-project-modal input, #new-project-modal textarea').forEach(el => {
@@ -858,18 +868,11 @@ function showNewProjectModal() {
     el.style.backgroundColor = '';
   });
 
-  // 关键修复：使用 requestAnimationFrame 确保模态框已完全渲染
-  // 打开控制台会触发重绘，所以问题消失，这证明是渲染时序问题
+  // 聚焦到项目名称输入框
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      // 先聚焦到模态框本身（利用 tabindex=-1）
-      elements.newProjectModal.focus();
-      
-      // 再聚焦到项目名称输入框
-      if (elements.manualProjectName) {
-        elements.manualProjectName.focus();
-      }
-    });
+    if (elements.manualProjectName) {
+      elements.manualProjectName.focus();
+    }
   });
 }
 

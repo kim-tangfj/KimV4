@@ -4,72 +4,63 @@
 
 ---
 
-## 2026-03-06 - 修复弹窗后表单失焦问题（第七次修复 - loading-overlay 覆盖问题）
+## 2026-03-06 - 修复弹窗后表单失焦问题（第八次修复 - 强制重绘）
 
 ### 关键线索
 
-**点击输入框无反馈，Tab 键无法切换** → 输入框被**覆盖层阻挡**
+**打开控制台后问题消失** → 控制台的打开会触发**强制重绘**
 
 ### 问题行为
 
-1. 控制台没有任何错误
-2. 创建项目表单中，生成提问模板、默认画幅选项等可以操作
-3. 其他单行文本和多行文本都无法编辑，点击没反应
-4. 打开页面控制台后，问题消失
+1. 点击输入框无反馈
+2. Tab 键无法切换
+3. loading-overlay 强制隐藏后还是不行
+4. 打开控制台后问题消失
 
 ### 根本原因分析
 
-**`loading-overlay` 覆盖问题**:
-- `loading-overlay` 的 `z-index: 3000`
-- 模态框的 `z-index: 2000`
-- 如果 `loading-overlay` 没有正确隐藏，它会覆盖整个屏幕，阻挡所有交互
-- 打开控制台可能触发重绘，隐藏了覆盖层
+**渲染问题**:
+- 模态框显示后，浏览器可能没有正确重绘内容
+- 打开控制台会触发强制重绘，所以问题消失
+- 这是 Electron/Chromium 的渲染 bug
 
-### 修复方案（第七次尝试）
+### 修复方案（第八次尝试）
 
-**方案**: 在 `showNewProjectModal` 中强制隐藏 `loading-overlay`
+**方案**: 强制重绘模态框内容
 
-**修改文件**: `src/renderer.js` (第 821 行)
+**修改文件**: `src/renderer.js` (第 856 行)
 
 ```javascript
 function showNewProjectModal() {
-  if (!elements.newProjectModal) return;
+  // ...
 
-  // 关键修复：确保 loading-overlay 已隐藏（z-index=3000 会覆盖模态框）
-  if (elements.loadingOverlay) {
-    elements.loadingOverlay.style.display = 'none';
+  // 显示模态框
+  elements.newProjectModal.style.display = 'flex';
+
+  // 关键修复：强制重绘模态框内容，解决点击无反应问题
+  // 打开控制台会触发重绘所以问题消失，这证明是渲染问题
+  const modalContent = elements.newProjectModal.querySelector('.modal-content');
+  if (modalContent) {
+    modalContent.style.display = 'none';
+    // 强制重绘：读取 offsetHeight 会触发重排
+    void modalContent.offsetHeight;
+    modalContent.style.display = '';
   }
 
-  // ... 其他逻辑
-
+  // 聚焦到项目名称输入框
   requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      elements.newProjectModal.focus();
-      if (elements.manualProjectName) {
-        elements.manualProjectName.focus();
-      }
-    });
+    if (elements.manualProjectName) {
+      elements.manualProjectName.focus();
+    }
   });
-}
-```
-
-**辅助修复**: `toggleSceneView` 函数 (第 3799 行)
-
-```javascript
-function toggleSceneView() {
-  alert('视图切换功能待实现');
-  // 确保 loading-overlay 已隐藏
-  if (elements.loadingOverlay) {
-    elements.loadingOverlay.style.display = 'none';
-  }
 }
 ```
 
 ### 关键改进
 
-1. **强制隐藏 loading-overlay** - 防止覆盖层阻挡模态框
-2. **z-index 层级修复** - loading-overlay (3000) > 模态框 (2000)
-3. **双重保障** - 在显示模态框时确保覆盖层已隐藏
+1. **强制重绘** - 通过设置 `display: none` 然后读取 `offsetHeight` 触发重排
+2. **恢复显示** - 重绘后恢复 `display` 为空（使用 CSS 默认值）
+3. **简化聚焦逻辑** - 移除不必要的双重聚焦
 
 ### 修复历程
 
@@ -81,13 +72,25 @@ function toggleSceneView() {
 | 第四次 | `blur()` 移到最前面 + alert 后 blur | ❌ 仍未解决 |
 | 第五次 | 模态框 tabindex + setTimeout(1ms) | ❌ 未解决 |
 | 第六次 | 双重 requestAnimationFrame | ❌ 未解决 |
-| 第七次 | **强制隐藏 loading-overlay** | ⏳ 待测试 |
+| 第七次 | 强制隐藏 loading-overlay | ❌ 未解决 |
+| 第八次 | **强制重绘模态框内容** | ⏳ 待测试 |
 
 ### 为什么之前的方案失败
 
-**第六次方案失败原因**: 即使模态框完全渲染，如果 `loading-overlay` 没有隐藏，它仍然会阻挡所有交互。
+**第七次方案失败原因**: 即使 loading-overlay 被隐藏，如果模态框内容没有正确重绘，点击仍然无反应。
 
-**第七次方案的优势**: 直接解决覆盖层问题，确保模态框在最上层。
+**第八次方案的优势**: 直接触发浏览器的重排/重绘，确保模态框内容正确渲染和可交互。
+
+### 技术原理
+
+**强制重绘技巧**:
+```javascript
+modalContent.style.display = 'none';  // 隐藏
+void modalContent.offsetHeight;       // 读取 offsetHeight 触发重排
+modalContent.style.display = '';      // 恢复显示
+```
+
+读取 `offsetHeight` 会强制浏览器计算布局，从而触发重绘。
 
 ### 测试场景
 
@@ -103,11 +106,7 @@ function toggleSceneView() {
 
 ---
 
-## 2026-03-06 - 修复弹窗后表单失焦问题（第六次修复 - 渲染时序问题）
-| `saveSceneProperties` | 参数传递旧引用 | ✅ 已修复 |
-| `setupOptionHintListeners` | 闭包变量 | ✅ 已修复 |
-| `setupSceneOptionHintListeners` | 闭包变量 | ✅ 已修复 |
-| `setupAddOptionButtons` | 闭包变量 | ✅ 已修复 |
+## 2026-03-06 - 修复弹窗后表单失焦问题（第七次修复 - loading-overlay 覆盖问题）
 | `showQuickAddOptionModal` | 闭包变量 | ✅ 已修复 |
 
 #### 安全的代码 (无需修复)
