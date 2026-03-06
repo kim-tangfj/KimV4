@@ -4,6 +4,93 @@
 
 ---
 
+## 2026-03-06 - 属性自动保存功能检查
+
+### 检查范围
+1. 片段属性字段完整性
+2. 镜头属性字段完整性
+3. 失焦自动保存功能
+
+### 检查结果
+
+#### 字段完整性
+**片段属性**: 14/14 = 100% ✅
+| 字段 | 字段 ID | 状态 |
+|------|--------|------|
+| 片段名称 | shotName | ✅ |
+| 片段描述 | shotDescription | ✅ |
+| 风格 | shotStyle | ✅ |
+| 情绪氛围 | shotMood | ✅ |
+| 角色 | shotCharacters | ✅ |
+| 场景设定 | shotSceneSetting | ✅ |
+| 画幅比例 | shotAspectRatio | ✅ |
+| 视频时长 | shotDuration | ✅ |
+| 配乐风格 | shotMusicStyle | ✅ |
+| 音效需求 | shotSoundEffect | ✅ |
+| 图片参考 | shotImageRef | ✅ |
+| 视频参考 | shotVideoRef | ✅ |
+| 音频参考 | shotAudioRef | ✅ |
+| 补充提示词 | shotCustomPrompt | ✅ |
+
+**镜头属性**: 10/10 = 100% ✅
+| 字段 | 字段 ID | 状态 |
+|------|--------|------|
+| 镜头名称 | sceneName | ✅ |
+| 分镜图片 | sceneImage | ✅ |
+| 景别 | sceneShotType | ✅ |
+| 镜头角度 | sceneAngle | ✅ |
+| 运镜 | sceneCamera | ✅ |
+| 时长 | sceneDuration | ✅ |
+| 内容描述 | sceneContent | ✅ |
+| 对白内容 | sceneDialogue | ✅ |
+| 情绪描述 | sceneEmotion | ✅ |
+| 其他备注 | sceneNotes | ✅ |
+
+#### 自动保存功能
+- ✅ 失焦自动保存：已实现
+- ✅ 500ms 防抖：已实现
+- ✅ 选项变更检测：已实现
+- ✅ 使用次数统计：已实现
+
+### 实现位置
+**文件**: `src/renderer.js`
+
+**片段属性自动保存** (第 2950 行):
+```javascript
+document.querySelectorAll('#property-form [data-autosave="true"]').forEach(input => {
+  input.addEventListener('blur', () => autoSaveShotProperties(shot));
+});
+
+function autoSaveShotProperties(shot) {
+  if (shotSaveTimeout) clearTimeout(shotSaveTimeout);
+  shotSaveTimeout = setTimeout(async () => {
+    await saveShotProperties(shot, true);
+  }, 500);
+}
+```
+
+**镜头属性自动保存** (第 3193 行):
+```javascript
+document.querySelectorAll('#property-form [data-autosave="true"]').forEach(input => {
+  input.addEventListener('blur', () => autoSaveSceneProperties(scene));
+});
+
+function autoSaveSceneProperties(scene) {
+  if (sceneSaveTimeout) clearTimeout(sceneSaveTimeout);
+  sceneSaveTimeout = setTimeout(async () => {
+    await saveSceneProperties(scene, true);
+  }, 500);
+}
+```
+
+### 结论
+**自动保存功能已基本实现**，所有字段都能正确保存到 `project.json` 文件中。
+
+### 输出文档
+- `work/属性自动保存功能检查报告.md`
+
+---
+
 ## 2026-03-06 - 修复创建项目时 ID 生成问题
 
 ### 问题
