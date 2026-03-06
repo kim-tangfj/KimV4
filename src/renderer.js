@@ -3513,6 +3513,11 @@ async function saveSceneProperties(isAutoSave = false) {
         updatePromptPreview();
         // 重新渲染镜头列表，更新镜头名称等信息
         renderSceneList(shot.scenes || []);
+        // 重新设置选中状态
+        const sceneItem = document.querySelector(`#scene-list .list-item[data-id="${scene.id}"]`);
+        if (sceneItem) {
+          sceneItem.classList.add('selected');
+        }
         // 自动保存时也显示提示
         showUpdateNotification();
       }
@@ -3605,7 +3610,7 @@ function showProjectContextMenu(project, event) {
     <div class="context-menu-item" id="project-context-open-folder">打开资源文件管理器</div>
   `;
 
-  // 菜单位置：鼠标点击位置
+  // 菜单位置：鼠标点击��置
   contextMenu.style.position = 'fixed';
   contextMenu.style.top = `${event.clientY}px`;
   contextMenu.style.left = `${event.clientX}px`;
