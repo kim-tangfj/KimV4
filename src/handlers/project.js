@@ -105,6 +105,27 @@ function initProjectIPC(mainWindow) {
         };
       }
 
+      // 为所有片段和镜头生成唯一 ID（如果缺失）
+      const timestamp = Date.now();
+      if (shots && Array.isArray(shots)) {
+        shots.forEach((shot, shotIndex) => {
+          // 为片段生成 ID
+          if (!shot.id) {
+            shot.id = `shot_${timestamp}_${shotIndex}`;
+            console.log('[创建项目] 为片段添加 ID:', shot.name || `片段${shotIndex}`, '->', shot.id);
+          }
+          // 为镜头生成 ID
+          if (shot.scenes && Array.isArray(shot.scenes)) {
+            shot.scenes.forEach((scene, sceneIndex) => {
+              if (!scene.id) {
+                scene.id = `scene_${timestamp}_${shotIndex}_${sceneIndex}`;
+                console.log('[创建项目] 为镜头添加 ID:', scene.name || `镜头${sceneIndex}`, '->', scene.id);
+              }
+            });
+          }
+        });
+      }
+
       const projectDir = path.join(baseDir, `${projectInfo.name}_${Date.now()}`);
       const assetsDir = path.join(projectDir, 'assets');
       const imagesDir = path.join(assetsDir, 'images');

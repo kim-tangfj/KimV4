@@ -4,6 +4,57 @@
 
 ---
 
+## 2026-03-06 - 修复创建项目时 ID 生成问题
+
+### 问题
+创建项目时，初始化 project.json 时只有项目级别生成了唯一 ID，但片段（shots）和镜头（scenes）没有生成唯一 ID，导致：
+1. 保存时依赖名称匹配，不可靠
+2. 可能出现数据覆盖风险
+3. 选中状态无法正确匹配
+
+### 原因
+`project:create` IPC 处理器中，直接使用传入的 `shots` 数组，没有为缺失 ID 的片段和镜头生成唯一 ID。
+
+### 修复方案
+
+**修改文件**: `src/handlers/project.js`
+
+**新增逻辑**:
+```javascript
+// 为所有片段和镜头生成唯一 ID（如果缺失）
+const timestamp = Date.now();
+if (shots && Array.isArray(shots)) {
+  shots.forEach((shot, shotIndex) => {
+    // 为片段生成 ID
+    if (!shot.id) {
+      shot.id = `shot_${timestamp}_${shotIndex}`;
+      console.log('[创建项目] 为片段添加 ID:', shot.name || `片段${shotIndex}`, '->', shot.id);
+    }
+    // 为镜头生成 ID
+    if (shot.scenes && Array.isArray(shot.scenes)) {
+      shot.scenes.forEach((scene, sceneIndex) => {
+        if (!scene.id) {
+          scene.id = `scene_${timestamp}_${shotIndex}_${sceneIndex}`;
+          console.log('[创建项目] 为镜头添加 ID:', scene.name || `镜头${sceneIndex}`, '->', scene.id);
+        }
+      });
+    }
+  });
+}
+```
+
+### ID 格式
+- **片段 ID**: `shot_时间戳_索引` (如：`shot_1772760068170_0`)
+- **镜头 ID**: `scene_时间戳_片段索引_镜头索引` (如：`scene_1772760068170_0_0`)
+
+### 效果
+1. **创建项目时自动生成** - 所有缺失的 ID 会在项目创建时自动生成
+2. **日志输出** - 控制台显示 ID 添加过程
+3. **唯一性保证** - 使用时间戳 + 索引确保唯一性
+4. **与保存时修复互补** - 创建时生成 + 保存时检查，双重保障
+
+---
+
 ## 2026-03-06 - 修复新建项目表单失焦问题
 
 ### 问题
