@@ -3869,7 +3869,7 @@ window.alert = function(message) {
 };
 
 window.confirm = function(message) {
-  console.warn('window.confirm 已被替换为 showConfirm，请使用 await showConfirm()');
+  // 保留原生 confirm 行为
   return originalConfirm(message);
 };
 
