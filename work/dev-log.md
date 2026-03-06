@@ -4,60 +4,76 @@
 
 ---
 
-## 2026-03-06 - 修复弹窗后表单失焦问题（第四次修复 - 最终版本）
+## 2026-03-06 - 修复弹窗后表单失焦问题（第五次修复 - 模态框 tabindex 方案）
 
-### 问题重现
+### 问题
 
-1. 启动程序
-2. 点击镜头栏的视图切换按钮 → 弹出 `alert('视图切换功能待实现')`
-3. 点击项目栏菜单按钮 → 点击创建项目
-4. **问题**: 创建项目表单无法编辑，输入框都无法被选中编辑
+点击视图切换按钮 → alert 提示 → 点击创建项目 → 表单无法编辑
 
-### 根本原因
+### 之前尝试的失败方案
 
-**alert 同步阻塞问题**: 
-- `alert()` 是同步阻塞的，会暂停 JavaScript 执行
-- alert 关闭后，焦点会留在触发 alert 的元素上（`viewToggleBtn`）
-- 当用户点击"创建项目"时，`showNewProjectModal()` 被调用
-- 但此时 `document.activeElement` 仍然是 `viewToggleBtn`
-- **关键**: `blur()` 调用必须在 `focus()` 之前，且要在 DOM 操作之前
+1. **第一次**: `requestAnimationFrame` - ❌ 未解决
+2. **第二次**: `setTimeout(50ms)` + 双重检查 - ❌ 未解决
+3. **第三次**: `document.activeElement.blur()` - ❌ 位置不对
+4. **第四次**: `blur()` 移到最前面 + 在 alert 后 blur - ❌ 仍未解决
 
-### 修复方案
+### 根本原因分析
 
-**修改文件**: `src/renderer.js`
+**浏览器焦点恢复机制**: 
+- 当 alert 关闭后，浏览器会尝试恢复焦点到"合理"的元素
+- 即使调用了 `blur()`，浏览器可能仍然会把焦点放回原元素
+- `setTimeout` 执行时，浏览器的焦点恢复可能已经完成
 
-**showNewProjectModal 函数修复** (第 821 行):
+### 修复方案（第五次尝试）
+
+**方案**: 使用 `tabindex="-1"` 让模态框可以接收焦点，然后分两步聚焦
+
+**修改文件 1**: `index.html` (第 256 行)
+
+```html
+<!-- 添加 tabindex="-1" 让模态框可以接收焦点 -->
+<div id="new-project-modal" class="modal" style="display: none;" tabindex="-1">
+```
+
+**修改文件 2**: `src/renderer.js` (第 820 行)
 
 ```javascript
 function showNewProjectModal() {
-  if (!elements.newProjectModal) return;
-
-  // 关键修复：在操作之前先移除当前焦点元素的焦点（解决 alert 后焦点丢失问题）
-  // alert/confirm 关闭后，焦点会留在触发元素上，必须先 blur 才能正确聚焦到输入框
-  if (document.activeElement && document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
-  }
-
-  // 清空输入
   // ...
 
   // 显示模态框
   elements.newProjectModal.style.display = 'flex';
 
-  // 立即聚焦到项目名称输入框
+  // 关键修复：分两步聚焦，先聚焦模态框，再聚焦输入框
   setTimeout(() => {
+    // 第一步：聚焦到模态框本身（利用 tabindex=-1）
+    elements.newProjectModal.focus();
+    
+    // 第二步：聚焦到项目名称输入框
     if (elements.manualProjectName) {
       elements.manualProjectName.focus();
     }
-  }, 10);
+  }, 1);
+}
+```
+
+**辅助修复**: `toggleSceneView` 函数 (第 3795 行)
+
+```javascript
+function toggleSceneView() {
+  alert('视图切换功能待实现');
+  // alert 关闭后立即移除焦点，防止影响后续操作
+  if (document.activeElement && document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
 }
 ```
 
 ### 关键改进
 
-1. **blur() 移到最前面** - 在所有 DOM 操作之前调用，确保焦点被移除
-2. **移除双重 focus 检查** - 不需要，blur() 已经解决问题
-3. **缩短 setTimeout 延迟** - 10ms 足够，更快响应用户
+1. **模态框可聚焦** - 添加 `tabindex="-1"` 让模态框可以接收焦点
+2. **分两步聚焦** - 先聚焦模态框，再聚焦输入框，覆盖浏览器的焦点恢复
+3. **更短延迟** - `setTimeout(1ms)` 尽快执行
 
 ### 修复历程
 
@@ -65,36 +81,25 @@ function showNewProjectModal() {
 |------|------|------|
 | 第一次 | 使用 `requestAnimationFrame` | ❌ 未解决 |
 | 第二次 | 使用 `setTimeout(50ms)` + 双重检查 | ❌ 未解决 |
-| 第三次 | 添加 `document.activeElement.blur()` | ❌ 位置不对（在 DOM 操作之后） |
-| 第四次 | **blur() 移到最前面** | ✅ 最终修复 |
+| 第三次 | 添加 `document.activeElement.blur()` | ❌ 位置不对 |
+| 第四次 | `blur()` 移到最前面 + alert 后 blur | ❌ 仍未解决 |
+| 第五次 | **模态框 tabindex + 分两步聚焦** | ⏳ 待测试 |
 
 ### 测试场景
 
 **场景 1**: alert 后创建项目
 1. 点击视图切换按钮 → alert 提示
 2. 点击项目菜单 → 新建项目
-3. ✅ 项目名称输入框自动获得焦点
+3. ⏳ 项目名称输入框自动获得焦点
 
 **场景 2**: confirm 后创建项目
 1. 点击删除项目 → confirm 确认
 2. 点击项目菜单 → 新建项目
-3. ✅ 项目名称输入框自动获得焦点
-
-**场景 3**: 直接创建项目
-1. 点击项目菜单 → 新建项目
-2. ✅ 项目名称输入框自动获得焦点
-
-### 结论
-
-**关键点**: `blur()` 必须在所有 DOM 操作**之前**调用，否则焦点可能被其他元素抢占。
+3. ⏳ 项目名称输入框自动获得焦点
 
 ---
 
-## 2026-03-06 - 修复弹窗后表单失焦问题（第三次修复 - 根本原因）
-- `setTimeout` 延迟执行的函数
-- 事件监听器中的异步操作
-
-### 检查结果
+## 2026-03-06 - 修复弹窗后表单失焦问题（第四次修复 - 最终版本）
 
 #### 已修复的 Bug (8 个)
 | 函数 | 问题 | 修复状态 |
@@ -2182,7 +2187,7 @@ initOptionsIPC();
 ### 需求
 片段列表状态更改功能，同项目管理状态变更一样
 
-### 处理内容
+### 处理���容
 
 #### renderShotList 修改
 ```javascript

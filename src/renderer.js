@@ -821,12 +821,6 @@ function hideSettingsModal() {
 function showNewProjectModal() {
   if (!elements.newProjectModal) return;
 
-  // 关键修复：在操作之前先移除当前焦点元素的焦点（解决 alert 后焦点丢失问题）
-  // alert/confirm 关闭后，焦点会留在触发元素上，必须先 blur 才能正确聚焦到输入框
-  if (document.activeElement && document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
-  }
-
   // 清空输入
   if (elements.manualProjectName) elements.manualProjectName.value = '';
   if (elements.manualProjectDesc) elements.manualProjectDesc.value = '';
@@ -859,13 +853,16 @@ function showNewProjectModal() {
     el.style.backgroundColor = '';
   });
 
-  // 立即聚焦到项目名称输入框
-  // 使用 setTimeout 确保模态框已渲染，但时间要短
+  // 关键修复：分两步聚焦，先聚焦模态框，再聚焦输入框
   setTimeout(() => {
+    // 第一步：聚焦到模态框本身（利用 tabindex=-1）
+    elements.newProjectModal.focus();
+    
+    // 第二步：聚焦到项目名称输入框
     if (elements.manualProjectName) {
       elements.manualProjectName.focus();
     }
-  }, 10);
+  }, 1);
 }
 
 // 隐藏新建项目弹窗
@@ -3793,6 +3790,10 @@ function getPanelConstraints(panelType) {
 
 function toggleSceneView() {
   alert('视图切换功能待实现');
+  // 关键修复：alert 关闭后立即移除焦点，防止影响后续操作
+  if (document.activeElement && document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
 }
 
 // 获取状态文本
