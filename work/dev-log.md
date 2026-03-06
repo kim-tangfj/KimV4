@@ -4,6 +4,70 @@
 
 ---
 
+## 2026-03-06 - 闭包变量 Bug 全面检查
+
+### 检查范围
+- `src/renderer.js` 中所有使用闭包变量的事件监听器和异步函数
+- `setTimeout` 延迟执行的函数
+- 事件监听器中的异步操作
+
+### 检查结果
+
+#### 已修复的 Bug (8 个)
+| 函数 | 问题 | 修复状态 |
+|------|------|----------|
+| `autoSaveShotProperties` | 闭包变量导致数据覆盖 | ✅ 已修复 |
+| `autoSaveSceneProperties` | 闭包变量导致数据覆盖 | ✅ 已修复 |
+| `saveShotProperties` | 参数传递旧引用 | ✅ 已修复 |
+| `saveSceneProperties` | 参数传递旧引用 | ✅ 已修复 |
+| `setupOptionHintListeners` | 闭包变量 | ✅ 已修复 |
+| `setupSceneOptionHintListeners` | 闭包变量 | ✅ 已修复 |
+| `setupAddOptionButtons` | 闭包变量 | ✅ 已修复 |
+| `showQuickAddOptionModal` | 闭包变量 | ✅ 已修复 |
+
+#### 安全的代码 (无需修复)
+| 函数 | 原因 | 状态 |
+|------|------|------|
+| `renderShotList` 点击事件 | `selectShot` 从 JSON 读取最新数据 | ✅ 安全 |
+| `renderSceneList` 点击事件 | `selectScene` 从 JSON 读取最新数据 | ✅ 安全 |
+| `showShotStatusMenu` | 立即执行，非延迟 | ✅ 安全 |
+| `updateShotStatus` | 立即执行，使用 ID 查找 | ✅ 安全 |
+
+### 代码模式对比
+
+**❌ 危险模式** (已修复):
+```javascript
+// 延迟执行 + 闭包变量 = 数据覆盖/丢失
+function autoSaveShotProperties(shot) {
+  shotSaveTimeout = setTimeout(async () => {
+    await saveShotProperties(shot, true); // ❌ 可能是旧的 shot
+  }, 500);
+}
+```
+
+**✅ 安全模式**:
+```javascript
+// 使用 appState + 立即执行 = 数据安全
+function autoSaveShotProperties() {
+  shotSaveTimeout = setTimeout(async () => {
+    await saveShotProperties(true); // ✅ 使用 appState.currentShot
+  }, 500);
+}
+
+async function saveShotProperties() {
+  const shot = appState.currentShot; // ✅ 始终使用当前对象
+  // ...
+}
+```
+
+### 输出文档
+- `work/闭包变量 Bug 全面检查报告.md`
+
+### 结论
+**所有严重的闭包变量 Bug 已修复，代码中不存在相同类型的问题。**
+
+---
+
 ## 2026-03-06 - 修复数据覆盖和丢失严重 Bug
 
 ### 问题
@@ -2153,7 +2217,7 @@ if (sceneItem) {
 ## 2026-03-05 - 片段选项卡切换修复
 
 ### 问题
-片段选项卡选中状态效果有 bug，不能切换选中的选项卡效果
+片段选项卡选中状���效果有 bug，不能切换选中的选项卡效果
 
 ### 原因
 `showNewProjectModal` 函数中使用 `toggle('active', ...)` 但逻辑不正确
