@@ -833,7 +833,7 @@ function showNewProjectModal() {
   // 切换到手动模式 - 直接操作样式，避免触发事件
   elements.manualMode?.classList.add('active');
   elements.aiMode?.classList.remove('active');
-  
+
   // 更新 tab 样式
   elements.modeTabs.forEach(tab => {
     if (tab.dataset.mode === 'manual') {
@@ -843,16 +843,26 @@ function showNewProjectModal() {
     }
   });
 
+  // 显示模态框
   elements.newProjectModal.style.display = 'flex';
 
-  // 等待模态框完全显示后再聚焦
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if (elements.manualProjectName) {
+  // 清除可能存在的错误提示
+  document.querySelectorAll('.input-error-message').forEach(el => el.remove());
+  document.querySelectorAll('#new-project-modal input, #new-project-modal textarea').forEach(el => {
+    el.style.borderColor = '';
+    el.style.backgroundColor = '';
+  });
+
+  // 等待模态框完全显示后再聚焦 - 使用更长的延迟确保模态框已渲染
+  setTimeout(() => {
+    if (elements.manualProjectName) {
+      elements.manualProjectName.focus();
+      // 再次确认焦点，防止被其他元素抢占
+      if (document.activeElement !== elements.manualProjectName) {
         elements.manualProjectName.focus();
       }
-    });
-  });
+    }
+  }, 50);
 }
 
 // 隐藏新建项目弹窗

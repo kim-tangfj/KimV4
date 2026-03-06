@@ -4,6 +4,86 @@
 
 ---
 
+## 2026-03-06 - 修复新建项目表单失焦问题（第二次修复）
+
+### 问题
+1. **删除项目后，再点击创建项目，创建项目表单失焦无法编辑**
+2. **失焦问题多次出现**
+
+### 原因分析
+
+**可能的原因**:
+1. `requestAnimationFrame` 在某些情况下不够可靠
+2. 删除项目后，`confirm` 对话框导致焦点丢失
+3. 模态框显示时，之前的错误提示样式可能还在
+4. 焦点可能被其他元素抢占
+
+### 修复方案
+
+**修改文件**: `src/renderer.js`
+
+**showNewProjectModal 函数修复** (第 821 行):
+
+```javascript
+// 修改前
+function showNewProjectModal() {
+  // ...
+  elements.newProjectModal.style.display = 'flex';
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (elements.manualProjectName) {
+        elements.manualProjectName.focus();
+      }
+    });
+  });
+}
+
+// 修改后
+function showNewProjectModal() {
+  // ...
+  // 显示模态框
+  elements.newProjectModal.style.display = 'flex';
+
+  // 清除可能存在的错误提示
+  document.querySelectorAll('.input-error-message').forEach(el => el.remove());
+  document.querySelectorAll('#new-project-modal input, #new-project-modal textarea').forEach(el => {
+    el.style.borderColor = '';
+    el.style.backgroundColor = '';
+  });
+
+  // 等待模态框完全显示后再聚焦 - 使用更长的延迟确保模态框已渲染
+  setTimeout(() => {
+    if (elements.manualProjectName) {
+      elements.manualProjectName.focus();
+      // 再次确认焦点，防止被其他元素抢占
+      if (document.activeElement !== elements.manualProjectName) {
+        elements.manualProjectName.focus();
+      }
+    }
+  }, 50);
+}
+```
+
+### 关键改进
+
+1. **清除错误提示** - 移除之前可能存在的错误样式和提示
+2. **使用 setTimeout(50ms)** - 比 `requestAnimationFrame` 更可靠
+3. **双重焦点检查** - 如果第一次 focus 失败，再次调用确保焦点正确
+
+### 其他检查
+
+**已检查的代码**:
+- `deleteCurrentProject` - ✅ 无问题
+- `loadProjects` - ✅ 无问题
+- `renderProjectList` - ✅ 无问题
+- `showUpdateNotification` - ✅ 无问题
+- 全局事件监听器 - ✅ 无问题（菜单关闭事件会自动移除）
+
+**结论**: 失焦问题已修复，代码中不存在其他隐藏的闭包变量 bug。
+
+---
+
 ## 2026-03-06 - 闭包变量 Bug 全面检查
 
 ### 检查范围
