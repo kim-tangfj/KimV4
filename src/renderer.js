@@ -2320,71 +2320,23 @@ async function loadProjects() {
     } else {
       appState.projects = [];
     }
-    renderProjectList(appState.projects);
+    // 使用模块中的 renderProjectList 函数
+    window.renderProjectList(appState.projects, elements, selectProject, showProjectContextMenu, showProjectStatusMenu);
   }
 }
 
-function renderProjectList(projects) {
-  if (!elements.projectList) return;
-
-  elements.projectList.innerHTML = '';
-
-  if (projects.length === 0) {
-    elements.projectList.innerHTML = '<div class="placeholder-text">暂无项目，点击 + 新建</div>';
-    return;
-  }
-
-  projects.forEach(project => {
-    const projectElement = document.createElement('div');
-    projectElement.className = 'list-item';
-    projectElement.dataset.id = project.id;
-    const statusText = getStatusText(project.status || 'draft');
-    projectElement.innerHTML = `
-      <div class="list-item-content">
-        <div class="list-item-title">${project.name}</div>
-        <div class="list-item-subtitle">
-          ${(project.description || '').substring(0, 30)}${(project.description || '').length > 30 ? '...' : ''}
-        </div>
-      </div>
-      <span class="status-tag status-${project.status || 'draft'}" data-project-id="${project.id}" data-status="${project.status || 'draft'}">${statusText}</span>
-    `;
-
-    // 项目卡片点击
-    projectElement.addEventListener('click', (e) => {
-      if (e.target.classList.contains('status-tag')) {
-        return;
-      }
-      selectProject(project);
-    });
-
-    // 右键菜单
-    projectElement.addEventListener('contextmenu', (e) => {
-      e.preventDefault();
-      showProjectContextMenu(project, e);
-    });
-
-    // 状态标签点击
-    const statusTag = projectElement.querySelector('.status-tag');
-    if (statusTag) {
-      statusTag.addEventListener('click', (e) => {
-        e.stopPropagation();
-        showProjectStatusMenu(project, e);
-      });
-    }
-
-    elements.projectList.appendChild(projectElement);
-  });
-}
+// 项目列表渲染已移至 src/utils/projectList.js
+// window.renderProjectList 由模块提供
 
 async function selectProject(project) {
   appState.currentProject = project;
   appState.currentShot = null;
   appState.currentScene = null;
 
-  document.querySelectorAll('#project-list .list-item').forEach(item => {
-    item.classList.remove('selected');
-  });
-  document.querySelector(`#project-list .list-item[data-id="${project.id}"]`)?.classList.add('selected');
+  // 使用模块中的 updateProjectSelection 函数
+  if (window.updateProjectSelection) {
+    window.updateProjectSelection(elements, project.id);
+  }
 
   if (elements.newShotBtn) elements.newShotBtn.disabled = false;
   if (elements.deleteShotBtn) elements.deleteShotBtn.disabled = false;
