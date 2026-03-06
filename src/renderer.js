@@ -3125,6 +3125,8 @@ async function saveShotProperties(isAutoSave = false) {
           elements.bottomPanelTitle.textContent = `${name || '片段'} 属性`;
         }
         updatePromptPreview();
+        // 重新渲染片段列表，更新片段名称等信息
+        renderShotList(loadResult.projectJson.shots || []);
         // 自动保存时也显示提示
         showUpdateNotification();
       }
@@ -3350,6 +3352,8 @@ async function saveSceneProperties(isAutoSave = false) {
           elements.bottomPanelTitle.textContent = `${name || '镜头'} 属性`;
         }
         updatePromptPreview();
+        // 重新渲染镜头列表，更新镜头名称等信息
+        renderSceneList(shot.scenes || []);
         // 自动保存时也显示提示
         showUpdateNotification();
       }
