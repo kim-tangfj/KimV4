@@ -3860,6 +3860,19 @@ function toggleSceneView() {
   showToast('视图切换功能待实现');
 }
 
+// 全局替换 alert 和 confirm
+const originalAlert = window.alert;
+const originalConfirm = window.confirm;
+
+window.alert = function(message) {
+  showToast(message);
+};
+
+window.confirm = function(message) {
+  console.warn('window.confirm 已被替换为 showConfirm，请使用 await showConfirm()');
+  return originalConfirm(message);
+};
+
 // 获取状态文本
 function getStatusText(status) {
   const statusMap = {
