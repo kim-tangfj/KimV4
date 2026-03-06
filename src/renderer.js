@@ -830,21 +830,29 @@ function showNewProjectModal() {
   if (elements.aiProjectDesc) elements.aiProjectDesc.value = '';
   if (elements.aiProjectRatio) elements.aiProjectRatio.value = '16:9';
 
-  // 切换到手动模式
+  // 切换到手动模式 - 直接操作样式，避免触发事件
+  elements.manualMode?.classList.add('active');
+  elements.aiMode?.classList.remove('active');
+  
+  // 更新 tab 样式
   elements.modeTabs.forEach(tab => {
-    tab.classList.remove('active');
+    if (tab.dataset.mode === 'manual') {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
   });
-  if (elements.modeTabs.length > 0) {
-    elements.modeTabs[0].classList.add('active'); // 手动模式是第一个
-  }
-  if (elements.manualMode) elements.manualMode.classList.add('active');
-  if (elements.aiMode) elements.aiMode.classList.remove('active');
 
   elements.newProjectModal.style.display = 'flex';
 
-  setTimeout(() => {
-    if (elements.manualProjectName) elements.manualProjectName.focus();
-  }, 100);
+  // 等待模态框完全显示后再聚焦
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (elements.manualProjectName) {
+        elements.manualProjectName.focus();
+      }
+    });
+  });
 }
 
 // 隐藏新建项目弹窗
@@ -3600,7 +3608,7 @@ async function updateShotStatus(shot, newStatus) {
     }
     
     if (shotIndex === -1) {
-      console.error('片段未找到，shot.id:', shot.id, 'shot.name:', shot.name);
+      console.error('片段未找到���shot.id:', shot.id, 'shot.name:', shot.name);
       console.error('可用片段:', loadResult.projectJson.shots?.map(s => ({ id: s.id, name: s.name })));
       alert('片��未找到，请检查数据一致性');
       return;

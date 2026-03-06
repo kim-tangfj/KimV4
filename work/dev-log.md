@@ -4,6 +4,82 @@
 
 ---
 
+## 2026-03-06 - 修复新建项目表单失焦问题
+
+### 问题
+打开新建项目表单后，输入框失焦，无法选中文本框无法编辑。
+
+### 原因
+`showNewProjectModal` 函数中：
+1. 使用 `setTimeout` 延迟聚焦，但 100ms 可能不够或受其他事件干扰
+2. 模式切换 tab 的样式更新逻辑可能触发额外的事件
+
+### 修复方案
+
+**修改前**:
+```javascript
+function showNewProjectModal() {
+  // ... 清空输入
+
+  // 切换到手动模式
+  elements.modeTabs.forEach(tab => {
+    tab.classList.remove('active');
+  });
+  if (elements.modeTabs.length > 0) {
+    elements.modeTabs[0].classList.add('active');
+  }
+  // ...
+
+  elements.newProjectModal.style.display = 'flex';
+
+  setTimeout(() => {
+    if (elements.manualProjectName) elements.manualProjectName.focus();
+  }, 100);
+}
+```
+
+**修改后**:
+```javascript
+function showNewProjectModal() {
+  // ... 清空输入
+
+  // 切换到手动模式 - 直接操作样式，避免触发事件
+  elements.manualMode?.classList.add('active');
+  elements.aiMode?.classList.remove('active');
+  
+  // 更新 tab 样式
+  elements.modeTabs.forEach(tab => {
+    if (tab.dataset.mode === 'manual') {
+      tab.classList.add('active');
+    } else {
+      tab.classList.remove('active');
+    }
+  });
+
+  elements.newProjectModal.style.display = 'flex';
+
+  // 等待模态框完全显示后再聚焦
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      if (elements.manualProjectName) {
+        elements.manualProjectName.focus();
+      }
+    });
+  });
+}
+```
+
+### 关键改进
+1. **简化模式切换逻辑** - 直接操作样式，避免不必要的事件触发
+2. **使用 `requestAnimationFrame`** - 比 `setTimeout` 更可靠，确保在浏览器完成重绘后聚焦
+3. **双重 `requestAnimationFrame`** - 确保模态框完全显示且样式稳定后再聚焦
+
+### 效果
+- 打开新建项目表单后，项目名称输入框自动获得焦点
+- 可以立即开始输入，无失焦问题
+
+---
+
 ## 2026-03-05 - 修复 ID 缺失问题
 
 ### 问题
