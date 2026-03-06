@@ -3269,6 +3269,11 @@ async function saveShotProperties(isAutoSave = false) {
         updatePromptPreview();
         // 重新渲染片段列表，更新片段名称等信息
         renderShotList(loadResult.projectJson.shots || []);
+        // 重新设置选中状态
+        const shotItem = document.querySelector(`#shot-list .list-item[data-id="${shot.id}"]`);
+        if (shotItem) {
+          shotItem.classList.add('selected');
+        }
         // 自动保存时也显示提示
         showUpdateNotification();
       }
