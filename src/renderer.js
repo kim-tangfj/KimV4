@@ -821,6 +821,11 @@ function hideSettingsModal() {
 function showNewProjectModal() {
   if (!elements.newProjectModal) return;
 
+  // 关键修复：确保 loading-overlay 已隐藏（z-index=3000 会覆盖模态框）
+  if (elements.loadingOverlay) {
+    elements.loadingOverlay.style.display = 'none';
+  }
+
   // 清空输入
   if (elements.manualProjectName) elements.manualProjectName.value = '';
   if (elements.manualProjectDesc) elements.manualProjectDesc.value = '';
@@ -3793,9 +3798,9 @@ function getPanelConstraints(panelType) {
 
 function toggleSceneView() {
   alert('视图切换功能待实现');
-  // 关键修复：alert 关闭后立即移除焦点，防止影响后续操作
-  if (document.activeElement && document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
+  // 确保 loading-overlay 已隐藏
+  if (elements.loadingOverlay) {
+    elements.loadingOverlay.style.display = 'none';
   }
 }
 

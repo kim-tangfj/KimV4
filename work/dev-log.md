@@ -4,47 +4,47 @@
 
 ---
 
-## 2026-03-06 - 修复弹窗后表单失焦问题（第六次修复 - 渲染时序问题）
+## 2026-03-06 - 修复弹窗后表单失焦问题（第七次修复 - loading-overlay 覆盖问题）
 
 ### 关键线索
 
-**打开控制台后问题消失** → 这证明是**渲染时序问题**
+**点击输入框无反馈，Tab 键无法切换** → 输入框被**覆盖层阻挡**
 
 ### 问题行为
 
 1. 控制台没有任何错误
 2. 创建项目表单中，生成提问模板、默认画幅选项等可以操作
-3. **其他单行文本和多行文本都无法编辑，点击没反应，没有输入光标跳动**
-4. **打开页面控制台后，问题消失，点击变得有反应**
+3. 其他单行文本和多行文本都无法编辑，点击没反应
+4. 打开页面控制台后，问题消失
 
 ### 根本原因分析
 
-**渲染时序问题**:
-- `setTimeout(1ms)` 执行时，模态框可能还没有完全渲染
-- 打开控制台会触发浏览器的重绘/重排，改变了渲染时序
-- 这就是为什么打开控制台后问题消失
+**`loading-overlay` 覆盖问题**:
+- `loading-overlay` 的 `z-index: 3000`
+- 模态框的 `z-index: 2000`
+- 如果 `loading-overlay` 没有正确隐藏，它会覆盖整个屏幕，阻挡所有交互
+- 打开控制台可能触发重绘，隐藏了覆盖层
 
-### 修复方案（第六次尝试）
+### 修复方案（第七次尝试）
 
-**方案**: 使用双重 `requestAnimationFrame` 确保模态框已完全渲染
+**方案**: 在 `showNewProjectModal` 中强制隐藏 `loading-overlay`
 
-**修改文件**: `src/renderer.js` (第 856 行)
+**修改文件**: `src/renderer.js` (第 821 行)
 
 ```javascript
 function showNewProjectModal() {
-  // ...
+  if (!elements.newProjectModal) return;
 
-  // 显示模态框
-  elements.newProjectModal.style.display = 'flex';
+  // 关键修复：确保 loading-overlay 已隐藏（z-index=3000 会覆盖模态框）
+  if (elements.loadingOverlay) {
+    elements.loadingOverlay.style.display = 'none';
+  }
 
-  // 关键修复：使用 requestAnimationFrame 确保模态框已完全渲染
-  // 打开控制台会触发重绘，所以问题消失，这证明是渲染时序问题
+  // ... 其他逻辑
+
   requestAnimationFrame(() => {
     requestAnimationFrame(() => {
-      // 先聚焦到模态框本身（利用 tabindex=-1）
       elements.newProjectModal.focus();
-      
-      // 再聚焦到项目名称输入框
       if (elements.manualProjectName) {
         elements.manualProjectName.focus();
       }
@@ -53,11 +53,23 @@ function showNewProjectModal() {
 }
 ```
 
+**辅助修复**: `toggleSceneView` 函数 (第 3799 行)
+
+```javascript
+function toggleSceneView() {
+  alert('视图切换功能待实现');
+  // 确保 loading-overlay 已隐藏
+  if (elements.loadingOverlay) {
+    elements.loadingOverlay.style.display = 'none';
+  }
+}
+```
+
 ### 关键改进
 
-1. **双重 requestAnimationFrame** - 确保模态框已完全渲染和布局
-2. **先聚焦模态框** - 覆盖浏览器可能的焦点恢复行为
-3. **再聚焦输入框** - 确保输入框获得焦点
+1. **强制隐藏 loading-overlay** - 防止覆盖层阻挡模态框
+2. **z-index 层级修复** - loading-overlay (3000) > 模态框 (2000)
+3. **双重保障** - 在显示模态框时确保覆盖层已隐藏
 
 ### 修复历程
 
@@ -67,14 +79,15 @@ function showNewProjectModal() {
 | 第二次 | 使用 `setTimeout(50ms)` + 双重检查 | ❌ 未解决 |
 | 第三次 | 添加 `document.activeElement.blur()` | ❌ 位置不对 |
 | 第四次 | `blur()` 移到最前面 + alert 后 blur | ❌ 仍未解决 |
-| 第五次 | 模态框 tabindex + setTimeout(1ms) | ❌ 未解决（渲染时序问题） |
-| 第六次 | **双重 requestAnimationFrame** | ⏳ 待测试 |
+| 第五次 | 模态框 tabindex + setTimeout(1ms) | ❌ 未解决 |
+| 第六次 | 双重 requestAnimationFrame | ❌ 未解决 |
+| 第七次 | **强制隐藏 loading-overlay** | ⏳ 待测试 |
 
 ### 为什么之前的方案失败
 
-**第五次方案失败原因**: `setTimeout(1ms)` 只保证延迟执行，但不保证模态框已完全渲染。浏览器的渲染是异步的，可能需要多个帧才能完成。
+**第六次方案失败原因**: 即使模态框完全渲染，如果 `loading-overlay` 没有隐藏，它仍然会阻挡所有交互。
 
-**第六次方案的优势**: `requestAnimationFrame` 会在浏览器下一次重绘之前执行，双重 `requestAnimationFrame` 确保模态框已经完全渲染和布局。
+**第七次方案的优势**: 直接解决覆盖层问题，确保模态框在最上层。
 
 ### 测试场景
 
@@ -88,17 +101,9 @@ function showNewProjectModal() {
 2. 点击项目菜单 → 新建项目
 3. ⏳ 项目名称输入框自动获得焦点，可以编辑
 
-**场景 3**: 直接创建项目
-1. 点击项目菜单 → 新建项目
-2. ⏳ 项目名称输入框自动获得焦点，可以编辑
-
 ---
 
-## 2026-03-06 - 修复弹窗后表单失焦问题（第五次修复 - 模态框 tabindex 方案）
-|------|------|----------|
-| `autoSaveShotProperties` | 闭包变量导致数据覆盖 | ✅ 已修复 |
-| `autoSaveSceneProperties` | 闭包变量导致数据覆盖 | ✅ 已修复 |
-| `saveShotProperties` | 参数传递旧引用 | ✅ 已修复 |
+## 2026-03-06 - 修复弹窗后表单失焦问题（第六次修复 - 渲染时序问题）
 | `saveSceneProperties` | 参数传递旧引用 | ✅ 已修复 |
 | `setupOptionHintListeners` | 闭包变量 | ✅ 已修复 |
 | `setupSceneOptionHintListeners` | 闭包变量 | ✅ 已修复 |
