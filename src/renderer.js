@@ -2301,17 +2301,21 @@ async function loadProjects() {
       const result = await window.electronAPI.listProjects(settings.storagePath || '');
       if (result.success) {
         appState.projects = result.projects;
-        renderProjectList(appState.projects);
+        window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
+          window.showProjectContextMenu(project, e, selectProject, deleteCurrentProject, window.openProjectFolderByProject);
+        }, (project, e) => {
+          window.showProjectStatusMenu(project, e, updateProjectStatus);
+        });
         console.log('项目加载成功，数量:', result.projects.length);
       } else {
         console.error('项目加载失败:', result.error);
         appState.projects = [];
-        renderProjectList([]);
+        window.renderProjectList([], elements, selectProject, () => {}, () => {});
       }
     } catch (error) {
       console.error('加载项目异常:', error);
       appState.projects = [];
-      renderProjectList([]);
+      window.renderProjectList([], elements, selectProject, () => {}, () => {});
     }
   } else {
     const savedProjects = localStorage.getItem('kim_projects');
