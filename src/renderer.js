@@ -2794,16 +2794,16 @@ async function deleteSelectedScene() {
 
 // ========== 提示词 ==========
 
-// 提示词生成函数
+// 提示词生成函数（按 defualt-prompt.md 模板）
 function generateScenePrompt(scene, index, cumulativeTime) {
   if (!scene) return '';
   
-  const shotType = scene.shotType || '特写';
-  const angle = scene.angle || '平视';
-  const camera = scene.camera || '固定镜头';
+  const shotType = scene.shotType || '';
+  const angle = scene.angle || '';
+  const camera = scene.camera || '';
   const content = scene.content || '';
-  const emotion = scene.emotion ? `（${scene.emotion}）` : '';
-  const dialogue = scene.dialogue ? `\n【对白】${scene.dialogue}` : '';
+  const emotion = scene.emotion || '';
+  const dialogue = scene.dialogue || '';
   
   // 计算镜头时间
   const duration = scene.duration || 2;
@@ -2811,50 +2811,100 @@ function generateScenePrompt(scene, index, cumulativeTime) {
   const endTime = cumulativeTime + duration;
   const timeRange = `${startTime}-${endTime}秒`;
   
-  return `## 镜头${index + 1}\n**${timeRange}**：[${shotType}、${angle}、${camera}]，${content}。${emotion}${dialogue}`;
+  // 格式：## 镜头 1\n**0-1 秒**：[特写、俯视、固定镜头]，内容...（情绪）
+  let prompt = `## 镜头${index + 1}\n**${timeRange}**：`;
+  
+  if (shotType || angle || camera) {
+    prompt += `[${[shotType, angle, camera].filter(Boolean).join('、')}]，`;
+  }
+  
+  prompt += content;
+  
+  if (emotion) {
+    prompt += `（${emotion}）`;
+  }
+  
+  if (dialogue) {
+    prompt += `\n【对白】${dialogue}`;
+  }
+  
+  return prompt;
 }
 
 function generateShotPrompt(shot) {
   if (!shot) return '';
 
-  const style = shot.style || '默认风格';
-  const duration = shot.duration || 0;
-  const aspectRatio = shot.aspectRatio || '16:9';
-  const characters = shot.characters ? `\n**角色**：${shot.characters}` : '';
-  const sceneSetting = shot.sceneSetting ? `\n**场景**：${shot.sceneSetting}` : '';
-  const description = shot.description ? `\n**片段描述**：${shot.description}` : '';
-  const mood = shot.mood || '默认情绪';
+  // 片段头部信息
+  let prompt = '';
   
-  const musicStyle = shot.musicStyle ? `\n**配乐**：${shot.musicStyle}` : '';
-  const soundEffect = shot.soundEffect ? `\n**音效**：${shot.soundEffect}` : '';
-  const soundLine = (musicStyle || soundEffect) 
-    ? `\n**声音**：${musicStyle}${soundEffect}`.replace(/\n\*\*/g, ' + ').replace(/^\+ /, '') 
-    : '';
+  // **风格**：风格，情绪氛围
+  if (shot.style || shot.mood) {
+    prompt += `**风格**：${shot.style || ''}${shot.mood ? `，${shot.mood}` : ''}\n\n`;
+  }
   
-  const imageRef = shot.imageRef ? `\n**图片参考**：${shot.imageRef}` : '';
-  const videoRef = shot.videoRef ? `\n**视频参考**：${shot.videoRef}` : '';
-  const audioRef = shot.audioRef ? `\n**音频参考**：${shot.audioRef}` : '';
-  const refs = imageRef + videoRef + audioRef;
+  // **时长**：视频时长（秒）
+  if (shot.duration) {
+    prompt += `**时长**：${shot.duration}秒\n\n`;
+  }
   
-  const customPrompt = shot.customPrompt ? `\n\n${shot.customPrompt}` : '';
-
+  // **画幅**：画幅比例
+  if (shot.aspectRatio) {
+    prompt += `**画幅**：${shot.aspectRatio}\n\n`;
+  }
+  
+  // **角色**：角色
+  if (shot.characters) {
+    prompt += `**角色**：${shot.characters}\n\n`;
+  }
+  
+  // **场景**：场景设定
+  if (shot.sceneSetting) {
+    prompt += `**场景**：${shot.sceneSetting}\n\n`;
+  }
+  
+  // **片段描述**：片段描述
+  if (shot.description) {
+    prompt += `**片段描述**：${shot.description}\n\n`;
+  }
+  
+  // **声音**：对白 + 配乐风格 + 音效需求
+  const soundParts = [];
+  if (shot.musicStyle) soundParts.push(shot.musicStyle);
+  if (shot.soundEffect) soundParts.push(shot.soundEffect);
+  if (soundParts.length > 0) {
+    prompt += `**声音**：对白 + ${soundParts.join(' + ')}\n\n`;
+  }
+  
+  // **参考**：图片参考，视频参考，音频参考
+  const refs = [];
+  if (shot.imageRef) refs.push(shot.imageRef);
+  if (shot.videoRef) refs.push(shot.videoRef);
+  if (shot.audioRef) refs.push(shot.audioRef);
+  if (refs.length > 0) {
+    prompt += `**参考**：${refs.join('，')}\n\n`;
+  }
+  
+  // 自定义提示词部分
+  if (shot.customPrompt) {
+    prompt += `${shot.customPrompt}\n\n`;
+  }
+  
+  // 镜头列表
   const scenes = shot.scenes || [];
   const enabledScenes = scenes.filter(scene => scene.enabled !== false);
-
-  let scenesPrompt = '';
+  
   if (enabledScenes.length > 0) {
+    prompt += '---\n# 镜头\n\n';
+    
     let cumulativeTime = 0;
-    scenesPrompt = '\n\n---\n# 镜头\n\n' + enabledScenes.map((scene, index) => {
-      const prompt = generateScenePrompt(scene, index, cumulativeTime);
+    enabledScenes.forEach((scene, index) => {
+      prompt += generateScenePrompt(scene, index, cumulativeTime);
       cumulativeTime += scene.duration || 2;
-      return prompt;
-    }).join('\n\n');
+      prompt += '\n\n';
+    });
   }
-
-  return `**风格**：${style}
-**时长**：${duration}秒
-**画幅**：${aspectRatio}${characters}${sceneSetting}${description}
-**情绪**：${mood}${soundLine}${refs}${customPrompt}${scenesPrompt}`;
+  
+  return prompt.trim();
 }
 
 function generateProjectPrompt(project, getStatusText) {
