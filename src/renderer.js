@@ -2321,12 +2321,15 @@ async function loadProjects() {
       appState.projects = [];
     }
     // 使用模块中的 renderProjectList 函数
-    window.renderProjectList(appState.projects, elements, selectProject, showProjectContextMenu, showProjectStatusMenu);
+    window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
+      window.showProjectContextMenu(project, e, selectProject, deleteCurrentProject, window.openProjectFolderByProject);
+    }, (project, e) => {
+      window.showProjectStatusMenu(project, e, updateProjectStatus);
+    });
   }
 }
 
-// 项目列表渲染已移至 src/utils/projectList.js
-// window.renderProjectList 由模块提供
+// 项目管理函数已移至 src/utils/projectList.js
 
 async function selectProject(project) {
   appState.currentProject = project;
@@ -3574,7 +3577,7 @@ function showProjectContextMenu(project, event) {
     <div class="context-menu-item" id="project-context-open-folder">打开资源文件管理器</div>
   `;
 
-  // 菜单位置：鼠标点击��置
+  // 菜单位置：鼠标点击位置
   contextMenu.style.position = 'fixed';
   contextMenu.style.top = `${event.clientY}px`;
   contextMenu.style.left = `${event.clientX}px`;
@@ -3736,38 +3739,19 @@ function showShotStatusMenu(shot, event) {
   document.body.appendChild(contextMenu);
 }
 
-// 更新项目状态
+// 更新项目状态 - 使用模块中的 updateProjectStatus 函数
 async function updateProjectStatus(project, newStatus) {
-  if (useElectronAPI && project.projectDir) {
-    try {
-      const loadResult = await window.electronAPI.loadProject(project.projectDir);
-      if (!loadResult.success) {
-        alert('加载项目失败：' + loadResult.error);
-        return;
-      }
-
-      // 更新项目状态
-      loadResult.projectJson.project.status = newStatus;
-      loadResult.projectJson.project.updatedAt = new Date().toISOString();
-
-      const saveResult = await window.electronAPI.saveProject(project.projectDir, loadResult.projectJson);
-      if (saveResult.success) {
-        // 更新本地状态
-        project.status = newStatus;
-        // 重新渲染项目列表
-        await loadProjects();
-        showUpdateNotification();
-      } else {
-        alert('保存失败：' + saveResult.error);
-      }
-    } catch (error) {
-      console.error('更新项目状态异常:', error);
-      alert('更新状态失败：' + error.message);
-    }
-  }
+  await window.updateProjectStatus(
+    project,
+    newStatus,
+    appState,
+    useElectronAPI,
+    loadProjects,
+    showUpdateNotification
+  );
 }
 
-// 更新片段状态
+// 更新片段状态 - 保留在 renderer.js 中（属于片段管理）
 async function updateShotStatus(shot, newStatus) {
   if (!useElectronAPI) {
     alert('请在 Electron 环境中使用此功能');
@@ -3775,11 +3759,11 @@ async function updateShotStatus(shot, newStatus) {
   }
   
   if (!appState.currentProject || !appState.currentProject.projectDir) {
-    alert('项目目录不��在，请先选择项目');
+    alert('项目目录不存在，请先选择项目');
     return;
   }
   
-  // ���查 shot 对象是否有 id，没有则生成
+  // 检查 shot 对象是否有 id，没有则生成
   if (!shot.id) {
     shot.id = Date.now();
     console.log('生成片段 ID:', shot.id);
@@ -3833,42 +3817,18 @@ async function updateShotStatus(shot, newStatus) {
   }
 }
 
-// 删除当前项目
+// 删除当前项目 - 使用模块中的 deleteCurrentProject 函数
 async function deleteCurrentProject() {
-  if (!appState.currentProject) {
-    showToast('请先选择一个项目');
-    return;
-  }
-
-  const confirmed = await showConfirm(`确定要删除项目 "${appState.currentProject.name}" 吗？此操作不可恢复！`);
-  if (!confirmed) return;
-
-  if (useElectronAPI && appState.currentProject.projectDir) {
-    try {
-      const result = await window.electronAPI.deleteProject(appState.currentProject.projectDir);
-      if (result.success) {
-        appState.currentProject = null;
-        appState.currentShot = null;
-        appState.currentScene = null;
-        appState.projectData = null;
-        await loadProjects();
-        renderShotList([]);
-        renderSceneList([]);
-        if (elements.promptPreview) {
-          elements.promptPreview.innerHTML = '<div class="placeholder-text">请选中项目 > 片段 > 镜头，自动生成提示词</div>';
-        }
-        if (elements.propertyForm) {
-          elements.propertyForm.innerHTML = '<div class="placeholder-text">请选择项目、片段或镜头以编辑属性</div>';
-        }
-        showToast('项目已删除');
-      } else {
-        showToast('删除失败：' + result.error);
-      }
-    } catch (error) {
-      console.error('删除项目异常:', error);
-      showToast('删除失败：' + error.message);
-    }
-  }
+  await window.deleteCurrentProject(
+    appState,
+    elements,
+    useElectronAPI,
+    loadProjects,
+    renderShotList,
+    renderSceneList,
+    showToast,
+    showConfirm
+  );
 }
 
 // ========== 面板拖拽 ==========
