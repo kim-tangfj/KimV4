@@ -821,6 +821,12 @@ function hideSettingsModal() {
 function showNewProjectModal() {
   if (!elements.newProjectModal) return;
 
+  // 关键修复：在操作之前先移除当前焦点元素的焦点（解决 alert 后焦点丢失问题）
+  // alert/confirm 关闭后，焦点会留在触发元素上，必须先 blur 才能正确聚焦到输入框
+  if (document.activeElement && document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+
   // 清空输入
   if (elements.manualProjectName) elements.manualProjectName.value = '';
   if (elements.manualProjectDesc) elements.manualProjectDesc.value = '';
@@ -853,21 +859,13 @@ function showNewProjectModal() {
     el.style.backgroundColor = '';
   });
 
-  // 关键修复：移除当前焦点元素的焦点（alert/confirm 后焦点会留在触发元素上）
-  if (document.activeElement && document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
-  }
-
-  // 等待模态框完全显示后再聚焦 - 使用更长的延迟确保模态框已渲染
+  // 立即聚焦到项目名称输入框
+  // 使用 setTimeout 确保模态框已渲染，但时间要短
   setTimeout(() => {
     if (elements.manualProjectName) {
       elements.manualProjectName.focus();
-      // 再次确认焦点，防止被其他元素抢占
-      if (document.activeElement !== elements.manualProjectName) {
-        elements.manualProjectName.focus();
-      }
     }
-  }, 50);
+  }, 10);
 }
 
 // 隐藏新建项目弹窗
