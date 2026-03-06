@@ -853,16 +853,19 @@ function showNewProjectModal() {
     el.style.backgroundColor = '';
   });
 
-  // 关键修复：分两步聚焦，先聚焦模态框，再聚焦输入框
-  setTimeout(() => {
-    // 第一步：聚焦到模态框本身（利用 tabindex=-1）
-    elements.newProjectModal.focus();
-    
-    // 第二步：聚焦到项目名称输入框
-    if (elements.manualProjectName) {
-      elements.manualProjectName.focus();
-    }
-  }, 1);
+  // 关键修复：使用 requestAnimationFrame 确保模态框已完全渲染
+  // 打开控制台会触发重绘，所以问题消失，这证明是渲染时序问题
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      // 先聚焦到模态框本身（利用 tabindex=-1）
+      elements.newProjectModal.focus();
+      
+      // 再聚焦到项目名称输入框
+      if (elements.manualProjectName) {
+        elements.manualProjectName.focus();
+      }
+    });
+  });
 }
 
 // 隐藏新建项目弹窗

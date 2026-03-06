@@ -4,38 +4,31 @@
 
 ---
 
-## 2026-03-06 - 修复弹窗后表单失焦问题（第五次修复 - 模态框 tabindex 方案）
+## 2026-03-06 - 修复弹窗后表单失焦问题（第六次修复 - 渲染时序问题）
 
-### 问题
+### 关键线索
 
-点击视图切换按钮 → alert 提示 → 点击创建项目 → 表单无法编辑
+**打开控制台后问题消失** → 这证明是**渲染时序问题**
 
-### 之前尝试的失败方案
+### 问题行为
 
-1. **第一次**: `requestAnimationFrame` - ❌ 未解决
-2. **第二次**: `setTimeout(50ms)` + 双重检查 - ❌ 未解决
-3. **第三次**: `document.activeElement.blur()` - ❌ 位置不对
-4. **第四次**: `blur()` 移到最前面 + 在 alert 后 blur - ❌ 仍未解决
+1. 控制台没有任何错误
+2. 创建项目表单中，生成提问模板、默认画幅选项等可以操作
+3. **其他单行文本和多行文本都无法编辑，点击没反应，没有输入光标跳动**
+4. **打开页面控制台后，问题消失，点击变得有反应**
 
 ### 根本原因分析
 
-**浏览器焦点恢复机制**: 
-- 当 alert 关闭后，浏览器会尝试恢复焦点到"合理"的元素
-- 即使调用了 `blur()`，浏览器可能仍然会把焦点放回原元素
-- `setTimeout` 执行时，浏览器的焦点恢复可能已经完成
+**渲染时序问题**:
+- `setTimeout(1ms)` 执行时，模态框可能还没有完全渲染
+- 打开控制台会触发浏览器的重绘/重排，改变了渲染时序
+- 这就是为什么打开控制台后问题消失
 
-### 修复方案（第五次尝试）
+### 修复方案（第六次尝试）
 
-**方案**: 使用 `tabindex="-1"` 让模态框可以接收焦点，然后分两步聚焦
+**方案**: 使用双重 `requestAnimationFrame` 确保模态框已完全渲染
 
-**修改文件 1**: `index.html` (第 256 行)
-
-```html
-<!-- 添加 tabindex="-1" 让模态框可以接收焦点 -->
-<div id="new-project-modal" class="modal" style="display: none;" tabindex="-1">
-```
-
-**修改文件 2**: `src/renderer.js` (第 820 行)
+**修改文件**: `src/renderer.js` (第 856 行)
 
 ```javascript
 function showNewProjectModal() {
@@ -44,36 +37,27 @@ function showNewProjectModal() {
   // 显示模态框
   elements.newProjectModal.style.display = 'flex';
 
-  // 关键修复：分两步聚焦，先聚焦模态框，再聚焦输入框
-  setTimeout(() => {
-    // 第一步：聚焦到模态框本身（利用 tabindex=-1）
-    elements.newProjectModal.focus();
-    
-    // 第二步：聚焦到项目名称输入框
-    if (elements.manualProjectName) {
-      elements.manualProjectName.focus();
-    }
-  }, 1);
-}
-```
-
-**辅助修复**: `toggleSceneView` 函数 (第 3795 行)
-
-```javascript
-function toggleSceneView() {
-  alert('视图切换功能待实现');
-  // alert 关闭后立即移除焦点，防止影响后续操作
-  if (document.activeElement && document.activeElement instanceof HTMLElement) {
-    document.activeElement.blur();
-  }
+  // 关键修复：使用 requestAnimationFrame 确保模态框已完全渲染
+  // 打开控制台会触发重绘，所以问题消失，这证明是渲染时序问题
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      // 先聚焦到模态框本身（利用 tabindex=-1）
+      elements.newProjectModal.focus();
+      
+      // 再聚焦到项目名称输入框
+      if (elements.manualProjectName) {
+        elements.manualProjectName.focus();
+      }
+    });
+  });
 }
 ```
 
 ### 关键改进
 
-1. **模态框可聚焦** - 添加 `tabindex="-1"` 让模态框可以接收焦点
-2. **分两步聚焦** - 先聚焦模态框，再聚焦输入框，覆盖浏览器的焦点恢复
-3. **更短延迟** - `setTimeout(1ms)` 尽快执行
+1. **双重 requestAnimationFrame** - 确保模态框已完全渲染和布局
+2. **先聚焦模态框** - 覆盖浏览器可能的焦点恢复行为
+3. **再聚焦输入框** - 确保输入框获得焦点
 
 ### 修复历程
 
@@ -83,26 +67,34 @@ function toggleSceneView() {
 | 第二次 | 使用 `setTimeout(50ms)` + 双重检查 | ❌ 未解决 |
 | 第三次 | 添加 `document.activeElement.blur()` | ❌ 位置不对 |
 | 第四次 | `blur()` 移到最前面 + alert 后 blur | ❌ 仍未解决 |
-| 第五次 | **模态框 tabindex + 分两步聚焦** | ⏳ 待测试 |
+| 第五次 | 模态框 tabindex + setTimeout(1ms) | ❌ 未解决（渲染时序问题） |
+| 第六次 | **双重 requestAnimationFrame** | ⏳ 待测试 |
+
+### 为什么之前的方案失败
+
+**第五次方案失败原因**: `setTimeout(1ms)` 只保证延迟执行，但不保证模态框已完全渲染。浏览器的渲染是异步的，可能需要多个帧才能完成。
+
+**第六次方案的优势**: `requestAnimationFrame` 会在浏览器下一次重绘之前执行，双重 `requestAnimationFrame` 确保模态框已经完全渲染和布局。
 
 ### 测试场景
 
 **场景 1**: alert 后创建项目
 1. 点击视图切换按钮 → alert 提示
 2. 点击项目菜单 → 新建项目
-3. ⏳ 项目名称输入框自动获得焦点
+3. ⏳ 项目名称输入框自动获得焦点，可以编辑
 
 **场景 2**: confirm 后创建项目
 1. 点击删除项目 → confirm 确认
 2. 点击项目菜单 → 新建项目
-3. ⏳ 项目名称输入框自动获得焦点
+3. ⏳ 项目名称输入框自动获得焦点，可以编辑
+
+**场景 3**: 直接创建项目
+1. 点击项目菜单 → 新建项目
+2. ⏳ 项目名称输入框自动获得焦点，可以编辑
 
 ---
 
-## 2026-03-06 - 修复弹窗后表单失焦问题（第四次修复 - 最终版本）
-
-#### 已修复的 Bug (8 个)
-| 函数 | 问题 | 修复状态 |
+## 2026-03-06 - 修复弹窗后表单失焦问题（第五次修复 - 模态框 tabindex 方案）
 |------|------|----------|
 | `autoSaveShotProperties` | 闭包变量导致数据覆盖 | ✅ 已修复 |
 | `autoSaveSceneProperties` | 闭包变量导致数据覆盖 | ✅ 已修复 |
