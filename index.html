@@ -507,6 +507,30 @@
     <div class="loading-text" id="loading-text">正在处理...</div>
   </div>
 
+  <!-- 自定义提示框（替代 alert/confirm） -->
+  <div id="toast-notification" class="toast-notification" style="display: none;">
+    <div class="toast-content">
+      <span class="toast-icon">ℹ️</span>
+      <span class="toast-message" id="toast-message"></span>
+    </div>
+  </div>
+
+  <!-- 自定义确认对话框 -->
+  <div id="confirm-modal" class="modal" style="display: none;">
+    <div class="modal-content confirm-modal">
+      <div class="modal-header">
+        <h3>确认</h3>
+      </div>
+      <div class="modal-body">
+        <p id="confirm-message"></p>
+      </div>
+      <div class="modal-footer">
+        <button id="confirm-cancel-btn" class="form-btn">取消</button>
+        <button id="confirm-ok-btn" class="form-btn primary">确认</button>
+      </div>
+    </div>
+  </div>
+
   <script src="./src/renderer.js"></script>
 </body>
 </html>

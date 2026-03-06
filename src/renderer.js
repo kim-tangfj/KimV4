@@ -3690,13 +3690,12 @@ async function updateShotStatus(shot, newStatus) {
 // 删除当前项目
 async function deleteCurrentProject() {
   if (!appState.currentProject) {
-    alert('请先选择一个项目');
+    showToast('请先选择一个项目');
     return;
   }
 
-  if (!confirm(`确定要删除项目 "${appState.currentProject.name}" 吗？此操作不可恢复！`)) {
-    return;
-  }
+  const confirmed = await showConfirm(`确定要删除项目 "${appState.currentProject.name}" 吗？此操作不可恢复！`);
+  if (!confirmed) return;
 
   if (useElectronAPI && appState.currentProject.projectDir) {
     try {
@@ -3715,13 +3714,13 @@ async function deleteCurrentProject() {
         if (elements.propertyForm) {
           elements.propertyForm.innerHTML = '<div class="placeholder-text">请选择项目、片段或镜头以编辑属性</div>';
         }
-        showUpdateNotification();
+        showToast('项目已删除');
       } else {
-        alert('删除失败：' + result.error);
+        showToast('删除失败：' + result.error);
       }
     } catch (error) {
       console.error('删除项目异常:', error);
-      alert('删除失败：' + error.message);
+      showToast('删除失败：' + error.message);
     }
   }
 }
@@ -3798,12 +3797,67 @@ function getPanelConstraints(panelType) {
 
 // ========== 工具函数 ==========
 
+// 自定义 Toast 提示（替代 alert）
+function showToast(message, duration = 2000) {
+  const toast = document.getElementById('toast-notification');
+  const toastMessage = document.getElementById('toast-message');
+  if (!toast || !toastMessage) return;
+
+  toastMessage.textContent = message;
+  toast.style.display = 'block';
+
+  setTimeout(() => {
+    toast.style.display = 'none';
+  }, duration);
+}
+
+// 自定义确认对话框（替代 confirm）
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    const modal = document.getElementById('confirm-modal');
+    const confirmMessage = document.getElementById('confirm-message');
+    const okBtn = document.getElementById('confirm-ok-btn');
+    const cancelBtn = document.getElementById('confirm-cancel-btn');
+
+    if (!modal || !confirmMessage || !okBtn || !cancelBtn) {
+      resolve(false);
+      return;
+    }
+
+    confirmMessage.textContent = message;
+    modal.style.display = 'flex';
+
+    // 移除旧的事件监听器
+    const newOkBtn = okBtn.cloneNode(true);
+    const newCancelBtn = cancelBtn.cloneNode(true);
+    okBtn.parentNode.replaceChild(newOkBtn, okBtn);
+    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
+
+    // 添加新的事件监听器
+    newOkBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+      resolve(true);
+    });
+
+    newCancelBtn.addEventListener('click', () => {
+      modal.style.display = 'none';
+      resolve(false);
+    });
+
+    // 点击背景关闭
+    modal.addEventListener('click', function closeOnBackdrop(e) {
+      if (e.target === modal) {
+        modal.style.display = 'none';
+        modal.removeEventListener('click', closeOnBackdrop);
+        resolve(false);
+      }
+    });
+  });
+}
+
+// 替换 toggleSceneView 函数，使用 Toast 替代 alert
 function toggleSceneView() {
-  alert('视图切换功能待实现');
-  // 确保 loading-overlay 已隐藏
-  if (elements.loadingOverlay) {
-    elements.loadingOverlay.style.display = 'none';
-  }
+  showToast('视图切换功能待实现');
 }
 
 // 获取状态文本

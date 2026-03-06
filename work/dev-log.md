@@ -4,11 +4,142 @@
 
 ---
 
+## 2026-03-06 - 使用自定义提示框替代 alert/confirm（最终解决方案）
+
+### 问题总结
+
+经过 8 次修复尝试后，确认 **alert/confirm 在 Electron 中有焦点问题**：
+- alert/confirm 关闭后，焦点会留在触发元素上
+- 即使强制 blur/focus，输入框仍然无法编辑
+- 打开控制台会触发重绘，问题暂时消失
+
+### 根本原因
+
+**Electron 的 alert/confirm 实现问题**:
+- Electron 的 alert/confirm 是原生对话框
+- 关闭后焦点恢复行为与浏览器不同
+- 可能导致渲染进程的焦点状态混乱
+
+### 解决方案
+
+**使用自定义模态框替代 alert/confirm**
+
+#### 1. HTML 新增组件
+
+**Toast 提示框** (替代 alert):
+```html
+<div id="toast-notification" class="toast-notification">
+  <div class="toast-content">
+    <span class="toast-icon">ℹ️</span>
+    <span class="toast-message"></span>
+  </div>
+</div>
+```
+
+**确认对话框** (替代 confirm):
+```html
+<div id="confirm-modal" class="modal">
+  <div class="modal-content confirm-modal">
+    <div class="modal-header"><h3>确认</h3></div>
+    <div class="modal-body"><p id="confirm-message"></p></div>
+    <div class="modal-footer">
+      <button id="confirm-cancel-btn">取消</button>
+      <button id="confirm-ok-btn">确认</button>
+    </div>
+  </div>
+</div>
+```
+
+#### 2. CSS 样式
+
+```css
+.toast-notification {
+  position: fixed;
+  top: 20px;
+  left: 50%;
+  transform: translateX(-50%);
+  background-color: #333;
+  color: #fff;
+  padding: 12px 24px;
+  border-radius: 8px;
+  z-index: 10000;
+  animation: slideDown 0.3s ease;
+}
+```
+
+#### 3. JavaScript 函数
+
+**showToast** (替代 alert):
+```javascript
+function showToast(message, duration = 2000) {
+  const toast = document.getElementById('toast-notification');
+  const toastMessage = document.getElementById('toast-message');
+  toastMessage.textContent = message;
+  toast.style.display = 'block';
+  setTimeout(() => {
+    toast.style.display = 'none';
+  }, duration);
+}
+```
+
+**showConfirm** (替代 confirm):
+```javascript
+function showConfirm(message) {
+  return new Promise((resolve) => {
+    // 显示对话框
+    // 绑定确认/取消按钮事件
+    // 返回 Promise
+  });
+}
+```
+
+#### 4. 替换调用
+
+**toggleSceneView**:
+```javascript
+// 修改前
+alert('视图切换功能待实现');
+
+// 修改后
+showToast('视图切换功能待实现');
+```
+
+**deleteCurrentProject**:
+```javascript
+// 修改前
+if (!confirm('确定要删除项目...')) return;
+alert('删除失败：' + result.error);
+
+// 修改后
+const confirmed = await showConfirm('确定要删除项目...');
+if (!confirmed) return;
+showToast('删除失败：' + result.error);
+```
+
+### 优势
+
+1. **完全控制焦点** - 自定义模态框不会影响输入框焦点
+2. **更好的用户体验** - Toast 提示更友好，不阻塞操作
+3. **可定制样式** - 可以调整样式匹配应用主题
+4. **Promise 支持** - showConfirm 返回 Promise，支持 async/await
+
+### 修改文件
+
+- `index.html` - 添加 Toast 和确认对话框 HTML
+- `styles.css` - 添加 Toast 和确认对话框样式
+- `src/renderer.js` - 添加 showToast/showConfirm 函数，替换 alert/confirm 调用
+
+### 后续工作
+
+需要替换其他地方的 alert/confirm 调用：
+- [ ] 模板删除确认
+- [ ] 模板备份/恢复确认
+- [ ] 自定义选项删除确认
+- [ ] 其他错误提示
+
+---
+
 ## 2026-03-06 - 修复弹窗后表单失焦问题（第八次修复 - 强制重绘）
-
-### 关键线索
-
-**打开控制台后问题消失** → 控制台的打开会触发**强制重绘**
 
 ### 问题行为
 
