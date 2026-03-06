@@ -12,6 +12,8 @@
  * @param {Function} onStatusClick - 状态标签点击回调
  */
 function renderProjectList(projects, elements, onSelectProject, onContextMenu, onStatusClick) {
+  console.log('[renderProjectList] 被调用，projects:', projects.length, 'onStatusClick:', typeof onStatusClick);
+  
   if (!elements.projectList) return;
 
   elements.projectList.innerHTML = '';
@@ -55,6 +57,7 @@ function renderProjectList(projects, elements, onSelectProject, onContextMenu, o
     if (statusTag) {
       statusTag.addEventListener('click', (e) => {
         e.stopPropagation();
+        console.log('[statusTag click] 被点击', project, onStatusClick);
         if (onStatusClick) onStatusClick(project, e);
       });
     }
