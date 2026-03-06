@@ -46,13 +46,7 @@ e:\AI\KimV4\
 │   ├── preload.js           # 预加载脚本（IPC 桥接）
 │   ├── renderer.js          # 渲染进程（UI 逻辑）
 │   ├── handlers/            # IPC 处理器模块
-│   └── utils/               # 工具模块（模块化组件）
-│       ├── menu.js
-│       ├── promptGenerator.js  # 提示词生成模块
-│       ├── projectList.js      # 项目管理模块
-│       ├── shotList.js         # 片段列表模块
-│       ├── sceneList.js        # 镜头列表模块
-│       └── propertyPanel.js    # 属性面板模块
+│   └── utils/               # 工具模块
 ├── assets/default/
 │   ├── default-templates.json  # 默认模板
 │   ├── options.json            # 默认自定义选项
@@ -105,125 +99,98 @@ npm run dev          # 开发模式（自动打开 DevTools）
 
 ## 近期行动
 
+### 已修复的严重 Bug
+
+1. **[修复] 数据覆盖和丢失问题** - 自动保存时切换片段/镜头导致数据被覆盖或清空
+   - 添加 `savingShotId/savingSceneId` 追踪正在保存的 ID
+   - 保存前检查 ID 是否匹配，不匹配则取消保存
+   - 保存前检查表单元素是否存在，不存在则取消保存
+
+2. **[修复] 选中状态丢失问题** - 选择片段/镜头时项目选中状态丢失
+   - `selectShot` 不再移除项目列表选中状态
+   - `selectScene` 从 project.json 读取最新数据
+
+3. **[修复] 保存后选中状态丢失** - 修改属性保存后选中状态丢失
+   - `renderShotList/renderSceneList` 后重新设置选中状态
+
+4. **[修复] 提示词不实时更新** - 修改镜头属性后提示词不更新
+   - 同时更新 `currentShot` 和 `currentScene`
+   - 确保提示词生成使用最新数据
+
+5. **[修复] 弹窗后表单失焦** - alert/confirm 后输入框无法编辑
+   - 全局替换 `alert` 为 `showToast`
+   - 全局替换 `confirm` 为 `await showConfirm`
+
+### 新增功能
+
+1. **[新增] 项目管理菜单优化**
+   - 将菜单按钮改为 `+` 新建项目按钮
+   - 添加项目列表右键菜单（修改、删除、打开资源管理器）
+
+2. **[新增] 提示词生成优化**
+   - 按 defualt-prompt.md 模板格式生成
+   - 添加镜头时间范围显示（0-1 秒、1-3 秒）
+   - 添加镜头【其他备注】字段
+   - 提示词面板高度 600px，自适应滚动
+
+3. **[新增] Tooltip 提示**
+   - 所有图标按钮添加鼠标悬停提示
+
+4. **[新增] 自定义提示框**
+   - Toast 提示框替代 alert
+   - 自定义确认对话框替代 confirm
+
+5. **[新增] 阿里百炼 API 支持**
+   - 在设置中添加阿里百炼 API 配置
+   - 支持 qwen-plus, qwen-max, qwen-turbo 等模型
+   - API 地址：https://dashscope.aliyuncs.com/compatible-mode/v1
+
+### 代码优化
+- 提示词生成函数内联到 renderer.js（避免 require 问题）
+- 统一使用 appState 管理状态
+- 自动保存 500ms 防抖
+
+## 当前计划
+
 ### 已完成 [DONE]
+1. [DONE] 修复数据覆盖和丢失严重 Bug
+2. [DONE] 修复选中状态丢失问题
+3. [DONE] 修复提示词不实时更新问题
+4. [DONE] 替换所有 alert/confirm 为自定义提示框
+5. [DONE] 项目管理菜单优化
+6. [DONE] 提示词模板更新（添加镜头时间、其他备注）
+7. [DONE] 添加按钮 Tooltip 提示
+8. [DONE] 阿里百炼 API 集成
 
-#### 代码模块化重构
-1. **[DONE] 创建模块化组件** (`src/utils/` 目录)
-   - `promptGenerator.js` (224 行) - 提示词生成
-   - `projectList.js` (335 行) - 项目管理（列表渲染、右键菜单、状态更新、删除）
-   - `shotList.js` (153 行) - 片段列表管理
-   - `sceneList.js` (168 行) - 镜头列表管理
-   - `propertyPanel.js` (488 行) - 属性面板管理
-
-2. **[DONE] 更新 index.html**
-   - 在 renderer.js 之前加载模块脚本
-   - 使用 defer 属性确保顺序加载
-
-3. **[DONE] 更新 renderer.js**
-   - 删除重复的列表渲染函数（-92 行）
-   - 使用 window 对象调用模块函数
-   - 暴露全局变量（useElectronAPI, elements, appState）
-
-#### Bug 修复
-1. **[DONE] 数据覆盖和丢失严重 Bug**
-   - 自动保存时使用闭包变量导致数据保存到错误对象
-   - 修复：改用 appState 中的当前对象
-
-2. **[DONE] 选中状态丢失问题**
-   - selectShot/selectScene 不从 project.json 读取最新数据
-   - 修复：从 project.json 读取最新数据
-
-3. **[DONE] 提示词不实时更新**
-   - 修改属性后提示词不更新
-   - 修复：同时更新 currentShot 和 currentScene
-
-4. **[DONE] 弹窗后表单失焦**
-   - alert/confirm 后输入框无法编辑
-   - 修复：全部替换为自定义 Toast/Confirm
-
-5. **[DONE] 模块变量引用错误**
-   - useElectronAPI 在初始化后才暴露
-   - 修复：包装 initializeApp，在完成后暴露全局变量
-
-6. **[DONE] 项目状态更新功能**
-   - 点击状态标签直接调用 updateProjectStatus，没有先弹出菜单
-   - 修复：调用 showProjectStatusMenu 弹出菜单，选择后才更新
-
-7. **[DONE] 删除项目功能**
-   - deleteCurrentProject 需要参数但调用时没有传递
-   - 修复：使用闭包传递完整参数
-
-8. **[DONE] 打开项目文件夹功能**
-   - useElectronAPI 全局变量暴露时机错误
-   - 修复：在 initializeApp 完成后暴露
+### 进行中 [IN PROGRESS]
+1. [IN PROGRESS] 提示词生成功能完善 - 确保所有字段修改后实时更新
 
 ### 待办 [TODO]
-1. **[TODO] 分镜图片上传功能** - 镜头属性表单的图片上传、拖放、缩略图预览
-2. **[TODO] 参考素材文件管理** - 片段属性表单的图片/视频/音频参考字段
-3. **[TODO] 项目级素材库管理界面** - 独立的素材库面板
-4. **[TODO] 响应式布局优化** - 小屏幕单列、中屏幕双列、大屏幕三列
-5. **[TODO] 深色主题完整适配** - 确保所有新增组件在深色主题下正常显示
-6. **[TODO] 修改项目功能实现** - 目前显示"待实现"
-7. **[TODO] 视图切换功能实现** - 镜头列表的卡片/列表视图切换
-8. **[TODO] 批量操作功能** - 批量删除、批量排序、批量导出
+1. [TODO] 分镜图片上传功能 - 镜头属性表单的图片上传、拖放、缩略图预览
+2. [TODO] 参考素材文件管理 - 片段属性表单的图片/视频/音频参考字段
+3. [TODO] 响应式布局优化 - 小屏幕单列、中屏幕双列、大屏幕三列
+4. [TODO] 深色主题完整适配 - 确保所有新增组件在深色主题下正常显示
+5. [TODO] 修改项目功能实现 - 目前显示"待实现"
 
-## 模块化组件总览
-
-| 模块 | 行数 | 功能 |
-|------|------|------|
-| `promptGenerator.js` | 224 | 提示词生成（镜头/片段/项目层级） |
-| `projectList.js` | 335 | 项目列表渲染、右键菜单、状态更新、删除 |
-| `shotList.js` | 153 | 片段列表渲染、选择 |
-| `sceneList.js` | 168 | 镜头列表渲染、选择、时间范围计算 |
-| `propertyPanel.js` | 488 | 属性表单渲染、数据获取、自动保存 |
-| **合计** | **1368** | **模块化代码** |
-
-## Git 提交历史（本次会话）
-
-### 模块化重构
-1. `a05dbc5` - Refactor - 项目列表模块拆分 (最小化)
-2. `a7f409d` - Refactor - 项目管理模块完整拆分
-3. `833bea7` - Refactor - 删除 renderer.js 中重复的列表渲染函数
-4. `ab30de1` - Fix - 修复提示词加载问题
-5. `5889550` - Fix - 修复 renderShotList/renderSceneList 调用
-6. `4a4571d` - Fix - 删除重复的 window.renderShotList 暴露
-
-### Bug 修复
-7. `c9c562a` - Fix - 修复 loadProjects 调用参数错误
-8. `f743a69` - Fix - 修复打开项目文件夹功能
-9. `8340f1c` - Fix - 修复 useElectronAPI 暴露时机
-10. `0b0cf7c` - Fix - 修复项目状态更新功能
-11. `a28c65b` - Fix - 修复状态标签点击参数
-12. `9f0d98b` - Fix - 修复状态更新调用链
-13. `1a64432` - Clean - 清理调试日志
-14. `09049e6` - Fix - 修复删除项目功能
-15. `36fe9d6` - Clean - 清理删除项目调试日志
-
-## 当前状态
-
-### 正常工作功能 ✅
-- ✅ 项目列表渲染
-- ✅ 项目右键菜单（修改/删除/打开文件夹）
-- ✅ 打开资源文件管理器
-- ✅ 项目状态菜单（草稿/进行中/已完成/已取消）
-- ✅ 项目状态更新
-- ✅ 删除项目
-- ✅ 片段列表渲染
-- ✅ 镜头列表渲染
-- ✅ 属性面板编辑
-- ✅ 自动保存（500ms 防抖）
-- ✅ 提示词生成（按 defualt-prompt.md 模板）
-- ✅ 提示词实时更新
-- ✅ 深色主题支持
+### 测试建议
+1. 修改片段/镜头属性后，检查提示词是否实时更新
+2. 快速切换片段/镜头，检查数据是否丢失
+3. 保存后检查选中状态是否保持
+4. 右键项目卡片检查菜单功能
+5. 检查所有按钮 Tooltip 是否正常显示
 
 ### 已知限制
 - 修改项目功能待实现
 - 视图切换功能待实现
 - 分镜图片上传功能待开发
 - 参考素材文件管理待开发
-- 批量操作功能待开发
 
 ---
 
 ## Summary Metadata
-**Update time**: 2026-03-06T16:37:52.709Z 
+**Update time**: 2026-03-06T09:36:03.288Z
+
+---
+
+## Summary Metadata
+**Update time**: 2026-03-06T17:16:50.037Z 
