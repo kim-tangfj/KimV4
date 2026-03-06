@@ -24,8 +24,8 @@ let settings = {
   models: {
     deepseek: 'deepseek-chat',
     doubao: 'doubao-pro-4k',
-    qianwen: 'qwen-turbo',
-    ailian: 'qwen-plus'
+    qianwen: 'qwen3.5-plus',
+    ailian: 'qwen3.5-plus'
   },
   templates: [],
   activeTemplateId: null
@@ -297,10 +297,10 @@ async function loadSettings() {
     elements.doubaoModel.value = settings.models.doubao || 'doubao-pro-4k';
   }
   if (elements.qianwenModel) {
-    elements.qianwenModel.value = settings.models.qianwen || 'qwen-turbo';
+    elements.qianwenModel.value = settings.models.qianwen || 'qwen3.5-plus';
   }
   if (elements.ailianModel) {
-    elements.ailianModel.value = settings.models.ailian || 'qwen-plus';
+    elements.ailianModel.value = settings.models.ailian || 'qwen3.5-plus';
   }
 }
 
@@ -401,8 +401,8 @@ function saveSettings() {
   settings.apiKeys.ailian = elements.ailianApiKey?.value || '';
   settings.models.deepseek = elements.deepseekModel?.value || 'deepseek-chat';
   settings.models.doubao = elements.doubaoModel?.value || 'doubao-pro-4k';
-  settings.models.qianwen = elements.qianwenModel?.value || 'qwen-turbo';
-  settings.models.ailian = elements.ailianModel?.value || 'qwen-plus';
+  settings.models.qianwen = elements.qianwenModel?.value || 'qwen3.5-plus';
+  settings.models.ailian = elements.ailianModel?.value || 'qwen3.5-plus';
   settings.theme = currentTheme;
   settings.autoSaveInterval = parseInt(elements.autoSaveInterval?.value) || 5;
 
@@ -742,10 +742,10 @@ async function testApiConnection(provider) {
     model = elements.doubaoModel?.value.trim() || 'doubao-pro-4k';
   } else if (provider === 'qianwen') {
     apiKey = elements.qianwenApiKey?.value.trim() || '';
-    model = elements.qianwenModel?.value.trim() || 'qwen-turbo';
+    model = elements.qianwenModel?.value.trim() || 'qwen3.5-plus';
   } else if (provider === 'ailian') {
     apiKey = elements.ailianApiKey?.value.trim() || '';
-    model = elements.ailianModel?.value.trim() || 'qwen-plus';
+    model = elements.ailianModel?.value.trim() || 'qwen3.5-plus';
   }
 
   if (!apiKey) {

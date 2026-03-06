@@ -16,11 +16,11 @@ const API_CONFIGS = {
   },
   qianwen: {
     baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
-    defaultModel: 'qwen-turbo'
+    defaultModel: 'qwen3.5-plus'
   },
   ailian: {
     baseUrl: 'https://coding.dashscope.aliyuncs.com/v1',
-    defaultModel: 'qwen-plus'
+    defaultModel: 'qwen3.5-plus'
   }
 };
 

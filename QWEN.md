@@ -217,7 +217,7 @@ getAllOptions, addCustomOption, deleteCustomOption, updateCustomOption
 |--------|----------|--------|
 | DeepSeek | deepseek-chat | API Key / 模型名称 |
 | 豆包 (字节) | doubao-pro-4k | API Key / 模型名称 |
-| 通义千问 (阿里) | qwen-turbo | API Key / 模型名称 |
+| 通义千问 (阿里) | qwen3.5-plus | API Key / 模型名称 |
 
 ---
 
