@@ -4,6 +4,130 @@
 
 ---
 
+## 2026-03-06 - 修复自动保存功能问题
+
+### 问题
+1. **自动保存时无提示** - 用户不知道是否保存成功
+2. **切换片段/镜头后数据不更新** - 切换片段再切回来，没有正确读取保存的数据
+
+### 原因分析
+
+**问题 1 原因**: 
+`saveShotProperties` 和 `saveSceneProperties` 函数中：
+```javascript
+if (!isAutoSave) {
+  showUpdateNotification();
+}
+```
+自动保存时不显示提示。
+
+**问题 2 原因**:
+`selectShot` 和 `selectScene` 函数直接使用传入的对象，没有从 `project.json` 中读取最新数据。
+
+### 修复方案
+
+#### 1. 修复自动保存提示
+
+**修改文件**: `src/renderer.js`
+
+**saveShotProperties 修复** (第 3052 行):
+```javascript
+// 修改前
+if (saveResult.success) {
+  appState.currentShot = { ... }; // 手动拼接对象
+  if (!isAutoSave) {
+    showUpdateNotification();
+  }
+}
+
+// 修改后
+if (saveResult.success) {
+  // 直接使用保存后的最新数据
+  appState.currentShot = loadResult.projectJson.shots[shotIndex];
+  // 自动保存时也显示提示
+  showUpdateNotification();
+}
+```
+
+**saveSceneProperties 修复** (第 3263 行):
+```javascript
+// 修改前
+if (saveResult.success) {
+  appState.currentScene = { ... }; // 手动拼接对象
+  if (!isAutoSave) {
+    showUpdateNotification();
+  }
+}
+
+// 修改后
+if (saveResult.success) {
+  // 直接使用保存后的最新数据
+  appState.currentScene = shot.scenes[sceneIndex];
+  // 自动保存时也显示提示
+  showUpdateNotification();
+}
+```
+
+#### 2. 修复数据读取
+
+**selectShot 修复** (第 2456 行):
+```javascript
+async function selectShot(shot) {
+  if (useElectronAPI && appState.currentProject.projectDir) {
+    // 从 project.json 中读取最新的片段数据
+    try {
+      const loadResult = await window.electronAPI.loadProject(appState.currentProject.projectDir);
+      if (loadResult.success) {
+        const latestShot = loadResult.projectJson.shots?.find(s => s.id === shot.id);
+        if (latestShot) {
+          appState.currentShot = latestShot;
+        }
+      }
+    } catch (error) {
+      console.error('加载最新片段数据失败:', error);
+      appState.currentShot = shot;
+    }
+  } else {
+    appState.currentShot = shot;
+  }
+  
+  // ... 其他逻辑
+  showShotProperties(appState.currentShot);
+}
+```
+
+**selectScene 修复** (第 2622 行):
+```javascript
+function selectScene(scene) {
+  if (useElectronAPI && appState.currentProject.projectDir && appState.currentShot) {
+    // 从 project.json 中读取最新的镜头数据
+    try {
+      const shot = appState.currentShot;
+      const latestScene = shot.scenes?.find(s => s.id === scene.id);
+      if (latestScene) {
+        appState.currentScene = latestScene;
+      }
+    } catch (error) {
+      console.error('加载最新镜头数据失败:', error);
+      appState.currentScene = scene;
+    }
+  } else {
+    appState.currentScene = scene;
+  }
+  
+  // ... 其他逻辑
+  showSceneProperties(appState.currentScene);
+}
+```
+
+### 效果
+
+1. **自动保存提示** - 每次自动保存后显示"已保存"提示
+2. **数据实时同步** - 切换片段/镜头后，重新从 `project.json` 读取最新数据
+3. **状态一致性** - `appState.currentShot` 和 `appState.currentScene` 始终指向最新数据
+
+---
+
 ## 2026-03-06 - 属性自动保存功能检查
 
 ### 检查范围

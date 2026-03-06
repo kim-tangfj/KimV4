@@ -2454,18 +2454,34 @@ function renderShotList(shots) {
 }
 
 async function selectShot(shot) {
-  appState.currentShot = shot;
+  if (useElectronAPI && appState.currentProject.projectDir) {
+    // 从 project.json 中读取最新的片段数据
+    try {
+      const loadResult = await window.electronAPI.loadProject(appState.currentProject.projectDir);
+      if (loadResult.success) {
+        const latestShot = loadResult.projectJson.shots?.find(s => s.id === shot.id);
+        if (latestShot) {
+          appState.currentShot = latestShot;
+        }
+      }
+    } catch (error) {
+      console.error('加载最新片段数据失败:', error);
+      appState.currentShot = shot;
+    }
+  } else {
+    appState.currentShot = shot;
+  }
 
   // 移除项目列表的选中状态
   document.querySelectorAll('#project-list .list-item').forEach(item => {
     item.classList.remove('selected');
   });
-  
+
   // 移除所有片段选中状态
   document.querySelectorAll('#shot-list .list-item').forEach(item => {
     item.classList.remove('selected');
   });
-  
+
   // 设置当前片段选中状态（转换为字符串比较）
   const shotItem = Array.from(document.querySelectorAll('#shot-list .list-item'))
     .find(item => item.dataset.id === String(shot.id));
@@ -2476,9 +2492,9 @@ async function selectShot(shot) {
   if (elements.newSceneBtn) elements.newSceneBtn.disabled = false;
   if (elements.deleteSceneBtn) elements.deleteSceneBtn.disabled = false;
 
-  renderSceneList(shot.scenes || []);
+  renderSceneList(appState.currentShot.scenes || []);
   updatePromptPreview();
-  showShotProperties(shot);
+  showShotProperties(appState.currentShot);
 }
 
 async function createNewShot() {
@@ -2604,13 +2620,29 @@ function renderSceneList(scenes) {
 }
 
 function selectScene(scene) {
-  appState.currentScene = scene;
+  if (useElectronAPI && appState.currentProject.projectDir && appState.currentShot) {
+    // 从 project.json 中读取最新的镜头数据
+    try {
+      const shot = appState.currentShot;
+      const latestScene = shot.scenes?.find(s => s.id === scene.id);
+      if (latestScene) {
+        appState.currentScene = latestScene;
+      }
+    } catch (error) {
+      console.error('加载最新镜头数据失败:', error);
+      appState.currentScene = scene;
+    }
+  } else {
+    appState.currentScene = scene;
+  }
+
+  appState.currentScene = appState.currentScene || scene;
 
   // 移除所有镜头选中状态
   document.querySelectorAll('#scene-list .list-item').forEach(item => {
     item.classList.remove('selected');
   });
-  
+
   // 设置当前镜头选中状态（转换为字符串比较）
   const sceneItem = Array.from(document.querySelectorAll('#scene-list .list-item'))
     .find(item => item.dataset.id === String(scene.id));
@@ -2623,7 +2655,7 @@ function selectScene(scene) {
   if (elements.clearPromptBtn) elements.clearPromptBtn.disabled = false;
 
   updatePromptPreview();
-  showSceneProperties(scene);
+  showSceneProperties(appState.currentScene);
 }
 
 async function createNewScene() {
@@ -3049,30 +3081,14 @@ async function saveShotProperties(shot, isAutoSave = false) {
         );
 
         if (saveResult.success) {
-          appState.currentShot = {
-            ...shot,
-            name,
-            description,
-            style,
-            mood,
-            characters: characters !== undefined ? characters : shot.characters,
-            sceneSetting: sceneSetting !== undefined ? sceneSetting : shot.sceneSetting,
-            aspectRatio,
-            duration,
-            musicStyle: musicStyle !== undefined ? musicStyle : shot.musicStyle,
-            soundEffect: soundEffect !== undefined ? soundEffect : shot.soundEffect,
-            imageRef: imageRef !== undefined ? imageRef : shot.imageRef,
-            videoRef: videoRef !== undefined ? videoRef : shot.videoRef,
-            audioRef: audioRef !== undefined ? audioRef : shot.audioRef,
-            customPrompt: customPrompt !== undefined ? customPrompt : shot.customPrompt
-          };
+          // 更新 appState 中的 currentShot 引用为最新数据
+          appState.currentShot = loadResult.projectJson.shots[shotIndex];
           if (elements.bottomPanelTitle) {
             elements.bottomPanelTitle.textContent = `${name || '片段'} 属性`;
           }
           updatePromptPreview();
-          if (!isAutoSave) {
-            showUpdateNotification();
-          }
+          // 自动保存时也显示提示
+          showUpdateNotification();
         }
       }
     } catch (error) {
@@ -3276,26 +3292,14 @@ async function saveSceneProperties(scene, isAutoSave = false) {
           );
 
           if (saveResult.success) {
-            appState.currentScene = {
-              ...scene,
-              name,
-              image: image !== undefined ? image : scene.image,
-              shotType,
-              angle,
-              camera,
-              duration,
-              content,
-              dialogue,
-              emotion,
-              notes
-            };
+            // 更新 appState 中的 currentScene 引用为最新数据
+            appState.currentScene = shot.scenes[sceneIndex];
             if (elements.bottomPanelTitle) {
               elements.bottomPanelTitle.textContent = `${name || '镜头'} 属性`;
             }
             updatePromptPreview();
-            if (!isAutoSave) {
-              showUpdateNotification();
-            }
+            // 自动保存时也显示提示
+            showUpdateNotification();
           }
         }
       }
