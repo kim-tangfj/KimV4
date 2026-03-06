@@ -2804,6 +2804,7 @@ function generateScenePrompt(scene, index, cumulativeTime) {
   const content = scene.content || '';
   const emotion = scene.emotion || '';
   const dialogue = scene.dialogue || '';
+  const notes = scene.notes || '';
   
   // 计算镜头时间
   const duration = scene.duration || 2;
@@ -2826,6 +2827,10 @@ function generateScenePrompt(scene, index, cumulativeTime) {
   
   if (dialogue) {
     prompt += `\n【对白】${dialogue}`;
+  }
+  
+  if (notes) {
+    prompt += `\n【其他备注】${notes}`;
   }
   
   return prompt;
