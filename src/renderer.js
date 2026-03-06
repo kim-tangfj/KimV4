@@ -47,9 +47,9 @@ function cacheDOMElements() {
   elements.promptPreview = document.getElementById('prompt-preview');
   elements.propertyForm = document.getElementById('property-form');
   elements.bottomPanel = document.getElementById('bottom-panel');
-  
+
   // 按钮
-  elements.projectMenuBtn = document.getElementById('project-menu-btn');
+  elements.newProjectBtn = document.getElementById('new-project-btn');
   elements.refreshProjectsBtn = document.getElementById('refresh-projects-btn');
   elements.newShotBtn = document.getElementById('new-shot-btn');
   elements.deleteShotBtn = document.getElementById('delete-shot-btn');
@@ -398,8 +398,8 @@ function setupEventListeners() {
   initPanelResizers();
 
   // 主界面按钮
-  if (elements.projectMenuBtn) {
-    elements.projectMenuBtn.addEventListener('click', showProjectMenu);
+  if (elements.newProjectBtn) {
+    elements.newProjectBtn.addEventListener('click', showNewProjectModal);
   }
   if (elements.refreshProjectsBtn) {
     elements.refreshProjectsBtn.addEventListener('click', loadProjects);
@@ -2330,7 +2330,7 @@ function renderProjectList(projects) {
   elements.projectList.innerHTML = '';
 
   if (projects.length === 0) {
-    elements.projectList.innerHTML = '<div class="placeholder-text">暂无项目，点击菜单新建</div>';
+    elements.projectList.innerHTML = '<div class="placeholder-text">暂无项目，点击 + 新建</div>';
     return;
   }
 
@@ -2351,11 +2351,16 @@ function renderProjectList(projects) {
 
     // 项目卡片点击
     projectElement.addEventListener('click', (e) => {
-      // 如果点击的是状态标签，不触发项目选择
       if (e.target.classList.contains('status-tag')) {
         return;
       }
       selectProject(project);
+    });
+
+    // 右键菜单
+    projectElement.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      showProjectContextMenu(project, e);
     });
 
     // 状态标签点击
@@ -3588,8 +3593,8 @@ function toggleAssetsPanelByHeader(e) {
   toggleBottomPanel();
 }
 
-// 显示项目菜单
-function showProjectMenu() {
+// 显示项目右键菜单
+function showProjectContextMenu(project, event) {
   const menu = document.getElementById('project-context-menu');
   if (menu) {
     menu.remove();
@@ -3600,42 +3605,34 @@ function showProjectMenu() {
   contextMenu.id = 'project-context-menu';
   contextMenu.className = 'context-menu';
   contextMenu.innerHTML = `
-    <div class="context-menu-item" id="project-menu-new">+ 新建项目</div>
-    <div class="context-menu-item" id="project-menu-modify">修改当前项目</div>
-    <div class="context-menu-item" id="project-menu-delete">删除当前项目</div>
-    <div class="context-menu-item" id="project-menu-open-folder">打开资源文件管理器</div>
+    <div class="context-menu-item" id="project-context-modify">修改项目</div>
+    <div class="context-menu-item" id="project-context-delete">删除项目</div>
+    <div class="context-menu-item" id="project-context-open-folder">打开资源文件管理器</div>
   `;
 
-  // 菜单位置：在项目菜单按钮下方
-  const projectMenuBtn = document.getElementById('project-menu-btn');
-  if (projectMenuBtn) {
-    const rect = projectMenuBtn.getBoundingClientRect();
-    contextMenu.style.position = 'fixed';
-    contextMenu.style.top = `${rect.bottom + 5}px`;
-    contextMenu.style.left = `${rect.left}px`;
-    contextMenu.style.zIndex = '1001';
-    contextMenu.style.minWidth = '180px';
-  }
+  // 菜单位置：鼠标点击位置
+  contextMenu.style.position = 'fixed';
+  contextMenu.style.top = `${event.clientY}px`;
+  contextMenu.style.left = `${event.clientX}px`;
+  contextMenu.style.zIndex = '1001';
+  contextMenu.style.minWidth = '180px';
 
   // 菜单项点击事件
   contextMenu.addEventListener('click', (e) => {
     const target = e.target;
-    if (target.id === 'project-menu-new') {
-      showNewProjectModal();
-    } else if (target.id === 'project-menu-modify') {
-      if (appState.currentProject) {
+    if (target.id === 'project-context-modify') {
+      if (project) {
         alert('修改项目功能待实现');
-      } else {
-        alert('请先选择一个项目');
       }
-    } else if (target.id === 'project-menu-delete') {
-      if (appState.currentProject) {
+    } else if (target.id === 'project-context-delete') {
+      if (project) {
+        appState.currentProject = project;
         deleteCurrentProject();
-      } else {
-        alert('请先选择一个项目');
       }
-    } else if (target.id === 'project-menu-open-folder') {
-      openProjectFolder();
+    } else if (target.id === 'project-context-open-folder') {
+      if (project) {
+        openProjectFolderByProject(project);
+      }
     }
     contextMenu.remove();
   });
@@ -3651,6 +3648,22 @@ function showProjectMenu() {
   }, 100);
 
   document.body.appendChild(contextMenu);
+}
+
+// 打开项目文件夹（通过项目对象）
+function openProjectFolderByProject(project) {
+  if (!project || !project.projectDir) {
+    alert('项目目录不存在');
+    return;
+  }
+  if (useElectronAPI) {
+    try {
+      window.electronAPI.openPath(project.projectDir);
+    } catch (error) {
+      console.error('打开文件夹失败:', error);
+      alert('打开文件夹失败：' + error.message);
+    }
+  }
 }
 
 // 显示项目状态菜单
