@@ -212,7 +212,12 @@ function showProjectStatusMenu(project, event, onUpdateStatus) {
  * @param {Object} project - 项目对象
  */
 function openProjectFolderByProject(project) {
+  console.log('[openProjectFolderByProject] 被调用', project);
+  console.log('[openProjectFolderByProject] useElectronAPI:', window.useElectronAPI);
+  console.log('[openProjectFolderByProject] electronAPI:', window.electronAPI);
+  
   if (!project || !project.projectDir) {
+    console.error('[openProjectFolderByProject] 项目目录不存在', project);
     alert('项目目录不存在');
     return;
   }
@@ -220,11 +225,14 @@ function openProjectFolderByProject(project) {
   const useElectronAPI = window.useElectronAPI || false;
   if (useElectronAPI) {
     try {
+      console.log('[openProjectFolderByProject] 正在打开:', project.projectDir);
       window.electronAPI.openPath(project.projectDir);
     } catch (error) {
-      console.error('打开文件夹失败:', error);
+      console.error('[openProjectFolderByProject] 打开文件夹失败:', error);
       alert('打开文件夹失败：' + error.message);
     }
+  } else {
+    console.warn('[openProjectFolderByProject] 不在 Electron 环境中');
   }
 }
 
