@@ -2481,6 +2481,14 @@ function renderShotList(shots) {
 }
 
 async function selectShot(shot) {
+  // 关键修复：切换片段时清除待处理的自动保存
+  if (shotSaveTimeout) {
+    clearTimeout(shotSaveTimeout);
+    shotSaveTimeout = null;
+    savingShotId = null;
+    console.log('[selectShot] 清除待处理的自动保存');
+  }
+
   if (useElectronAPI && appState.currentProject.projectDir) {
     // 从 project.json 中读取最新的片段数据
     try {
@@ -2648,6 +2656,14 @@ function renderSceneList(scenes) {
 }
 
 function selectScene(scene) {
+  // 关键修复：切换镜头时清除待处理的自动保存
+  if (sceneSaveTimeout) {
+    clearTimeout(sceneSaveTimeout);
+    sceneSaveTimeout = null;
+    savingSceneId = null;
+    console.log('[selectScene] 清除待处理的自动保存');
+  }
+
   if (useElectronAPI && appState.currentProject.projectDir && appState.currentShot) {
     // 从 project.json 中读取最新的镜头数据
     try {
@@ -3023,8 +3039,12 @@ async function showShotProperties(shot) {
 
 // 自动保存片段属性 - 使用 appState.currentShot 而不是闭包变量
 let shotSaveTimeout = null;
+let savingShotId = null; // 正在保存的片段 ID
+
 function autoSaveShotProperties() {
   if (shotSaveTimeout) clearTimeout(shotSaveTimeout);
+  // 记录当前要保存的片段 ID
+  savingShotId = appState.currentShot?.id;
   shotSaveTimeout = setTimeout(async () => {
     await saveShotProperties(true);
   }, 500);
@@ -3034,6 +3054,12 @@ async function saveShotProperties(isAutoSave = false) {
   // 使用 appState 中的当前片段，而不是闭包变量
   const shot = appState.currentShot;
   if (!shot) return;
+
+  // 关键修复：检查在保存过程中是否切换了片段
+  if (savingShotId !== shot.id) {
+    console.log('[saveShotProperties] 片段已切换，取消保存', savingShotId, '->', shot.id);
+    return;
+  }
 
   const name = document.getElementById('shotName')?.value;
   const description = document.getElementById('shotDescription')?.value;
@@ -3257,8 +3283,12 @@ async function showSceneProperties(scene) {
 
 // 自动保存镜头属性 - 使用 appState.currentScene 而不是闭包变量
 let sceneSaveTimeout = null;
+let savingSceneId = null; // 正在保存的镜头 ID
+
 function autoSaveSceneProperties() {
   if (sceneSaveTimeout) clearTimeout(sceneSaveTimeout);
+  // 记录当前要保存的镜头 ID
+  savingSceneId = appState.currentScene?.id;
   sceneSaveTimeout = setTimeout(async () => {
     await saveSceneProperties(true);
   }, 500);
@@ -3269,6 +3299,12 @@ async function saveSceneProperties(isAutoSave = false) {
   const scene = appState.currentScene;
   const currentShot = appState.currentShot;
   if (!scene || !currentShot) return;
+
+  // 关键修复：检查在保存过程中是否切换了镜头
+  if (savingSceneId !== scene.id) {
+    console.log('[saveSceneProperties] 镜头已切换，取消保存', savingSceneId, '->', scene.id);
+    return;
+  }
 
   const name = document.getElementById('sceneName')?.value;
   const image = document.getElementById('sceneImage')?.value;
