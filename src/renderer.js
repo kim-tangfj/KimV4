@@ -821,6 +821,9 @@ function hideSettingsModal() {
 function showNewProjectModal() {
   if (!elements.newProjectModal) return;
 
+  console.log('[showNewProjectModal] 开始执行');
+  console.log('[showNewProjectModal] elements.manualProjectName:', elements.manualProjectName);
+
   // 关键修复：确保 loading-overlay 已隐藏（z-index=3000 会覆盖模态框）
   if (elements.loadingOverlay) {
     elements.loadingOverlay.style.display = 'none';
@@ -868,12 +871,24 @@ function showNewProjectModal() {
     el.style.backgroundColor = '';
   });
 
-  // 聚焦到项目名称输入框
-  requestAnimationFrame(() => {
-    if (elements.manualProjectName) {
-      elements.manualProjectName.focus();
-    }
-  });
+  // 关键修复：直接同步聚焦，不使用 requestAnimationFrame
+  if (elements.manualProjectName) {
+    console.log('[showNewProjectModal] 尝试聚焦 manualProjectName');
+    elements.manualProjectName.focus();
+    console.log('[showNewProjectModal] 当前焦点元素:', document.activeElement);
+    
+    // 检查输入框是否被禁用
+    console.log('[showNewProjectModal] disabled:', elements.manualProjectName.disabled);
+    console.log('[showNewProjectModal] readonly:', elements.manualProjectName.readOnly);
+    console.log('[showNewProjectModal] style.pointerEvents:', elements.manualProjectName.style.pointerEvents);
+    
+    // 检查是否有覆盖层
+    const overlay = document.elementFromPoint(
+      elements.manualProjectName.getBoundingClientRect().left + 10,
+      elements.manualProjectName.getBoundingClientRect().top + 10
+    );
+    console.log('[showNewProjectModal] 输入框位置上的元素:', overlay);
+  }
 }
 
 // 隐藏新建项目弹窗
