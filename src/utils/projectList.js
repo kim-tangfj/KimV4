@@ -158,6 +158,8 @@ function showProjectContextMenu(project, event, onSelectProject, onDeleteProject
  * @param {Function} onUpdateStatus - 更新状态回调
  */
 function showProjectStatusMenu(project, event, onUpdateStatus) {
+  console.log('[showProjectStatusMenu] 被调用', project, event.target);
+  
   const menu = document.getElementById('project-status-menu');
   if (menu) {
     menu.remove();
@@ -189,8 +191,9 @@ function showProjectStatusMenu(project, event, onUpdateStatus) {
 
   contextMenu.addEventListener('click', (e) => {
     const status = e.target.dataset.status;
+    console.log('[showProjectStatusMenu] 选择状态:', status);
     if (status && onUpdateStatus) {
-      onUpdateStatus(project, status);
+      onUpdateStatus(project, e);
     }
     contextMenu.remove();
   });

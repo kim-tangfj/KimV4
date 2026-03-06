@@ -2304,7 +2304,8 @@ async function loadProjects() {
         window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
           window.showProjectContextMenu(project, e, selectProject, deleteCurrentProject, window.openProjectFolderByProject);
         }, (project, e) => {
-          window.showProjectStatusMenu(project, e, updateProjectStatus);
+          const newStatus = e.target.dataset.status;
+          window.updateProjectStatus(project, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
         });
         console.log('项目加载成功，数量:', result.projects.length);
       } else {
@@ -2328,7 +2329,8 @@ async function loadProjects() {
     window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
       window.showProjectContextMenu(project, e, selectProject, deleteCurrentProject, window.openProjectFolderByProject);
     }, (project, e) => {
-      window.showProjectStatusMenu(project, e, updateProjectStatus);
+      const newStatus = e.target.dataset.status;
+      window.updateProjectStatus(project, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
     });
   }
 }
