@@ -30,8 +30,12 @@ function createWindow() {
       nodeIntegration: false,
       contextIsolation: true,
       preload: path.join(__dirname, 'preload.js'),
-      // 禁用默认的键盘快捷键（如 Ctrl+R、F5 等）
-      acceleratorWorksWhenHidden: false
+      // 关键修复：启用 sandbox 模式
+      sandbox: true,
+      // 禁用 web 安全策略
+      webSecurity: true,
+      // 允许本地文件访问
+      allowRunningInsecureContent: false
     },
     // 禁用菜单栏（Windows/Linux）
     autoHideMenuBar: true
@@ -39,22 +43,6 @@ function createWindow() {
 
   mainWindow.loadFile('index.html');
   //mainWindow.webContents.openDevTools();
-
-  // 禁用所有键盘快捷键
-  mainWindow.webContents.on('before-input-event', (event, input) => {
-    // 允许 F12 打开 DevTools
-    if (input.key === 'F12') return;
-    // 允许 Ctrl+Shift+I 打开 DevTools
-    if (input.key === 'I' && input.control && input.shift) return;
-    // 允许 Ctrl+C/V/X/A 等编辑快捷键
-    if (input.control && ['C', 'V', 'X', 'A', 'Z', 'Y'].includes(input.key.toUpperCase())) return;
-    // 允许箭头键、Tab、Enter 等导航键
-    if (['ArrowUp', 'ArrowDown', 'ArrowLeft', 'ArrowRight', 'Tab', 'Enter', 'Escape'].includes(input.key)) return;
-    // 允许字母、数字、符号键
-    if (input.key.length === 1 && !input.control && !input.alt) return;
-    // 阻止其他所有键
-    // event.preventDefault();
-  });
 
   // 设置原生菜单
   setMainMenu(mainWindow);
