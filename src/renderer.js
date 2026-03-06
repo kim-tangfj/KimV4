@@ -2031,8 +2031,8 @@ async function openOptionsFolder() {
   }
 }
 
-// 设置选项提示监听
-function setupOptionHintListeners(shot) {
+// 设置选项提示监听 - 使用 appState 而不是闭包变量
+function setupOptionHintListeners() {
   const hintMap = {
     'shotStyle': 'shotStyleHint',
     'shotMood': 'shotMoodHint',
@@ -2048,16 +2048,15 @@ function setupOptionHintListeners(shot) {
         const selectedOption = select.options[select.selectedIndex];
         const description = selectedOption.dataset.description || '选择该项';
         hint.textContent = description;
-        if (shot) {
-          autoSaveShotProperties(shot);
-        }
+        // 触发自动保存
+        autoSaveShotProperties();
       });
     }
   });
 }
 
-// 设置镜头选项提示监听
-function setupSceneOptionHintListeners(scene) {
+// 设置镜头选项提示监听 - 使用 appState 而不是闭包变量
+function setupSceneOptionHintListeners() {
   const hintMap = {
     'sceneShotType': 'sceneShotTypeHint',
     'sceneAngle': 'sceneAngleHint',
@@ -2072,28 +2071,27 @@ function setupSceneOptionHintListeners(scene) {
         const selectedOption = select.options[select.selectedIndex];
         const description = selectedOption.dataset.description || '选择该项';
         hint.textContent = description;
-        if (scene) {
-          autoSaveSceneProperties(scene);
-        }
+        // 触发自动保存
+        autoSaveSceneProperties();
       });
     }
   });
 }
 
-// 设置添加选项按钮事件
-function setupAddOptionButtons(context) {
+// 设置添加选项按钮事件 - 使用 appState 而不是闭包变量
+function setupAddOptionButtons() {
   document.querySelectorAll('.add-option-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
       const field = btn.dataset.field;
       const group = btn.dataset.group;
-      showQuickAddOptionModal(group, field, context);
+      showQuickAddOptionModal(group, field);
     });
   });
 }
 
-// 显示快速添加选项弹窗
-async function showQuickAddOptionModal(group, field, context, defaultValue = '') {
+// 显示快速添加选项弹窗 - 使用 appState 而不是闭包变量
+async function showQuickAddOptionModal(group, field, defaultValue = '') {
   const modal = document.createElement('div');
   modal.className = 'modal';
   modal.style.display = 'flex';
@@ -2139,7 +2137,12 @@ async function showQuickAddOptionModal(group, field, context, defaultValue = '')
     try {
       const result = await window.electronAPI.addCustomOption({ group, type, style, description });
       if (result.success) {
-        await (context && context.scenes ? showSceneProperties(context) : showShotProperties(context));
+        // 使用 appState 判断当前是片段还是镜头
+        if (appState.currentScene) {
+          await showSceneProperties(appState.currentScene);
+        } else if (appState.currentShot) {
+          await showShotProperties(appState.currentShot);
+        }
         modal.remove();
         showUpdateNotification();
       } else {
@@ -2980,28 +2983,32 @@ async function showShotProperties(shot) {
     </div>
   `;
 
-  // 为所有输入框添加失焦自动保存
+  // 为所有输入框添加失焦自动保存 - 不再传递闭包变量
   document.querySelectorAll('#property-form [data-autosave="true"]').forEach(input => {
-    input.addEventListener('blur', () => autoSaveShotProperties(shot));
+    input.addEventListener('blur', autoSaveShotProperties);
   });
 
-  // 为选项下拉框添加变化时更新提示
-  setupOptionHintListeners(shot);
+  // 为选项下拉框添加变化时更新提示 - 不再传递闭包变量
+  setupOptionHintListeners();
 
-  // 绑定添加选项按钮事件
-  setupAddOptionButtons(shot);
+  // 绑定添加选项按钮事件 - 不再传递闭包变量
+  setupAddOptionButtons();
 }
 
-// 自动保存片段属性
+// 自动保存片段属性 - 使用 appState.currentShot 而不是闭包变量
 let shotSaveTimeout = null;
-function autoSaveShotProperties(shot) {
+function autoSaveShotProperties() {
   if (shotSaveTimeout) clearTimeout(shotSaveTimeout);
   shotSaveTimeout = setTimeout(async () => {
-    await saveShotProperties(shot, true);
+    await saveShotProperties(true);
   }, 500);
 }
 
-async function saveShotProperties(shot, isAutoSave = false) {
+async function saveShotProperties(isAutoSave = false) {
+  // 使用 appState 中的当前片段，而不是闭包变量
+  const shot = appState.currentShot;
+  if (!shot) return;
+
   const name = document.getElementById('shotName')?.value;
   const description = document.getElementById('shotDescription')?.value;
   const style = document.getElementById('shotStyle')?.value;
@@ -3022,74 +3029,78 @@ async function saveShotProperties(shot, isAutoSave = false) {
       const loadResult = await window.electronAPI.loadProject(appState.currentProject.projectDir);
       if (!loadResult.success) return;
 
+      // 使用 shot.id 查找正确的片段
       const shotIndex = loadResult.projectJson.shots?.findIndex(s => s.id === shot.id);
-      if (shotIndex !== -1) {
-        const oldShot = loadResult.projectJson.shots[shotIndex];
-        
-        // 检查选项是否变更，如果变更则增加使用次数
-        if (style && oldShot && style !== oldShot.style) {
-          const styleOptions = await loadOptionsByGroup('风格');
-          const selectedOption = styleOptions.find(opt => opt.style === style);
-          if (selectedOption && !selectedOption.builtin) {
-            await window.electronAPI.incrementOptionUsage(selectedOption.id);
-          }
-        }
-        if (mood && oldShot && mood !== oldShot.mood) {
-          const moodOptions = await loadOptionsByGroup('情绪氛围');
-          const selectedOption = moodOptions.find(opt => opt.style === mood);
-          if (selectedOption && !selectedOption.builtin) {
-            await window.electronAPI.incrementOptionUsage(selectedOption.id);
-          }
-        }
-        if (musicStyle && oldShot && musicStyle !== oldShot.musicStyle) {
-          const musicOptions = await loadOptionsByGroup('配乐风格');
-          const selectedOption = musicOptions.find(opt => opt.style === musicStyle);
-          if (selectedOption && !selectedOption.builtin) {
-            await window.electronAPI.incrementOptionUsage(selectedOption.id);
-          }
-        }
-        if (soundEffect && oldShot && soundEffect !== oldShot.soundEffect) {
-          const soundOptions = await loadOptionsByGroup('音效');
-          const selectedOption = soundOptions.find(opt => opt.style === soundEffect);
-          if (selectedOption && !selectedOption.builtin) {
-            await window.electronAPI.incrementOptionUsage(selectedOption.id);
-          }
-        }
+      if (shotIndex === -1) {
+        console.error('保存片段失败：找不到片段 ID', shot.id);
+        return;
+      }
 
-        loadResult.projectJson.shots[shotIndex] = {
-          ...loadResult.projectJson.shots[shotIndex],
-          name: name || '',
-          description: description || '',
-          style: style || '',
-          mood: mood || '',
-          characters: characters !== undefined ? characters : (oldShot.characters || ''),
-          sceneSetting: sceneSetting !== undefined ? sceneSetting : (oldShot.sceneSetting || ''),
-          aspectRatio: aspectRatio || '',
-          duration: duration || 10,
-          musicStyle: musicStyle !== undefined ? musicStyle : (oldShot.musicStyle || ''),
-          soundEffect: soundEffect !== undefined ? soundEffect : (oldShot.soundEffect || ''),
-          imageRef: imageRef !== undefined ? imageRef : (oldShot.imageRef || ''),
-          videoRef: videoRef !== undefined ? videoRef : (oldShot.videoRef || ''),
-          audioRef: audioRef !== undefined ? audioRef : (oldShot.audioRef || ''),
-          customPrompt: customPrompt !== undefined ? customPrompt : (oldShot.customPrompt || ''),
-          updatedAt: new Date().toISOString()
-        };
+      const oldShot = loadResult.projectJson.shots[shotIndex];
 
-        const saveResult = await window.electronAPI.saveProject(
-          appState.currentProject.projectDir,
-          loadResult.projectJson
-        );
-
-        if (saveResult.success) {
-          // 更新 appState 中的 currentShot 引用为最新数据
-          appState.currentShot = loadResult.projectJson.shots[shotIndex];
-          if (elements.bottomPanelTitle) {
-            elements.bottomPanelTitle.textContent = `${name || '片段'} 属性`;
-          }
-          updatePromptPreview();
-          // 自动保存时也显示提示
-          showUpdateNotification();
+      // 检查选项是否变更，如果变更则增加使用次数
+      if (style && oldShot && style !== oldShot.style) {
+        const styleOptions = await loadOptionsByGroup('风格');
+        const selectedOption = styleOptions.find(opt => opt.style === style);
+        if (selectedOption && !selectedOption.builtin) {
+          await window.electronAPI.incrementOptionUsage(selectedOption.id);
         }
+      }
+      if (mood && oldShot && mood !== oldShot.mood) {
+        const moodOptions = await loadOptionsByGroup('情绪氛围');
+        const selectedOption = moodOptions.find(opt => opt.style === mood);
+        if (selectedOption && !selectedOption.builtin) {
+          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+        }
+      }
+      if (musicStyle && oldShot && musicStyle !== oldShot.musicStyle) {
+        const musicOptions = await loadOptionsByGroup('配乐风格');
+        const selectedOption = musicOptions.find(opt => opt.style === musicStyle);
+        if (selectedOption && !selectedOption.builtin) {
+          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+        }
+      }
+      if (soundEffect && oldShot && soundEffect !== oldShot.soundEffect) {
+        const soundOptions = await loadOptionsByGroup('音效');
+        const selectedOption = soundOptions.find(opt => opt.style === soundEffect);
+        if (selectedOption && !selectedOption.builtin) {
+          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+        }
+      }
+
+      loadResult.projectJson.shots[shotIndex] = {
+        ...loadResult.projectJson.shots[shotIndex],
+        name: name || '',
+        description: description || '',
+        style: style || '',
+        mood: mood || '',
+        characters: characters !== undefined && characters !== '' ? characters : (oldShot.characters || ''),
+        sceneSetting: sceneSetting !== undefined && sceneSetting !== '' ? sceneSetting : (oldShot.sceneSetting || ''),
+        aspectRatio: aspectRatio || '',
+        duration: duration || 10,
+        musicStyle: musicStyle !== undefined && musicStyle !== '' ? musicStyle : (oldShot.musicStyle || ''),
+        soundEffect: soundEffect !== undefined && soundEffect !== '' ? soundEffect : (oldShot.soundEffect || ''),
+        imageRef: imageRef !== undefined && imageRef !== '' ? imageRef : (oldShot.imageRef || ''),
+        videoRef: videoRef !== undefined && videoRef !== '' ? videoRef : (oldShot.videoRef || ''),
+        audioRef: audioRef !== undefined && audioRef !== '' ? audioRef : (oldShot.audioRef || ''),
+        customPrompt: customPrompt !== undefined && customPrompt !== '' ? customPrompt : (oldShot.customPrompt || ''),
+        updatedAt: new Date().toISOString()
+      };
+
+      const saveResult = await window.electronAPI.saveProject(
+        appState.currentProject.projectDir,
+        loadResult.projectJson
+      );
+
+      if (saveResult.success) {
+        // 更新 appState 中的 currentShot 引用为最新数据
+        appState.currentShot = loadResult.projectJson.shots[shotIndex];
+        if (elements.bottomPanelTitle) {
+          elements.bottomPanelTitle.textContent = `${name || '片段'} 属性`;
+        }
+        updatePromptPreview();
+        // 自动保存时也显示提示
+        showUpdateNotification();
       }
     } catch (error) {
       console.error('保存片段属性异常:', error);
@@ -3204,28 +3215,33 @@ async function showSceneProperties(scene) {
     </div>
   `;
 
-  // 为所有输入框添加失焦自动保存
+  // 为所有输入框添加失焦自动保存 - 不再传递闭包变量
   document.querySelectorAll('#property-form [data-autosave="true"]').forEach(input => {
-    input.addEventListener('blur', () => autoSaveSceneProperties(scene));
+    input.addEventListener('blur', autoSaveSceneProperties);
   });
 
-  // 为选项下拉框添加变化时更新提示
-  setupSceneOptionHintListeners(scene);
+  // 为选项下拉框添加变化时更新提示 - 不再传递闭包变量
+  setupSceneOptionHintListeners();
 
-  // 绑定添加选项按钮事件
-  setupAddOptionButtons(scene);
+  // 绑定添加选项按钮事件 - 不再传递闭包变量
+  setupAddOptionButtons();
 }
 
-// 自动保存镜头属性
+// 自动保存镜头属性 - 使用 appState.currentScene 而不是闭包变量
 let sceneSaveTimeout = null;
-function autoSaveSceneProperties(scene) {
+function autoSaveSceneProperties() {
   if (sceneSaveTimeout) clearTimeout(sceneSaveTimeout);
   sceneSaveTimeout = setTimeout(async () => {
-    await saveSceneProperties(scene, true);
+    await saveSceneProperties(true);
   }, 500);
 }
 
-async function saveSceneProperties(scene, isAutoSave = false) {
+async function saveSceneProperties(isAutoSave = false) {
+  // 使用 appState 中的当前镜头，而不是闭包变量
+  const scene = appState.currentScene;
+  const currentShot = appState.currentShot;
+  if (!scene || !currentShot) return;
+
   const name = document.getElementById('sceneName')?.value;
   const image = document.getElementById('sceneImage')?.value;
   const shotType = document.getElementById('sceneShotType')?.value;
@@ -3242,66 +3258,74 @@ async function saveSceneProperties(scene, isAutoSave = false) {
       const loadResult = await window.electronAPI.loadProject(appState.currentProject.projectDir);
       if (!loadResult.success) return;
 
-      const shot = loadResult.projectJson.shots?.find(s => s.id === appState.currentShot?.id);
-      if (shot && shot.scenes) {
-        const sceneIndex = shot.scenes.findIndex(s => s.id === scene.id);
-        if (sceneIndex !== -1) {
-          const oldScene = shot.scenes[sceneIndex];
-          
-          // 检查选项是否变更，如果变更则增加使用次数
-          if (shotType && oldScene && shotType !== oldScene.shotType) {
-            const shotTypeOptions = await loadOptionsByGroup('景别');
-            const selectedOption = shotTypeOptions.find(opt => opt.style === shotType);
-            if (selectedOption && !selectedOption.builtin) {
-              await window.electronAPI.incrementOptionUsage(selectedOption.id);
-            }
-          }
-          if (angle && oldScene && angle !== oldScene.angle) {
-            const angleOptions = await loadOptionsByGroup('镜头角度');
-            const selectedOption = angleOptions.find(opt => opt.style === angle);
-            if (selectedOption && !selectedOption.builtin) {
-              await window.electronAPI.incrementOptionUsage(selectedOption.id);
-            }
-          }
-          if (camera && oldScene && camera !== oldScene.camera) {
-            const cameraOptions = await loadOptionsByGroup('运镜');
-            const selectedOption = cameraOptions.find(opt => opt.style === camera);
-            if (selectedOption && !selectedOption.builtin) {
-              await window.electronAPI.incrementOptionUsage(selectedOption.id);
-            }
-          }
+      // 查找当前片段
+      const shot = loadResult.projectJson.shots?.find(s => s.id === currentShot.id);
+      if (!shot || !shot.scenes) {
+        console.error('保存镜头失败：找不到片段', currentShot.id);
+        return;
+      }
 
-          shot.scenes[sceneIndex] = {
-            ...shot.scenes[sceneIndex],
-            name: name || '',
-            image: image !== undefined ? image : (oldScene.image || ''),
-            shotType: shotType || '',
-            angle: angle || '',
-            camera: camera || '',
-            duration: duration || 2,
-            content: content || '',
-            dialogue: dialogue || '',
-            emotion: emotion || '',
-            notes: notes || '',
-            updatedAt: new Date().toISOString()
-          };
+      // 使用 scene.id 查找正确的镜头
+      const sceneIndex = shot.scenes.findIndex(s => s.id === scene.id);
+      if (sceneIndex === -1) {
+        console.error('保存镜头失败：找不到镜头 ID', scene.id);
+        return;
+      }
 
-          const saveResult = await window.electronAPI.saveProject(
-            appState.currentProject.projectDir,
-            loadResult.projectJson
-          );
+      const oldScene = shot.scenes[sceneIndex];
 
-          if (saveResult.success) {
-            // 更新 appState 中的 currentScene 引用为最新数据
-            appState.currentScene = shot.scenes[sceneIndex];
-            if (elements.bottomPanelTitle) {
-              elements.bottomPanelTitle.textContent = `${name || '镜头'} 属性`;
-            }
-            updatePromptPreview();
-            // 自动保存时也显示提示
-            showUpdateNotification();
-          }
+      // 检查选项是否变更，如果变更则增加使用次数
+      if (shotType && oldScene && shotType !== oldScene.shotType) {
+        const shotTypeOptions = await loadOptionsByGroup('景别');
+        const selectedOption = shotTypeOptions.find(opt => opt.style === shotType);
+        if (selectedOption && !selectedOption.builtin) {
+          await window.electronAPI.incrementOptionUsage(selectedOption.id);
         }
+      }
+      if (angle && oldScene && angle !== oldScene.angle) {
+        const angleOptions = await loadOptionsByGroup('镜头角度');
+        const selectedOption = angleOptions.find(opt => opt.style === angle);
+        if (selectedOption && !selectedOption.builtin) {
+          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+        }
+      }
+      if (camera && oldScene && camera !== oldScene.camera) {
+        const cameraOptions = await loadOptionsByGroup('运镜');
+        const selectedOption = cameraOptions.find(opt => opt.style === camera);
+        if (selectedOption && !selectedOption.builtin) {
+          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+        }
+      }
+
+      shot.scenes[sceneIndex] = {
+        ...shot.scenes[sceneIndex],
+        name: name || '',
+        image: image !== undefined && image !== '' ? image : (oldScene.image || ''),
+        shotType: shotType || '',
+        angle: angle || '',
+        camera: camera || '',
+        duration: duration || 2,
+        content: content || '',
+        dialogue: dialogue || '',
+        emotion: emotion || '',
+        notes: notes || '',
+        updatedAt: new Date().toISOString()
+      };
+
+      const saveResult = await window.electronAPI.saveProject(
+        appState.currentProject.projectDir,
+        loadResult.projectJson
+      );
+
+      if (saveResult.success) {
+        // 更新 appState 中的 currentScene 引用为最新数据
+        appState.currentScene = shot.scenes[sceneIndex];
+        if (elements.bottomPanelTitle) {
+          elements.bottomPanelTitle.textContent = `${name || '镜头'} 属性`;
+        }
+        updatePromptPreview();
+        // 自动保存时也显示提示
+        showUpdateNotification();
       }
     } catch (error) {
       console.error('保存镜头属性异常:', error);
@@ -3585,11 +3609,11 @@ async function updateShotStatus(shot, newStatus) {
   }
   
   if (!appState.currentProject || !appState.currentProject.projectDir) {
-    alert('项目目录不存在，请先选择项目');
+    alert('项目目录不��在，请先选择项目');
     return;
   }
   
-  // 检查 shot 对象是否有 id，没有则生成
+  // ���查 shot 对象是否有 id，没有则生成
   if (!shot.id) {
     shot.id = Date.now();
     console.log('生成片段 ID:', shot.id);

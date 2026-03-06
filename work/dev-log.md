@@ -4,6 +4,192 @@
 
 ---
 
+## 2026-03-06 - 修复数据覆盖和丢失严重 Bug
+
+### 问题
+1. **片段 1 数据被片段 2 数据覆盖**
+2. **镜头 1 属性数据突然丢失**
+
+### 原因分析
+
+**核心问题**: 自动保存函数使用**闭包变量**而不是 `appState` 中的当前对象。
+
+**问题代码**:
+```javascript
+// showShotProperties 函数中
+document.querySelectorAll('#property-form [data-autosave="true"]').forEach(input => {
+  input.addEventListener('blur', () => autoSaveShotProperties(shot)); // ❌ 闭包变量
+});
+
+function autoSaveShotProperties(shot) { // ❌ 使用闭包变量
+  shotSaveTimeout = setTimeout(async () => {
+    await saveShotProperties(shot, true); // ❌ 可能是旧的 shot 对象
+  }, 500);
+}
+```
+
+**问题场景**:
+1. 用户编辑片段 A → 触发 blur 事件 → 500ms 后保存
+2. 用户在 500ms 内切换到片段 B → 重新渲染表单 → 绑定新的事件
+3. 但片段 A 的 blur 事件还在队列中 → 保存片段 A 的数据
+4. 由于闭包变量 `shot` 是旧的引用，可能保存到错误的片段！
+
+**镜头保存有同样的问题**。
+
+### 修复方案
+
+**修改文件**: `src/renderer.js`
+
+#### 1. 移除闭包变量，使用 appState
+
+**autoSaveShotProperties 修复** (第 3000 行):
+```javascript
+// 修改前
+function autoSaveShotProperties(shot) {
+  shotSaveTimeout = setTimeout(async () => {
+    await saveShotProperties(shot, true);
+  }, 500);
+}
+
+// 修改后
+function autoSaveShotProperties() {
+  shotSaveTimeout = setTimeout(async () => {
+    await saveShotProperties(true);
+  }, 500);
+}
+```
+
+**saveShotProperties 修复** (第 3006 行):
+```javascript
+// 修改前
+async function saveShotProperties(shot, isAutoSave = false) {
+  // 使用传入的 shot 参数
+  const shotIndex = loadResult.projectJson.shots?.findIndex(s => s.id === shot.id);
+}
+
+// 修改后
+async function saveShotProperties(isAutoSave = false) {
+  // 使用 appState 中的当前片段
+  const shot = appState.currentShot;
+  if (!shot) return;
+  
+  const shotIndex = loadResult.projectJson.shots?.findIndex(s => s.id === shot.id);
+  if (shotIndex === -1) {
+    console.error('保存片段失败：找不到片段 ID', shot.id);
+    return;
+  }
+}
+```
+
+**镜头属性同样修复** (第 3231 行):
+```javascript
+async function saveSceneProperties(isAutoSave = false) {
+  const scene = appState.currentScene;
+  const currentShot = appState.currentShot;
+  if (!scene || !currentShot) return;
+  
+  // 查找当前片段和镜头
+  const shot = loadResult.projectJson.shots?.find(s => s.id === currentShot.id);
+  const sceneIndex = shot.scenes.findIndex(s => s.id === scene.id);
+  if (sceneIndex === -1) {
+    console.error('保存镜头失败：找不到镜头 ID', scene.id);
+    return;
+  }
+  // ...
+}
+```
+
+#### 2. 更新事件监听器
+
+**blur 事件** (第 2984 行):
+```javascript
+// 修改前
+input.addEventListener('blur', () => autoSaveShotProperties(shot));
+
+// 修改后
+input.addEventListener('blur', autoSaveShotProperties);
+```
+
+**选项变化事件** (第 2035 行):
+```javascript
+// 修改前
+function setupOptionHintListeners(shot) {
+  select.addEventListener('change', () => {
+    if (shot) autoSaveShotProperties(shot);
+  });
+}
+
+// 修改后
+function setupOptionHintListeners() {
+  select.addEventListener('change', () => {
+    autoSaveShotProperties(); // 使用 appState
+  });
+}
+```
+
+**添加选项按钮** (第 2082 行):
+```javascript
+// 修改前
+function setupAddOptionButtons(context) {
+  btn.addEventListener('click', () => {
+    showQuickAddOptionModal(group, field, context);
+  });
+}
+
+// 修改后
+function setupAddOptionButtons() {
+  btn.addEventListener('click', () => {
+    showQuickAddOptionModal(group, field);
+  });
+}
+
+// showQuickAddOptionModal 也使用 appState
+if (appState.currentScene) {
+  await showSceneProperties(appState.currentScene);
+} else if (appState.currentShot) {
+  await showShotProperties(appState.currentShot);
+}
+```
+
+#### 3. 增强错误处理
+
+**新增错误日志**:
+```javascript
+if (shotIndex === -1) {
+  console.error('保存片段失败：找不到片段 ID', shot.id);
+  return;
+}
+
+if (!shot || !shot.scenes) {
+  console.error('保存镜头失败：找不到片段', currentShot.id);
+  return;
+}
+
+if (sceneIndex === -1) {
+  console.error('保存镜头失败：找不到镜头 ID', scene.id);
+  return;
+}
+```
+
+#### 4. 空值处理改进
+
+```javascript
+// 修改前
+characters: characters !== undefined ? characters : (oldShot.characters || '')
+
+// 修改后 - 空字符串也视为有效值
+characters: characters !== undefined && characters !== '' ? characters : (oldShot.characters || '')
+```
+
+### 效果
+
+1. **数据不再覆盖** - 每个片段/镜头的数据保存到正确的对象
+2. **数据不再丢失** - 使用 `appState` 确保始终操作当前选中的对象
+3. **错误可追踪** - 新增错误日志便于调试
+4. **代码更清晰** - 移除闭包变量，逻辑更直观
+
+---
+
 ## 2026-03-06 - 修复自动保存功能问题
 
 ### 问题
@@ -2082,7 +2268,7 @@ sceneElement.innerHTML = `
 }
 ```
 
-#### JavaScript 新增
+#### JavaScript ���增
 - `initPanelResizers()`: 初始化拖拽手柄
 - `handleResizerMouseMove()`: 处理拖拽移动
 - `handleResizerMouseUp()`: 处理拖拽结束
