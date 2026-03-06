@@ -1,46 +1,38 @@
-The user wants me to create a comprehensive project summary based on the conversation history. Let me analyze what happened in this session:
+The user wants me to create a comprehensive project summary based on the conversation history. Let me analyze what has been accomplished in this session:
 
-1. **Initial Context**: This is an Electron desktop application called "Kim 多级分镜提示词助手" (Kim Multi-level Storyboard Prompt Assistant) for video creators and AI content generators.
+1. **Project**: Kim 多级分镜提示词助手 (Kim Multi-level Storyboard Prompt Assistant) - An Electron desktop application for video creators and AI content generators
 
-2. **Main Issues Discovered and Fixed**:
-   - **Bug 1**: Creating projects didn't generate unique IDs for shots and scenes - FIXED
-   - **Bug 2**: New project form lost focus and couldn't be edited - FIXED (multiple attempts)
-   - **Bug 3**: Auto-save data was being saved but switching between shots/scenes didn't show saved data - FIXED
-   - **Bug 4**: Data from shot 1 was being overwritten by shot 2, scene attributes were disappearing - FIXED (critical bug with closure variables)
-   - **Bug 5**: After any alert/confirm dialog, the create project form would lose focus - FIXED (replaced all alert/confirm with custom components)
+2. **Key Issues Fixed**:
+   - Data loss bug when switching shots/scenes during auto-save
+   - Form data being cleared when switching between panels
+   - Project selection state being lost when selecting shots/scenes
+   - Prompt not updating in real-time when modifying scene properties
+   - Selected state being lost after saving properties
+   - Added lens "other notes" field to prompt generation
 
-3. **Key Technical Discovery**: The root cause of the focus issue was that Electron's native alert/confirm dialogs interfere with focus management. The solution was to replace all alert/confirm calls with custom Toast notifications and confirmation modals.
+3. **Features Added/Modified**:
+   - Project management menu optimization (+ button, right-click context menu)
+   - Prompt generation template updated to match defualt-prompt.md
+   - Lens time range display (0-1 秒，1-3 秒，etc.)
+   - Tooltip hints for all icon buttons
+   - Prompt panel height set to 600px with auto-scroll
+   - All alert/confirm replaced with custom Toast/confirm dialogs
 
-4. **Changes Made**:
-   - Added ID generation for shots and scenes in project creation
-   - Fixed auto-save to use appState instead of closure variables
-   - Added custom Toast notification component
-   - Added custom confirmation modal component
-   - Replaced all 82+ alert calls with showToast()
-   - Replaced all 6 confirm calls with await showConfirm()
-   - Fixed loading-overlay z-index issue
-   - Added forced re-render for modal content
-   - Removed autoHideMenuBar setting
+4. **Technical Details**:
+   - Electron with contextIsolation: true
+   - Auto-save with 500ms debounce
+   - Three-level selection: Project → Shot → Scene
+   - Prompt generation from attributes
 
-5. **Files Modified**:
-   - src/renderer.js
-   - src/main.js
-   - src/handlers/project.js
-   - index.html
-   - styles.css
-   - work/dev-log.md
-
-6. **Current State**: All focus issues resolved, all native dialogs replaced with custom components, application is fully functional.
-
-Now I'll create the summary document.# Kim 多级分镜提示词助手 - 项目摘要
+Let me create a comprehensive summary.# Kim 多级分镜提示词助手 - 项目摘要
 
 ## 总体目标
-开发一款面向视频创作者和 AI 内容生成师的 Electron 桌面应用，提供多级分镜管理（项目→片段→镜头）与提示词自动化生成功能。
+开发一款面向视频创作者和 AI 内容生成师的 Electron 桌面应用，提供多级分镜管理（项目→片段→镜头）、属性编辑和 AI 提示词自动化生成功能。
 
 ## 关键知识
 
 ### 技术栈
-- **框架**: Electron v40.6.1
+- **框架**: Electron (v40.6.1)
 - **前端**: HTML5 / CSS3 / JavaScript (ES6+)
 - **IPC 通信**: ipcRenderer / contextBridge
 - **数据存储**: 本地文件系统 (JSON)
@@ -54,23 +46,39 @@ f:\AI\AIProject\KimV4\
 │   ├── preload.js           # 预加载脚本（IPC 桥接）
 │   ├── renderer.js          # 渲染进程（UI 逻辑）
 │   ├── handlers/            # IPC 处理器模块
-│   │   ├── project.js       # 项目管理
-│   │   ├── api.js           # LLM API 调用
-│   │   ├── template.js      # 模板管理
-│   │   └── options.js       # 自定义选项管理
-│   └── utils/
-│       └── menu.js          # 原生菜单和日志初始化
+│   └── utils/               # 工具模块
 ├── assets/default/
 │   ├── default-templates.json  # 默认模板
-│   └── options.json            # 默认自定义选项
+│   ├── options.json            # 默认自定义选项
+│   ├── attribute-field-description.md  # 字段描述
+│   └── defualt-prompt.md     # 提示词生成模板
 ├── index.html, styles.css
 └── work/                      # 开发文档和日志
 ```
 
-### 核心数据结构
+### 数据结构
 - **项目 ID**: `proj_时间戳`
 - **片段 ID**: `shot_时间戳_索引`
 - **镜头 ID**: `scene_时间戳_片段索引_镜头索引`
+
+### 提示词模板格式 (defualt-prompt.md)
+```
+**风格**：{{风格}}，{{情绪氛围}}
+**时长**：{{视频时长（秒）}}
+**画幅**：{{画幅比例}}
+**角色**：{{角色}}
+**场景**：{{场景设定}}
+**片段描述**：{{片段描述}}
+**声音**：对白 + {{配乐风格}} + {{音效需求}}
+**参考**：{{图片参考}}，{{视频参考}}，{{音频参考}}
+{{自定义提示词部分}}
+---
+# 镜头
+## 镜头 1
+**0-1 秒**：[{{景别}}、{{镜头角度}}、{{运镜方式}}]，{{内容描述}}（{{情绪描述}}）
+【对白】{{对白内容}}
+【其他备注】:{{其他备注}}
+```
 
 ### 构建和运行命令
 ```bash
@@ -86,128 +94,91 @@ npm run dev          # 开发模式（自动打开 DevTools）
 4. CSS: BEM 命名，2 空格缩进，px/rem 单位，黑白灰配色，支持深色主题
 5. JavaScript: ES6+，优先 const/let，异步用 async/await，禁用 var
 6. 所有开发工作记录到 `work/dev-log.md`
-7. 每次对话开发完成后 git 提交
+7. 每次对话开发完成后进行 git 提交
 
-## 近期工作
+## 近期行动
 
-### 2026-03-06 修复的关键 Bug
+### 已修复的严重 Bug
 
-#### 1. 创建项目时 ID 生成问题 [FIXED]
-- **问题**: 创建项目时只有项目级别生成 ID，片段和镜头没有 ID
-- **修复**: 在 `project:create` IPC 处理器中自动为缺失 ID 的片段和镜头生成唯一 ID
-- **文件**: `src/handlers/project.js`
+1. **[修复] 数据覆盖和丢失问题** - 自动保存时切换片段/镜头导致数据被覆盖或清空
+   - 添加 `savingShotId/savingSceneId` 追踪正在保存的 ID
+   - 保存前检查 ID 是否匹配，不匹配则取消保存
+   - 保存前检查表单元素是否存在，不存在则取消保存
 
-#### 2. 新建项目表单失焦问题 [FIXED - 多次修复]
-- **问题**: 打开新建项目表单后，输入框失焦无法编辑
-- **根本原因**: alert/confirm 关闭后焦点留在触发元素上
-- **修复**: 使用自定义 Toast 和确认对话框替代原生 alert/confirm
-- **文件**: `index.html`, `styles.css`, `src/renderer.js`
+2. **[修复] 选中状态丢失问题** - 选择片段/镜头时项目选中状态丢失
+   - `selectShot` 不再移除项目列表选中状态
+   - `selectScene` 从 project.json 读取最新数据
 
-#### 3. 数据覆盖和丢失严重 Bug [FIXED - CRITICAL]
-- **问题**: 片段 1 数据被片段 2 覆盖，镜头属性突然丢失
-- **根本原因**: 自动保存函数使用闭包变量而不是 `appState`，快速切换时保存到错误对象
-- **修复**: 
-  - `autoSaveShotProperties` 和 `autoSaveSceneProperties` 移除参数
-  - `saveShotProperties` 和 `saveSceneProperties` 使用 `appState.currentShot/currentScene`
-  - 所有相关事件监听器移除闭包参数
-- **文件**: `src/renderer.js`
+3. **[修复] 保存后选中状态丢失** - 修改属性保存后选中状态丢失
+   - `renderShotList/renderSceneList` 后重新设置选中状态
 
-#### 4. 弹窗后表单失焦问题 [FIXED - 统一替换]
-- **问题**: 任何 alert/confirm 后，创建项目表单无法编辑
-- **解决方案**: 
-  - 添加 Toast 提示框组件（替代 alert）
-  - 添加确认对话框组件（替代 confirm）
-  - 全局替换 82+ 处 alert 调用为 `showToast()`
-  - 全局替换 6 处 confirm 调用为 `await showConfirm()`
-- **文件**: `index.html`, `styles.css`, `src/renderer.js`
+4. **[修复] 提示词不实时更新** - 修改镜头属性后提示词不更新
+   - 同时更新 `currentShot` 和 `currentScene`
+   - 确保提示词生成使用最新数据
 
-### 新增功能组件
+5. **[修复] 弹窗后表单失焦** - alert/confirm 后输入框无法编辑
+   - 全局替换 `alert` 为 `showToast`
+   - 全局替换 `confirm` 为 `await showConfirm`
 
-#### Toast 提示框
-```html
-<div id="toast-notification" class="toast-notification">
-  <div class="toast-content">
-    <span class="toast-icon">ℹ️</span>
-    <span class="toast-message"></span>
-  </div>
-</div>
-```
+### 新增功能
 
-#### 确认对话框
-```html
-<div id="confirm-modal" class="modal">
-  <div class="modal-content confirm-modal">
-    <div class="modal-header"><h3>确认</h3></div>
-    <div class="modal-body"><p id="confirm-message"></p></div>
-    <div class="modal-footer">
-      <button id="confirm-cancel-btn">取消</button>
-      <button id="confirm-ok-btn">确认</button>
-    </div>
-  </div>
-</div>
-```
+1. **[新增] 项目管理菜单优化**
+   - 将菜单按钮改为 `+` 新建项目按钮
+   - 添加项目列表右键菜单（修改、删除、打开资源管理器）
 
-### Git 提交记录（本次会话）
-```
-fc0314d - feat: 全部替换 confirm 为 await showConfirm
-58ad639 - fix: 移除 confirm 重写时的警告日志
-a5ae222 - fix: 移除 autoHideMenuBar 设置，恢复原生菜单显示
-9f4e2dd - feat: 全局替换 alert 为 showToast
-67297b3 - feat: 使用自定义提示框替代 alert/confirm
-f8e2b3b - fix: 尝试启用 sandbox 模式修复输入问题
-e9d39ee - debug: 添加调试代码检查输入框问题
-17d4fec - fix: 修复弹窗后表单失焦问题（第六次修复 - 渲染时序问题）
-5ac024d - fix: 修复弹窗后表单失焦问题（第七次修复 - loading-overlay 覆盖问题）
-76052f9 - fix: 修复弹窗后表单失焦问题（第五次修复 - 模态框 tabindex 方案）
-260987a - fix: 修复弹窗后表单失焦问题（第四次修复 - 最终版本）
-7538873 - fix: 修复弹窗后表单失焦问题（第三次修复 - 根本原因）
-713e9fe - fix: 修复新建项目表单失焦问题（第二次修复）
-d00cac1 - docs: 更新开发日志 - 闭包变量 Bug 全面检查
-13d4060 - docs: 添加闭包变量 Bug 全面检查报告
-ac576ed - fix(critical): 修复数据覆盖和丢失严重 Bug
-4289446 - fix: 修复自动保存功能问题
-b22edfc - docs: 更新开发日志 - 属性自动保存功能检查
-e2d0ef4 - docs: 添加属性自动保存功能检查报告
-2d08b36 - fix: 修复创建项目时片段和镜头 ID 缺失问题
-1688487 - fix: 修复新建项目表单失焦问题
-```
+2. **[新增] 提示词生成优化**
+   - 按 defualt-prompt.md 模板格式生成
+   - 添加镜头时间范围显示（0-1 秒、1-3 秒）
+   - 添加镜头【其他备注】字段
+   - 提示词面板高度 600px，自适应滚动
+
+3. **[新增] Tooltip 提示**
+   - 所有图标按钮添加鼠标悬停提示
+
+4. **[新增] 自定义提示框**
+   - Toast 提示框替代 alert
+   - 自定义确认对话框替代 confirm
+
+### 代码优化
+- 提示词生成函数内联到 renderer.js（避免 require 问题）
+- 统一使用 appState 管理状态
+- 自动保存 500ms 防抖
 
 ## 当前计划
 
-### 已完成功能 [DONE]
-1. [DONE] 自定义选项管理模块（100%）
-2. [DONE] 选项使用统计和验证功能（100%）
-3. [DONE] 片段属性表单（100%）- 14 个字段
-4. [DONE] 镜头属性表单（80%）- 10 个字段，缺少图片上传
-5. [DONE] 字段一致性修复（100%）
-6. [DONE] 创建项目时 ID 自动生成
-7. [DONE] 自动保存功能修复（闭包变量问题）
-8. [DONE] 所有 alert/confirm 替换为自定义组件
+### 已完成 [DONE]
+1. [DONE] 修复数据覆盖和丢失严重 Bug
+2. [DONE] 修复选中状态丢失问题
+3. [DONE] 修复提示词不实时更新问题
+4. [DONE] 替换所有 alert/confirm 为自定义提示框
+5. [DONE] 项目管理菜单优化
+6. [DONE] 提示词模板更新（添加镜头时间、其他备注）
+7. [DONE] 添加按钮 Tooltip 提示
 
-### 待完成功能 [TODO]
-1. [TODO] **分镜图片上传功能** (P0) - 镜头属性表单的图片上传、拖放、缩略图预览、多张图片支持（≤9 张）
-2. [TODO] **参考素材文件管理** (P0) - 片段属性表单的图片/视频/音频参考字段，文件选择器集成、拖放上传、数量限制
-3. [TODO] **响应式布局优化** (P1) - 小屏幕单列、中屏幕双列、大屏幕三列的自适应布局
-4. [TODO] **选项字段搜索集成** (P1) - 将选项字段改为集成搜索和下拉的复合控件
-5. [TODO] **深色主题完整适配** (P2) - 确保所有新增组件在深色主题下正常显示
+### 进行中 [IN PROGRESS]
+1. [IN PROGRESS] 提示词生成功能完善 - 确保所有字段修改后实时更新
 
-### 已知问题
-- 无（所有已知焦点和数据覆盖问题已修复）
+### 待办 [TODO]
+1. [TODO] 分镜图片上传功能 - 镜头属性表单的图片上传、拖放、缩略图预览
+2. [TODO] 参考素材文件管理 - 片段属性表单的图片/视频/音频参考字段
+3. [TODO] 响应式布局优化 - 小屏幕单列、中屏幕双列、大屏幕三列
+4. [TODO] 深色主题完整适配 - 确保所有新增组件在深色主题下正常显示
+5. [TODO] 修改项目功能实现 - 目前显示"待实现"
 
 ### 测试建议
-1. 创建新项目 → 验证片段和镜头 ID 自动生成
-2. 编辑片段属性 → 切换片段 → 验证数据正确保存和加载
-3. 编辑镜头属性 → 切换镜头 → 验证数据正确保存和加载
-4. 点击视图切换按钮 → 验证 Toast 提示显示
-5. 删除项目/片段/镜头 → 验证自定义确认对话框显示
-6. 所有输入框应可正常编辑，无焦点问题
+1. 修改片段/镜头属性后，检查提示词是否实时更新
+2. 快速切换片段/镜头，检查数据是否丢失
+3. 保存后检查选中状态是否保持
+4. 右键项目卡片检查菜单功能
+5. 检查所有按钮 Tooltip 是否正常显示
 
----
-
-**摘要更新时间**: 2026-03-06  
-**项目状态**: 核心功能完成，待完成图片上传等进阶功能
+### 已知限制
+- 修改项目功能待实现
+- 视图切换功能待实现
+- 分镜图片上传功能待开发
+- 参考素材文件管理待开发
 
 ---
 
 ## Summary Metadata
-**Update time**: 2026-03-06T05:34:05.940Z 
+**Update time**: 2026-03-06T09:36:03.288Z 
