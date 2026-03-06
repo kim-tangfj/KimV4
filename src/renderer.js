@@ -2512,12 +2512,7 @@ async function selectShot(shot) {
     appState.currentShot = shot;
   }
 
-  // 移除项目列表的选中状态
-  document.querySelectorAll('#project-list .list-item').forEach(item => {
-    item.classList.remove('selected');
-  });
-
-  // 移除所有片段选中状态
+  // 移除所有片段选中状态（保留项目选中状态）
   document.querySelectorAll('#shot-list .list-item').forEach(item => {
     item.classList.remove('selected');
   });
