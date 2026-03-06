@@ -2311,12 +2311,12 @@ async function loadProjects() {
       } else {
         console.error('项目加载失败:', result.error);
         appState.projects = [];
-        window.renderProjectList([], elements, selectProject, () => {}, () => {});
+        window.renderProjectList([], elements, selectProject, () => {}, () => {}, () => {});
       }
     } catch (error) {
       console.error('加载项目异常:', error);
       appState.projects = [];
-      window.renderProjectList([], elements, selectProject, () => {}, () => {});
+      window.renderProjectList([], elements, selectProject, () => {}, () => {}, () => {});
     }
   } else {
     const savedProjects = localStorage.getItem('kim_projects');
