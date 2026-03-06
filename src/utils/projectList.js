@@ -196,7 +196,7 @@ function showProjectStatusMenu(project, event, onUpdateStatus) {
     const status = e.target.dataset.status;
     console.log('[showProjectStatusMenu] 选择状态:', status);
     if (status && onUpdateStatus) {
-      onUpdateStatus(project, e);
+      onUpdateStatus(project, status); // 传递 project 和 newStatus
     }
     contextMenu.remove();
   });

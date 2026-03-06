@@ -2304,8 +2304,10 @@ async function loadProjects() {
         window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
           window.showProjectContextMenu(project, e, selectProject, deleteCurrentProject, window.openProjectFolderByProject);
         }, (project, e) => {
-          const newStatus = e.target.dataset.status;
-          window.updateProjectStatus(project, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
+          // 点击状态标签时，弹出状态菜单
+          window.showProjectStatusMenu(project, e, (p, newStatus) => {
+            window.updateProjectStatus(p, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
+          });
         });
         console.log('项目加载成功，数量:', result.projects.length);
       } else {
@@ -2329,8 +2331,10 @@ async function loadProjects() {
     window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
       window.showProjectContextMenu(project, e, selectProject, deleteCurrentProject, window.openProjectFolderByProject);
     }, (project, e) => {
-      const newStatus = e.target.dataset.status;
-      window.updateProjectStatus(project, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
+      // 点击状态标签时，弹出状态菜单
+      window.showProjectStatusMenu(project, e, (p, newStatus) => {
+        window.updateProjectStatus(p, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
+      });
     });
   }
 }
@@ -3590,7 +3594,7 @@ function showProjectContextMenu(project, event) {
   contextMenu.style.zIndex = '1001';
   contextMenu.style.minWidth = '180px';
 
-  // 菜单项点击事件
+  // 菜���项点击事件
   contextMenu.addEventListener('click', (e) => {
     const target = e.target;
     if (target.id === 'project-context-modify') {
