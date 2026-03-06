@@ -3061,7 +3061,14 @@ async function saveShotProperties(isAutoSave = false) {
     return;
   }
 
-  const name = document.getElementById('shotName')?.value;
+  // 关键修复：检查表单元素是否存在，如果不存在说明已切换到镜头或其他地方
+  const nameElement = document.getElementById('shotName');
+  if (!nameElement) {
+    console.log('[saveShotProperties] 表单元素不存在，可能已切换，取消保存');
+    return;
+  }
+
+  const name = nameElement?.value;
   const description = document.getElementById('shotDescription')?.value;
   const style = document.getElementById('shotStyle')?.value;
   const mood = document.getElementById('shotMood')?.value;
@@ -3306,7 +3313,14 @@ async function saveSceneProperties(isAutoSave = false) {
     return;
   }
 
-  const name = document.getElementById('sceneName')?.value;
+  // 关键修复：检查表单元素是否存在，如果不存在说明已切换到片段或其他地方
+  const nameElement = document.getElementById('sceneName');
+  if (!nameElement) {
+    console.log('[saveSceneProperties] 表单元素不存在，可能已切换，取消保存');
+    return;
+  }
+
+  const name = nameElement?.value;
   const image = document.getElementById('sceneImage')?.value;
   const shotType = document.getElementById('sceneShotType')?.value;
   const angle = document.getElementById('sceneAngle')?.value;
