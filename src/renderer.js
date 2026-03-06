@@ -3512,6 +3512,8 @@ async function saveSceneProperties(isAutoSave = false) {
       if (saveResult.success) {
         // 更新 appState 中的 currentScene 引用为最新数据
         appState.currentScene = shot.scenes[sceneIndex];
+        // 同时更新 currentShot，确保提示词生成使用最新数据
+        appState.currentShot = shot;
         if (elements.bottomPanelTitle) {
           elements.bottomPanelTitle.textContent = `${name || '镜头'} 属性`;
         }
