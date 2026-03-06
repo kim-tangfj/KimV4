@@ -2794,8 +2794,8 @@ async function deleteSelectedScene() {
 
 // ========== 提示词 ==========
 
-// 提示词生成函数（从 promptGenerator.js 内联）
-function generateScenePrompt(scene, index) {
+// 提示词生成函数
+function generateScenePrompt(scene, index, cumulativeTime) {
   if (!scene) return '';
   
   const shotType = scene.shotType || '特写';
@@ -2805,7 +2805,13 @@ function generateScenePrompt(scene, index) {
   const emotion = scene.emotion ? `（${scene.emotion}）` : '';
   const dialogue = scene.dialogue ? `\n【对白】${scene.dialogue}` : '';
   
-  return `## 镜头${index + 1}\n[${shotType}、${angle}、${camera}]，${content}。${emotion}${dialogue}`;
+  // 计算镜头时间
+  const duration = scene.duration || 2;
+  const startTime = cumulativeTime;
+  const endTime = cumulativeTime + duration;
+  const timeRange = `${startTime}-${endTime}秒`;
+  
+  return `## 镜头${index + 1}\n**${timeRange}**：[${shotType}、${angle}、${camera}]，${content}。${emotion}${dialogue}`;
 }
 
 function generateShotPrompt(shot) {
@@ -2834,11 +2840,14 @@ function generateShotPrompt(shot) {
 
   const scenes = shot.scenes || [];
   const enabledScenes = scenes.filter(scene => scene.enabled !== false);
-  
+
   let scenesPrompt = '';
   if (enabledScenes.length > 0) {
+    let cumulativeTime = 0;
     scenesPrompt = '\n\n---\n# 镜头\n\n' + enabledScenes.map((scene, index) => {
-      return generateScenePrompt(scene, index);
+      const prompt = generateScenePrompt(scene, index, cumulativeTime);
+      cumulativeTime += scene.duration || 2;
+      return prompt;
     }).join('\n\n');
   }
 
@@ -2876,7 +2885,7 @@ function renderPromptWithHighlight(prompt) {
   });
   
   highlighted = highlighted.replace(/(---)/g, '<span class="prompt-separator">$1</span>');
-  highlighted = highlighted.replace(/(\d+ 秒)/g, '<span class="prompt-value">$1</span>');
+  highlighted = highlighted.replace(/(\d+-\d+ 秒)/g, '<span class="prompt-scene-time">$1</span>');
   highlighted = highlighted.replace(/(## 镜头\d+)/g, '<span class="prompt-scene-title">$1</span>');
 
   return `<div class="prompt-content">${highlighted}</div>`;

@@ -295,6 +295,17 @@ body.dark-theme {
   color: var(--text-color);
 }
 
+.prompt-scene-time {
+  display: inline-block;
+  padding: 2px 6px;
+  background-color: var(--selected-bg);
+  border-radius: 4px;
+  font-size: 12px;
+  font-weight: 600;
+  color: var(--text-color);
+  margin-right: 6px;
+}
+
 /* 底部属性面板 - 两栏独立布局 */
 .bottom-panel,
 .assets-panel {
