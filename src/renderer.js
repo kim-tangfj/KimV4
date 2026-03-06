@@ -853,6 +853,11 @@ function showNewProjectModal() {
     el.style.backgroundColor = '';
   });
 
+  // 关键修复：移除当前焦点元素的焦点（alert/confirm 后焦点会留在触发元素上）
+  if (document.activeElement && document.activeElement instanceof HTMLElement) {
+    document.activeElement.blur();
+  }
+
   // 等待模态框完全显示后再聚焦 - 使用更长的延迟确保模态框已渲染
   setTimeout(() => {
     if (elements.manualProjectName) {

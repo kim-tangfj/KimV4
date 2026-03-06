@@ -4,87 +4,79 @@
 
 ---
 
-## 2026-03-06 - 修复新建项目表单失焦问题（第二次修复）
+## 2026-03-06 - 修复弹窗后表单失焦问题（第三次修复 - 根本原因）
 
 ### 问题
-1. **删除项目后，再点击创建项目，创建项目表单失焦无法编辑**
-2. **失焦问题多次出现**
+**只要是弹窗提示（alert/confirm），提示框关闭后，创建项目表单就会失焦，无法点击编辑框**
 
-### 原因分析
+### 根本原因
 
-**可能的原因**:
-1. `requestAnimationFrame` 在某些情况下不够可靠
-2. 删除项目后，`confirm` 对话框导致焦点丢失
-3. 模态框显示时，之前的错误提示样式可能还在
-4. 焦点可能被其他元素抢占
+**浏览器行为**: 当 alert/confirm 对话框关闭后，焦点会回到**触发对话框的元素**上，而不是我们期望的输入框。
+
+**问题场景**:
+1. 用户点击"删除项目" → 触发 `confirm()` 对话框
+2. 用户确认删除 → `confirm()` 关闭，焦点回到"删除项目"菜单项
+3. 用户点击"新建项目" → `showNewProjectModal()` 被调用
+4. 但此时焦点仍在"删除项目"菜单项上
+5. `focus()` 调用被浏览器的焦点行为覆盖
 
 ### 修复方案
 
 **修改文件**: `src/renderer.js`
 
-**showNewProjectModal 函数修复** (第 821 行):
+**showNewProjectModal 函数修复** (第 856 行):
 
 ```javascript
-// 修改前
-function showNewProjectModal() {
-  // ...
-  elements.newProjectModal.style.display = 'flex';
-
-  requestAnimationFrame(() => {
-    requestAnimationFrame(() => {
-      if (elements.manualProjectName) {
-        elements.manualProjectName.focus();
-      }
-    });
-  });
+// 关键修复：移除当前焦点元素的焦点（alert/confirm 后焦点会留在触发元素上）
+if (document.activeElement && document.activeElement instanceof HTMLElement) {
+  document.activeElement.blur();
 }
 
-// 修改后
-function showNewProjectModal() {
-  // ...
-  // 显示模态框
-  elements.newProjectModal.style.display = 'flex';
-
-  // 清除可能存在的错误提示
-  document.querySelectorAll('.input-error-message').forEach(el => el.remove());
-  document.querySelectorAll('#new-project-modal input, #new-project-modal textarea').forEach(el => {
-    el.style.borderColor = '';
-    el.style.backgroundColor = '';
-  });
-
-  // 等待模态框完全显示后再聚焦 - 使用更长的延迟确保模态框已渲染
-  setTimeout(() => {
-    if (elements.manualProjectName) {
+// 等待模态框完全显示后再聚焦
+setTimeout(() => {
+  if (elements.manualProjectName) {
+    elements.manualProjectName.focus();
+    // 再次确认焦点，防止被其他元素抢占
+    if (document.activeElement !== elements.manualProjectName) {
       elements.manualProjectName.focus();
-      // 再次确认焦点，防止被其他元素抢占
-      if (document.activeElement !== elements.manualProjectName) {
-        elements.manualProjectName.focus();
-      }
     }
-  }, 50);
-}
+  }
+}, 50);
 ```
 
 ### 关键改进
 
-1. **清除错误提示** - 移除之前可能存在的错误样式和提示
-2. **使用 setTimeout(50ms)** - 比 `requestAnimationFrame` 更可靠
-3. **双重焦点检查** - 如果第一次 focus 失败，再次调用确保焦点正确
+1. **强制 blur 当前焦点元素** - 在聚焦输入框之前，先移除当前元素的焦点
+2. **解决 alert/confirm 焦点问题** - 这是浏览器级别的行为，必须手动处理
+3. **双重焦点检查** - 确保焦点正确设置
 
-### 其他检查
+### 测试场景
 
-**已检查的代码**:
-- `deleteCurrentProject` - ✅ 无问题
-- `loadProjects` - ✅ 无问题
-- `renderProjectList` - ✅ 无问题
-- `showUpdateNotification` - ✅ 无问题
-- 全局事件监听器 - ✅ 无问题（菜单关闭事件会自动移除）
+**场景 1**: 删除项目后创建项目
+1. 点击项目菜单 → 删除项目 → confirm 确认
+2. 点击项目菜单 → 新建项目
+3. ✅ 项目名称输入框自动获得焦点
 
-**结论**: 失焦问题已修复，代码中不存在其他隐藏的闭包变量 bug。
+**场景 2**: 任何 alert/confirm 后创建项目
+1. 触发任何 alert/confirm（删除模板、备份选项等）
+2. 点击新建项目
+3. ✅ 项目名称输入框自动获得焦点
+
+### 之前的修复（不完整）
+
+**第一次修复**: 使用 `requestAnimationFrame` - ❌ 未解决 alert/confirm 焦点问题
+**第二次修复**: 使用 `setTimeout(50ms)` - ❌ 仍未解决 alert/confirm 焦点问题
+**第三次修复**: 添加 `document.activeElement.blur()` - ✅ 根本原因修复
+
+### 结论
+
+**根本原因**: alert/confirm 对话框关闭后，浏览器会把焦点恢复到触发对话框的元素上。
+
+**解决方案**: 在聚焦输入框之前，先调用 `document.activeElement.blur()` 移除当前焦点。
 
 ---
 
-## 2026-03-06 - 闭包变量 Bug 全面检查
+## 2026-03-06 - 修复新建项目表单失焦问题（第二次修复）
 
 ### 检查范围
 - `src/renderer.js` 中所有使用闭包变量的事件监听器和异步函数
@@ -2193,7 +2185,7 @@ if (statusTag) {
 }
 ```
 
-#### 新增函数
+#### 新增函���
 - `showShotStatusMenu(shot, event)` - 显示片段状态菜单
 - `updateShotStatus(shot, newStatus)` - 更新片段状态
 
