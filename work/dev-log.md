@@ -4,6 +4,84 @@
 
 ---
 
+## 2026-03-06 - 提示词生成功能拆分与优化
+
+### 修改内容
+
+**1. 创建提示词生成器模块** (`src/utils/promptGenerator.js`)
+- `generateScenePrompt(scene, index)` - 生成镜头提示词
+- `generateShotPrompt(shot)` - 生成片段提示词
+- `generateProjectPrompt(project, getStatusText)` - 生成项目提示词
+- `renderPromptWithHighlight(prompt)` - 渲染提示词并高亮关键词
+
+**2. 更新 renderer.js**
+- 导入提示词生成器模块
+- 删除原有的提示词生成函数（约 50 行代码）
+- `renderer.js` 从 4018 行减少到 3975 行
+
+**3. 更新提示词显示逻辑**
+```javascript
+// updatePromptPreview 函数
+// 无论选中片段还是镜头，都显示片段级提示词
+if (appState.currentShot) {
+  prompt = generateShotPrompt(appState.currentShot);
+} else if (appState.currentProject) {
+  prompt = generateProjectPrompt(appState.currentProject, getStatusText);
+}
+```
+
+**4. 提示词格式**（按 `defualt-prompt.md` 模板）
+```
+**风格**：电影质感
+**时长**：15 秒
+**画幅**：16:9
+**角色**：短白发女主，穿着 jk
+**场景**：海边公路
+**片段描述**：...
+**情绪**：舒缓、治愈
+**声音**：温馨配乐 + 风吹树叶
+**图片参考**：@图片 1 为首帧
+**视频参考**：@视频 1 为参考
+**音频参考**：@音频 1 为参考
+
+{{自定义提示词}}
+
+---
+# 镜头
+
+## 镜头 1
+[特写、俯视、固定镜头]，干净化妆台...（舒缓、治愈）
+【对白】先做好基础打底...
+
+## 镜头 2
+[近景、平视、摇镜头]，镜头缓慢上移...（舒适、沉浸式）
+```
+
+**5. 更新 CSS 样式**
+- 添加 `.prompt-scene-title` 样式 - 镜头标题高亮
+
+### 效果
+
+**修复前**:
+- 点击片段 → 显示片段提示词
+- 点击镜头 → 显示单镜头提示词 ❌
+
+**修复后**:
+- 点击片段 → 显示片段提示词 ✅
+- 点击镜头 → 也显示片段提示词 ✅
+- 提示词与属性面板动态关联 ✅
+- 修改属性后提示词实时更新 ✅
+
+### 后续优化
+
+提示词生成器已独立，后续可以继续拆分：
+- [ ] 项目列表管理 (`src/utils/projectList.js`)
+- [ ] 片段列表管理 (`src/utils/shotList.js`)
+- [ ] 镜头列表管理 (`src/utils/sceneList.js`)
+- [ ] 属性面板管理 (`src/utils/propertyPanel.js`)
+
+---
+
 ## 2026-03-06 - 修复 selectScene 不从 project.json 读取最新数据的问题
 
 ### 问题
