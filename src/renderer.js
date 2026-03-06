@@ -2302,7 +2302,7 @@ async function loadProjects() {
       if (result.success) {
         appState.projects = result.projects;
         window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
-          window.showProjectContextMenu(project, e, selectProject, deleteCurrentProject, window.openProjectFolderByProject);
+          window.showProjectContextMenu(project, e, selectProject, () => deleteCurrentProject(appState, elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm), window.openProjectFolderByProject);
         }, (project, e) => {
           // 点击状态标签时，弹出状态菜单
           window.showProjectStatusMenu(project, e, (p, newStatus) => {
@@ -2329,7 +2329,7 @@ async function loadProjects() {
     }
     // 使用模块中的 renderProjectList 函数
     window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
-      window.showProjectContextMenu(project, e, selectProject, deleteCurrentProject, window.openProjectFolderByProject);
+      window.showProjectContextMenu(project, e, selectProject, () => deleteCurrentProject(appState, elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm), window.openProjectFolderByProject);
     }, (project, e) => {
       // 点击状态标签时，弹出状态菜单
       window.showProjectStatusMenu(project, e, (p, newStatus) => {

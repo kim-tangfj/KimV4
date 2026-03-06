@@ -99,6 +99,9 @@ function updateProjectSelection(elements, projectId) {
  * @param {Function} onOpenFolder - 打开文件夹回调
  */
 function showProjectContextMenu(project, event, onSelectProject, onDeleteProject, onOpenFolder) {
+  console.log('[showProjectContextMenu] 被调用', project);
+  console.log('[showProjectContextMenu] onDeleteProject:', onDeleteProject);
+  
   const menu = document.getElementById('project-context-menu');
   if (menu) {
     menu.remove();
@@ -127,7 +130,9 @@ function showProjectContextMenu(project, event, onSelectProject, onDeleteProject
         alert('修改项目功能待实现');
       }
     } else if (target.id === 'project-context-delete') {
+      console.log('[showProjectContextMenu] 点击删除项目');
       if (project && onDeleteProject) {
+        console.log('[showProjectContextMenu] 调用 onDeleteProject，project:', project);
         onSelectProject(project);
         onDeleteProject();
       }
@@ -287,7 +292,12 @@ async function updateProjectStatus(project, newStatus, appState, useElectronAPI,
  * @param {Function} showConfirm - 显示确认对话框回调
  */
 async function deleteCurrentProject(appState, elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm) {
-  if (!appState.currentProject) {
+  console.log('[deleteCurrentProject] 被调用');
+  console.log('[deleteCurrentProject] appState:', appState);
+  console.log('[deleteCurrentProject] appState.currentProject:', appState?.currentProject);
+  
+  if (!appState || !appState.currentProject) {
+    console.error('[deleteCurrentProject] appState 或 currentProject 不存在');
     showToast('请先选择一个项目');
     return;
   }
