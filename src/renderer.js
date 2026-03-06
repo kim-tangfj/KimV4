@@ -4048,12 +4048,16 @@ function showUpdateNotification() {
   notification.style.zIndex = '3000';
   notification.style.opacity = '0';
   notification.style.transition = 'opacity 0.3s';
-  
+
   document.body.appendChild(notification);
-  
+
   setTimeout(() => { notification.style.opacity = '1'; }, 10);
   setTimeout(() => {
     notification.style.opacity = '0';
     setTimeout(() => { document.body.removeChild(notification); }, 300);
   }, 2000);
 }
+
+// ========== 全局变量暴露（供模块使用）==========
+window.useElectronAPI = useElectronAPI;
+window.elements = elements;

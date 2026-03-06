@@ -216,7 +216,9 @@ function openProjectFolderByProject(project) {
     alert('项目目录不存在');
     return;
   }
-  if (window.useElectronAPI) {
+  // 使用全局变量
+  const useElectronAPI = window.useElectronAPI || false;
+  if (useElectronAPI) {
     try {
       window.electronAPI.openPath(project.projectDir);
     } catch (error) {
