@@ -86,6 +86,7 @@ function cacheDOMElements() {
   elements.deepseekConfig = document.getElementById('deepseek-config');
   elements.doubaoConfig = document.getElementById('doubao-config');
   elements.qianwenConfig = document.getElementById('qianwen-config');
+  elements.ailianConfig = document.getElementById('ailian-config');
   
   // DeepSeek
   elements.deepseekApiKey = document.getElementById('deepseek-api-key');
