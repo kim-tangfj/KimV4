@@ -36,9 +36,7 @@ function createWindow() {
       webSecurity: true,
       // 允许本地文件访问
       allowRunningInsecureContent: false
-    },
-    // 禁用菜单栏（Windows/Linux）
-    autoHideMenuBar: true
+    }
   });
 
   mainWindow.loadFile('index.html');
