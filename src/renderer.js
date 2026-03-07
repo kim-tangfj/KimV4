@@ -262,179 +262,6 @@ async function initializeApp() {
 // ========== 设置管理 ==========
 // 【已迁移至 src/utils/settings.js】
 
-// 加载设置
-/* === 已注释 - 函数已迁移至 settings.js ===
-async function loadSettings() {
-  // 从 localStorage 加载基本设置（主题、API 配置等）
-  const savedSettings = localStorage.getItem('kim_settings');
-  if (savedSettings) {
-    try {
-      const parsed = JSON.parse(savedSettings);
-      // 只加载非模板相关的设置
-      settings.storagePath = parsed.storagePath || settings.storagePath;
-      settings.apiProvider = parsed.apiProvider || settings.apiProvider;
-      settings.apiKeys = parsed.apiKeys || settings.apiKeys;
-      settings.models = parsed.models || settings.models;
-      settings.theme = parsed.theme || 'light';
-      settings.autoSaveInterval = parsed.autoSaveInterval || 5;
-      currentTheme = settings.theme;
-    } catch (e) {
-      console.error('加载设置失败:', e);
-    }
-  }
-
-  // 从本地文件加载模板配置
-  if (useElectronAPI) {
-    try {
-      const result = await window.electronAPI.loadTemplates();
-      if (result.success && result.config) {
-        if (result.config.templates && result.config.templates.length > 0) {
-          settings.templates = result.config.templates;
-          settings.activeTemplateId = result.config.activeTemplateId;
-        } else {
-          // 如果模板为空，使用默认模板
-          settings.templates = [getDefaultTemplate()];
-          settings.activeTemplateId = settings.templates[0].id;
-        }
-      } else {
-        // 加载失败，使用默认模板
-        settings.templates = [getDefaultTemplate()];
-        settings.activeTemplateId = settings.templates[0].id;
-      }
-    } catch (e) {
-      console.error('加载模板配置失败:', e);
-      settings.templates = [getDefaultTemplate()];
-      settings.activeTemplateId = settings.templates[0].id;
-    }
-  } else {
-    // 浏览器环境，使用 localStorage
-    if (!settings.templates || settings.templates.length === 0) {
-      settings.templates = [getDefaultTemplate()];
-      settings.activeTemplateId = settings.templates[0].id;
-    }
-  }
-
-  // 填充设置表单
-  if (elements.storagePathInput) {
-    elements.storagePathInput.value = settings.storagePath || '文档/KimStoryboard';
-  }
-  if (elements.apiProviderSelect) {
-    elements.apiProviderSelect.value = settings.apiProvider;
-  }
-  if (elements.deepseekApiKey) {
-    elements.deepseekApiKey.value = settings.apiKeys.deepseek || '';
-  }
-  if (elements.doubaoApiKey) {
-    elements.doubaoApiKey.value = settings.apiKeys.doubao || '';
-  }
-  if (elements.qianwenApiKey) {
-    elements.qianwenApiKey.value = settings.apiKeys.qianwen || '';
-  }
-  if (elements.ailianApiKey) {
-    elements.ailianApiKey.value = settings.apiKeys.ailian || '';
-  }
-  if (elements.deepseekModel) {
-    elements.deepseekModel.value = settings.models.deepseek || 'deepseek-chat';
-  }
-  if (elements.doubaoModel) {
-    elements.doubaoModel.value = settings.models.doubao || 'doubao-pro-4k';
-  }
-  if (elements.qianwenModel) {
-    elements.qianwenModel.value = settings.models.qianwen || 'qwen3.5-plus';
-  }
-  if (elements.ailianModel) {
-    elements.ailianModel.value = settings.models.ailian || 'qwen3.5-plus';
-  }
-}
-
-// 获取默认模板
-function getDefaultTemplate() {
-  return {
-    id: 'default_' + Date.now(),
-    name: '默认分镜模板',
-    description: '标准的视频分镜脚本模板',
-    content: `你是一位专业的视频分镜脚本助手。请将以下剧本内容转换为结构化的 JSON 格式片段数据。
-
-剧本内容：
-{剧本内容}
-
-重要约束：
-1. 每个片段 (shot) 的总时长不能超过 15 秒
-2. 片段内所有镜头 (scenes) 的时长相加不能超过 15 秒
-3. 每个镜头的时长建议在 2-5 秒之间
-4. 镜头描述要简洁明确，便于视觉化呈现
-5. 必须包含景别和运镜信息
-6. 【重要】对话台词格式要求：如果镜头中有多人对话，必须标明说话人，格式为：角色名："台词内容"
-7. 【重要】时长分配要求：必须根据台词长度合理分配镜头时长，每个汉字约 0.3-0.5 秒朗读时间
-
-景别选项（shotType）：
-- 特写 (Close-up)
-- 近景 (Medium Close-up)
-- 中景 (Medium Shot)
-- 全景 (Full Shot)
-- 远景 (Long Shot)
-- 大远景 (Extreme Long Shot)
-
-镜头角度（angle）：
-- 平视 (Eye Level)
-- 俯视 (High Angle)
-- 仰视 (Low Angle)
-- 过肩 (Over the Shoulder)
-- 鸟瞰 (Bird's Eye View)
-- 倾斜 (Dutch Angle)
-
-运镜方式（camera）：
-- 固定镜头 (Static)
-- 推镜头 (Push In)
-- 拉镜头 (Pull Out)
-- 摇镜头 (Pan)
-- 跟镜头 (Follow)
-- 升降镜头 (Crane)
-- 环绕镜头 (Orbit)
-- 手持镜头 (Handheld)
-
-请严格按照以下 JSON 格式返回数据（只返回 JSON，不要其他说明文字）：
-
-{
-  "project": {
-    "name": "项目名称",
-    "description": "项目描述",
-    "aspectRatio": "16:9",
-    "status": "draft"
-  },
-  "shots": [
-    {
-      "name": "片段名称",
-      "description": "片段描述",
-      "duration": 10,
-      "aspectRatio": "16:9",
-      "style": "风格",
-      "mood": "情绪",
-      "scenes": [
-        {
-          "name": "镜头描述",
-          "shotType": "中景",
-          "angle": "平视",
-          "camera": "推镜头",
-          "content": "详细的画面内容描述",
-          "duration": 5,
-          "dialogue": "台词内容",
-          "emotion": "情绪氛围",
-          "notes": "备注说明"
-        }
-      ]
-    }
-  ]
-}
-
-要求：
-- 所有字段都要填写，没有内容的字段填空字符串""
-- 确保每个镜头总时长≤15 秒
-- 返回标准 JSON 格式，可直接解析`
-  };
-}
-=== 已注释结束 === */
-
 // ========== 设置管理 ==========
 // 【已迁移至 src/utils/settings.js】
 
@@ -2012,8 +1839,8 @@ async function deleteCurrentProject() {
     loadProjects,
     renderShotList,
     renderSceneList,
-    showToast,
-    showConfirm
+    window.showToast,
+    window.showConfirm
   );
 }
 
@@ -2028,149 +1855,15 @@ let currentPanel = null;
 // ========== UI 工具函数 ==========
 // 【已迁移至 src/utils/uiHelpers.js】
 
-/* === 已注释 - 函数已迁移至 uiHelpers.js ===
-// 初始化面板拖拽
-function initPanelResizers() {
-  const resizers = document.querySelectorAll('.panel-resizer');
-  resizers.forEach(resizer => {
-    resizer.addEventListener('mousedown', (e) => {
-      isResizing = true;
-      currentResizer = resizer;
-      currentPanel = resizer.dataset.panel;
-      startX = e.pageX;
-
-      const panel = resizer.parentElement;
-      startWidth = panel.offsetWidth;
-
-      resizer.classList.add('resizing');
-
-      document.addEventListener('mousemove', handleResizerMouseMove);
-      document.addEventListener('mouseup', handleResizerMouseUp);
-
-      e.preventDefault();
-    });
-  });
-}
-
-// 处理拖拽移动
-function handleResizerMouseMove(e) {
-  if (!isResizing || !currentResizer) return;
-
-  const diff = e.pageX - startX;
-  const panel = currentResizer.parentElement;
-  const newWidth = startWidth + diff;
-
-  // 根据面板类型设置最小/最大宽度
-  const constraints = getPanelConstraints(currentPanel);
-  const constrainedWidth = Math.max(constraints.min, Math.min(constraints.max, newWidth));
-
-  panel.style.width = `${constrainedWidth}px`;
-  panel.style.flex = 'none';
-}
-
-// 处理拖拽结束
-function handleResizerMouseUp() {
-  isResizing = false;
-  if (currentResizer) {
-    currentResizer.classList.remove('resizing');
-  }
-  currentResizer = null;
-  currentPanel = null;
-
-  document.removeEventListener('mousemove', handleResizerMouseMove);
-  document.removeEventListener('mouseup', handleResizerMouseUp);
-}
-
-// 获取面板约束
-function getPanelConstraints(panelType) {
-  const constraints = {
-    project: { min: 150, max: 500 },
-    shot: { min: 200, max: 600 },
-    scene: { min: 250, max: 700 }
-  };
-  return constraints[panelType] || { min: 150, max: 500 };
-}
-=== 已注释结束 === */
-
 // ========== 工具函数 ==========
 // 【已迁移至 src/utils/uiHelpers.js】
-
-/* === 已注释 - 函数已迁移至 uiHelpers.js ===
-
-// 自定义 Toast 提示（替代 alert）
-function showToast(message, duration = 2000) {
-  const toast = document.getElementById('toast-notification');
-  const toastMessage = document.getElementById('toast-message');
-  if (!toast || !toastMessage) return;
-
-  toastMessage.textContent = message;
-  toast.style.display = 'block';
-
-  setTimeout(() => {
-    toast.style.display = 'none';
-  }, duration);
-}
-
-// 自定义确认对话框（替代 confirm）
-function showConfirm(message) {
-  return new Promise((resolve) => {
-    const modal = document.getElementById('confirm-modal');
-    const confirmMessage = document.getElementById('confirm-message');
-    const okBtn = document.getElementById('confirm-ok-btn');
-    const cancelBtn = document.getElementById('confirm-cancel-btn');
-
-    if (!modal || !confirmMessage || !okBtn || !cancelBtn) {
-      resolve(false);
-      return;
-    }
-
-    confirmMessage.textContent = message;
-    modal.style.display = 'flex';
-
-    // 移除旧的事件监听器
-    const newOkBtn = okBtn.cloneNode(true);
-    const newCancelBtn = cancelBtn.cloneNode(true);
-    okBtn.parentNode.replaceChild(newOkBtn, okBtn);
-    cancelBtn.parentNode.replaceChild(newCancelBtn, cancelBtn);
-
-    // 添加新的事件监听器
-    newOkBtn.addEventListener('click', () => {
-      modal.style.display = 'none';
-      resolve(true);
-    });
-
-    newCancelBtn.addEventListener('click', () => {
-      modal.style.display = 'none';
-      resolve(false);
-    });
-
-    // 点击背景关闭
-    modal.addEventListener('click', function closeOnBackdrop(e) {
-      if (e.target === modal) {
-        modal.style.display = 'none';
-        modal.removeEventListener('click', closeOnBackdrop);
-        resolve(false);
-      }
-    });
-  });
-}
-
-// 全局替换 alert 和 confirm（已移至 uiHelpers.js）
-/* === 已注释 - 功能已移至 uiHelpers.js ===
-const originalAlert = window.alert;
-const originalConfirm = window.confirm;
-
-window.alert = function(message) {
-  showToast(message);
-};
-=== 已注释结束 === */
 
 /**
  * 显示自定义输入框（替代系统 prompt）
  * @param {string} message - 提示信息
  * @param {string} title - 标题
  * @returns {Promise<string>} 用户输入的内容
- 
+ */
 async function showCustomPrompt(message, title = '输入') {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
@@ -2275,7 +1968,6 @@ async function showCustomPrompt(message, title = '输入') {
     });
   });
 }
-=== 已注释结束 === */
 
 // 渲染素材库列表
 function renderAssetsList(assets) {
