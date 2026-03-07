@@ -181,7 +181,7 @@ async function createNewShot() {
       // 加载项目
       const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
       if (!loadResult.success) {
-        alert('加载项目失败：' + loadResult.error);
+        window.showErrorModal('加载项目失败：' + loadResult.error);
         return;
       }
 
@@ -199,14 +199,14 @@ async function createNewShot() {
         await window.selectProject(window.appState.currentProject);
         window.showUpdateNotification();
       } else {
-        alert('保存失败：' + saveResult.error);
+        window.showErrorModal('保存失败：' + saveResult.error);
       }
     } catch (error) {
       console.error('[createNewShot] 创建片段异常:', error);
-      alert('创建片段失败：' + error.message);
+      window.showErrorModal('创建片段失败：' + error.message);
     }
   } else {
-    alert('请在 Electron 环境中使用此功能');
+    window.showToast('请在 Electron 环境中使用此功能');
   }
 }
 
@@ -215,7 +215,7 @@ async function createNewShot() {
  */
 async function deleteSelectedShot() {
   if (!window.appState.currentShot) {
-    alert('请先选择一个片段');
+    window.showToast('请先选择一个片段');
     return;
   }
 
@@ -249,14 +249,14 @@ async function deleteSelectedShot() {
         await window.selectProject(window.appState.currentProject);
         window.renderSceneList([]);
       } else {
-        alert('保存失败：' + saveResult.error);
+        window.showErrorModal('保存失败：' + saveResult.error);
       }
     } catch (error) {
       console.error('[deleteSelectedShot] 删除片段异常:', error);
-      alert('删除片段失败：' + error.message);
+      window.showErrorModal('删除片段失败：' + error.message);
     }
   } else {
-    alert('请在 Electron 环境中使用此功能');
+    window.showToast('请在 Electron 环境中使用此功能');
   }
 }
 
@@ -325,12 +325,12 @@ function showShotStatusMenu(shot, event) {
  */
 async function updateShotStatus(shot, newStatus) {
   if (!window.useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
+    window.showToast('请在 Electron 环境中使用此功能');
     return;
   }
 
   if (!window.appState.currentProject || !window.appState.currentProject.projectDir) {
-    alert('项目目录不存在，请先选择项目');
+    window.showToast('项目目录不存在，请先选择项目');
     return;
   }
 
@@ -343,7 +343,7 @@ async function updateShotStatus(shot, newStatus) {
     // 加载项目
     const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
     if (!loadResult.success) {
-      alert('加载项目失败：' + loadResult.error);
+      window.showErrorModal('加载项目失败：' + loadResult.error);
       return;
     }
 
@@ -356,7 +356,7 @@ async function updateShotStatus(shot, newStatus) {
     }
 
     if (shotIndex === -1) {
-      alert('片段未找到，请检查数据一致性');
+      window.showErrorModal('片段未找到，请检查数据一致性');
       return;
     }
 
@@ -378,11 +378,11 @@ async function updateShotStatus(shot, newStatus) {
       window.renderShotList(loadResult.projectJson.shots || []);
       window.showUpdateNotification();
     } else {
-      alert('保存失败：' + saveResult.error);
+      window.showErrorModal('保存失败：' + saveResult.error);
     }
   } catch (error) {
     console.error('[updateShotStatus] 更新片段状态异常:', error);
-    alert('更新状态失败：' + error.message);
+    window.showErrorModal('更新状态失败：' + error.message);
   }
 }
 

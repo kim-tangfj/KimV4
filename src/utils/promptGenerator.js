@@ -263,7 +263,7 @@ async function generatePromptFromAI() {
   const apiKey = settings.apiKeys[provider];
 
   if (!apiKey) {
-    alert('请先在设置中配置 API Key');
+    window.showToast('请先在设置中配置 API Key');
     window.showSettingsModal();
     return;
   }
@@ -310,14 +310,14 @@ async function generatePromptFromAI() {
         if (elements.aiResponsePreview) {
           elements.aiResponsePreview.value = result.content;
         }
-        alert('AI 返回的数据格式可能有误，请检查预览内容');
+        window.showToast('AI 返回的数据格式可能有误，请检查预览内容');
       }
     } else {
-      alert('AI 调用失败：' + result.error);
+      window.showToast('AI 调用失败：' + result.error);
     }
   } catch (error) {
     console.error('API call error:', error);
-    alert('AI 调用失败：' + error.message);
+    window.showToast('AI 调用失败：' + error.message);
   } finally {
     if (elements.generatePromptBtn) {
       elements.generatePromptBtn.disabled = false;

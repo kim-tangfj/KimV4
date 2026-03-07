@@ -124,7 +124,7 @@ function showProjectContextMenu(project, event, onSelectProject, onDeleteProject
     const target = e.target;
     if (target.id === 'project-context-modify') {
       if (project) {
-        alert('修改项目功能待实现');
+        window.showToast('修改项目功能待实现');
       }
     } else if (target.id === 'project-context-delete') {
       if (project && onDeleteProject) {
@@ -215,10 +215,10 @@ function openProjectFolderByProject(project) {
   console.log('[openProjectFolderByProject] 被调用', project);
   console.log('[openProjectFolderByProject] useElectronAPI:', window.useElectronAPI);
   console.log('[openProjectFolderByProject] electronAPI:', window.electronAPI);
-  
+
   if (!project || !project.projectDir) {
     console.error('[openProjectFolderByProject] 项目目录不存在', project);
-    alert('项目目录不存在');
+    window.showErrorModal('项目目录不存在');
     return;
   }
   // 使用全局变量
@@ -229,7 +229,7 @@ function openProjectFolderByProject(project) {
       window.electronAPI.openPath(project.projectDir);
     } catch (error) {
       console.error('[openProjectFolderByProject] 打开文件夹失败:', error);
-      alert('打开文件夹失败：' + error.message);
+      window.showErrorModal('打开文件夹失败：' + error.message);
     }
   } else {
     console.warn('[openProjectFolderByProject] 不在 Electron 环境中');
@@ -250,7 +250,7 @@ async function updateProjectStatus(project, newStatus, appState, useElectronAPI,
     try {
       const loadResult = await window.electronAPI.loadProject(project.projectDir);
       if (!loadResult.success) {
-        alert('加载项目失败：' + loadResult.error);
+        window.showErrorModal('加载项目失败：' + loadResult.error);
         return;
       }
 
@@ -266,11 +266,11 @@ async function updateProjectStatus(project, newStatus, appState, useElectronAPI,
         await loadProjects();
         showUpdateNotification();
       } else {
-        alert('保存失败：' + saveResult.error);
+        window.showErrorModal('保存失败：' + saveResult.error);
       }
     } catch (error) {
       console.error('更新项目状态异常:', error);
-      alert('更新状态失败：' + error.message);
+      window.showErrorModal('更新状态失败：' + error.message);
     }
   }
 }

@@ -4,6 +4,90 @@
 //
 
 /**
+ * 显示错误提示模态框（用于严重错误）
+ * @param {string} message - 错误消息
+ * @returns {Promise<void>}
+ */
+function showErrorModal(message) {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+    `;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-content';
+    modal.style.cssText = `
+      background: var(--bg-color, #fff);
+      border-radius: 8px;
+      padding: 24px;
+      min-width: 400px;
+      max-width: 500px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    `;
+
+    modal.innerHTML = `
+      <div style="display: flex; align-items: center; gap: 12px; margin-bottom: 16px;">
+        <span style="font-size: 24px; color: #d32f2f;">⚠️</span>
+        <h3 style="margin: 0; font-size: 18px; color: var(--text-color, #333);">错误提示</h3>
+      </div>
+      <div style="margin-bottom: 24px; padding: 12px; background: #ffebee; border-radius: 4px; color: #d32f2f; font-size: 14px; line-height: 1.6;">
+        ${message}
+      </div>
+      <div style="display: flex; justify-content: flex-end;">
+        <button id="error-modal-confirm" style="
+          padding: 8px 24px;
+          border: none;
+          background: #d32f2f;
+          color: white;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+        ">确定</button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const confirmBtn = document.getElementById('error-modal-confirm');
+
+    const closeModal = () => {
+      overlay.remove();
+      resolve();
+    };
+
+    confirmBtn.addEventListener('click', closeModal);
+
+    // ESC 键关闭
+    const handleEscKey = (e) => {
+      if (e.key === 'Escape') {
+        closeModal();
+        document.removeEventListener('keydown', handleEscKey);
+      }
+    };
+    document.addEventListener('keydown', handleEscKey);
+
+    // 点击遮罩关闭
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        closeModal();
+      }
+    });
+  });
+}
+
+/**
  * 显示输入错误提示（不阻塞）
  * @param {HTMLElement} input - 输入框元素
  * @param {string} message - 错误消息
@@ -332,3 +416,4 @@ window.showToast = showToast;
 window.showConfirm = showConfirm;
 window.showCustomPrompt = showCustomPrompt;
 window.showUpdateNotification = showUpdateNotification;
+window.showErrorModal = showErrorModal;

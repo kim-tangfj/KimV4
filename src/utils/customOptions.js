@@ -334,9 +334,9 @@ function hideCustomOptionEditModal() {
 async function saveCustomOptionEdit() {
   const useElectronAPI = window.useElectronAPI;
   const elements = window.elements;
-  
+
   if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
+    window.showToast('请在 Electron 环境中使用此功能');
     return;
   }
 
@@ -353,7 +353,7 @@ async function saveCustomOptionEdit() {
   const description = elements.editCustomOptionDescription?.value;
 
   if (!group || !type || !style || !description) {
-    alert('请填写所有必填字段');
+    window.showToast('请填写所有必填字段');
     return;
   }
 
@@ -375,11 +375,11 @@ async function saveCustomOptionEdit() {
       await loadGroupFilter();
       window.showUpdateNotification();
     } else {
-      alert('保存失败：' + result.error);
+      window.showToast('保存失败：' + result.error);
     }
   } catch (error) {
     console.error('保存选项失败:', error);
-    alert('保存失败：' + error.message);
+    window.showToast('保存失败：' + error.message);
   }
 }
 
@@ -389,9 +389,9 @@ async function saveCustomOptionEdit() {
 async function saveCustomOption() {
   const useElectronAPI = window.useElectronAPI;
   const elements = window.elements;
-  
+
   if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
+    window.showToast('请在 Electron 环境中使用此功能');
     return;
   }
 
@@ -402,7 +402,7 @@ async function saveCustomOption() {
   const description = elements.customOptionDescription?.value;
 
   if (!group || !type || !style || !description) {
-    alert('请填写所有必填字段');
+    window.showToast('请填写所有必填字段');
     return;
   }
 
@@ -423,11 +423,11 @@ async function saveCustomOption() {
       await loadCustomOptionsList();
       window.showUpdateNotification();
     } else {
-      alert('保存失败：' + result.error);
+      window.showToast('保存失败：' + result.error);
     }
   } catch (error) {
     console.error('保存选项失败:', error);
-    alert('保存失败：' + error.message);
+    window.showToast('保存失败：' + error.message);
   }
 }
 
@@ -439,9 +439,9 @@ async function deleteCustomOption(optionId) {
   const useElectronAPI = window.useElectronAPI;
   const elements = window.elements;
   const appState = window.appState;
-  
+
   if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
+    window.showToast('请在 Electron 环境中使用此功能');
     return;
   }
 
@@ -449,13 +449,13 @@ async function deleteCustomOption(optionId) {
     // 先检查使用情况
     const usageResult = await window.electronAPI.checkOptionUsage(optionId);
     if (!usageResult.success) {
-      alert('检查失败：' + usageResult.error);
+      window.showToast('检查失败：' + usageResult.error);
       return;
     }
 
     if (usageResult.usageCount > 0) {
       // 选项正在被使用，不允许删除
-      alert(
+      window.showToast(
         `该选项已被使用 ${usageResult.usageCount} 次，无法删除。\n\n` +
         `请先到片段或镜头中修改使用该选项的内容，然后再尝试删除。`
       );
@@ -484,7 +484,7 @@ async function deleteCustomOption(optionId) {
     }
   } catch (error) {
     console.error('删除选项失败:', error);
-    alert('删除失败：' + error.message);
+    window.showToast('删除失败：' + error.message);
   }
 }
 

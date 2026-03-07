@@ -126,7 +126,7 @@ async function selectScene(scene) {
  */
 async function createNewScene() {
   if (!window.appState.currentShot) {
-    alert('请先选择一个片段');
+    window.showToast('请先选择一个片段');
     return;
   }
 
@@ -185,7 +185,7 @@ async function createNewScene() {
  */
 async function deleteSelectedScene() {
   if (!window.appState.currentScene) {
-    alert('请先选择一个镜头');
+    window.showToast('请先选择一个镜头');
     return;
   }
 

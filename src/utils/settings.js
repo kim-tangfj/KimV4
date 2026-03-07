@@ -237,7 +237,7 @@ async function testApiConnection(provider) {
   const elements = window.elements;
 
   if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
+    window.showToast('请在 Electron 环境中使用此功能');
     return;
   }
 
@@ -258,7 +258,7 @@ async function testApiConnection(provider) {
   }
 
   if (!apiKey) {
-    alert('请先输入 API Key');
+    window.showToast('请先输入 API Key');
     return;
   }
 
