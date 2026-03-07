@@ -4,6 +4,54 @@
 
 ---
 
+## 2026-03-07 - 迁移 loadProjects 和 selectProject 到 projectList.js
+
+### 检查项目模块拆分状态
+
+**projectList.js 已包含的函数**：
+- `renderProjectList` - 渲染项目列表
+- `getStatusText` - 获取状态文本
+- `updateProjectSelection` - 更新项目列表选中状态
+- `showProjectContextMenu` - 显示项目右键菜单
+- `showProjectStatusMenu` - 显示项目状态菜单
+- `openProjectFolderByProject` - 打开项目文件夹
+- `updateProjectStatus` - 更新项目状态
+- `deleteCurrentProject` - 删除当前项目
+
+**未迁移的函数**（在 renderer.js 中）：
+- `loadProjects` - 加载项目列表 ❌
+- `selectProject` - 选择项目 ❌
+
+### 迁移内容
+
+**1. 在 projectList.js 中添加函数**（第 325-427 行）
+- `loadProjects()` - 约 50 行
+- `selectProject(project)` - 约 55 行
+
+**2. 更新导出**（第 432-438 行）
+```javascript
+window.loadProjects = loadProjects;
+window.selectProject = selectProject;
+```
+
+**3. 在 renderer.js 中注释原有函数**（第 2221-2325 行）
+- `loadProjects` - 第 2221-2265 行（注释）
+- `selectProject` - 第 2267-2320 行（注释）
+
+### 保留在 renderer.js 中的项目相关函数
+以下函数与 UI 交互（模态框）紧密相关，保留在 renderer.js 中：
+- `hideNewProjectModal` - 隐藏新建项目弹窗
+- `confirmCreateProject` - 确认创建项目
+- `createProjectManual` - 手动创建项目
+- `createProjectAI` - AI 创建项目
+- `buildPromptFromTemplate` - 构建提示词模板
+- `copyTemplate` - 复制模板
+
+### 提交
+- `feat: 迁移 loadProjects 和 selectProject 到 projectList.js`
+
+---
+
 ## 2026-03-07 - 清理属性面板模块控制台日志
 
 ### 修改内容
