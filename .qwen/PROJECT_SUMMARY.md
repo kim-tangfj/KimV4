@@ -1,4 +1,4 @@
-用户询问 TypeScript 迁移是否也在 Electron 中进行，我需要确认这一点并解释 Electron 项目使用 TypeScript 的方式，同时生成项目总结。# Project Summary
+# Project Summary
 
 ## Overall Goal
 将 Kim 多级分镜提示词助手（Electron 桌面应用）的 JavaScript 代码重构为模块化结构，并最终迁移到 TypeScript，提升代码质量和可维护性。
@@ -18,13 +18,16 @@ e:\AI\KimV4\
 ├── src/
 │   ├── main.js              # Electron 主进程
 │   ├── preload.js           # 预加载脚本（IPC 桥接）
-│   ├── renderer.js          # 渲染进程（UI 逻辑）
+│   ├── renderer.js          # 渲染进程（UI 逻辑，1366 行）
 │   └── utils/               # 工具模块
 │       ├── projectList.js   # 项目管理模块 ✅
 │       ├── shotList.js      # 片段管理模块 ✅
 │       ├── sceneList.js     # 镜头管理模块 ✅
 │       ├── propertyPanel.js # 属性面板模块 ✅
 │       ├── promptGenerator.js # 提示词生成模块 ✅
+│       ├── settings.js      # 设置管理模块 ✅
+│       ├── customOptions.js # 自定义选项管理 ✅
+│       ├── uiHelpers.js     # UI 工具函数模块 ✅
 │       └── menu.js          # 菜单工具
 ├── index.html               # 主界面（四栏布局）
 ├── styles.css               # 全局样式
@@ -65,10 +68,10 @@ npm run dev          # 开发模式（自动打开 DevTools）
 | 片段管理 | `src/utils/shotList.js` | 413 行 | ✅ 已完成 |
 | 镜头管理 | `src/utils/sceneList.js` | 230 行 | ✅ 已完成 |
 | 属性面板 | `src/utils/propertyPanel.js` | 766 行 | ✅ 已完成 |
-| **提示词生成** | **`src/utils/promptGenerator.js`** | **266 行** | **✅ 已完成** |
-| 设置管理 | （在 renderer.js 中） | ~200 行 | ⏳ 待拆分 |
-| 自定义选项 | （在 renderer.js 中） | ~300 行 | ⏳ 待拆分 |
-| 工具函数 | （在 renderer.js 中） | ~150 行 | ⏳ 待拆分 |
+| 提示词生成 | `src/utils/promptGenerator.js` | 266 行 | ✅ 已完成 |
+| 设置管理 | `src/utils/settings.js` | 494 行 | ✅ 已完成 |
+| 自定义选项管理 | `src/utils/customOptions.js` | ~520 行 | ✅ 已完成 |
+| UI 工具函数 | `src/utils/uiHelpers.js` | ~300 行 | ✅ 已完成 |
 
 ### renderer.js 代码变化
 | 阶段 | 行数 | 减少 |
@@ -76,28 +79,35 @@ npm run dev          # 开发模式（自动打开 DevTools）
 | 原始 | 3988 行 | - |
 | 模块拆分前 | 2998 行 | -990 行 (-24.8%) |
 | 提示词模块拆分后 | 2567 行 | -431 行 (-14.4%) |
-| **累计减少** | | **-1421 行 (-35.6%)** |
+| 设置管理模块拆分后 | 2577 行 | -453 行 (-14.9%) |
+| 自定义选项模块拆分后 | ~2600 行 | 添加注释标记 |
+| UI 工具函数模块拆分后 | ~2700 行 | 添加注释标记 |
+| 代码整理后 | 1793 行 | -280 行 (-13.5%) |
+| alert 替换后 | ~1700 行 | -99 行 |
+| 重复代码清理后 | **1366 行** | **-109 行** |
+| **累计减少** | | **~-2600 行 (-65.5%)** |
 
-### 修复的问题
-1. **loadProjects 未定义** - 函数迁移后调用方式未更新
-2. **window.settings 未定义** - 初始化顺序问题，在调用 loadProjects 前未导出
-3. **片段属性字段清空后提示词不更新** - 保存逻辑保留旧值
-4. **镜头属性变更后提示词不更新** - 未更新 currentShot.scenes
-5. **修改属性后列表不实时更新** - 缺少 renderSceneList 调用
-6. **镜头属性更新后片段列表选中状态丢失** - 未恢复选中状态
-7. **清理不必要的控制台日志** - 移除调试输出，保留错误日志
+### 最近修复的问题
+1. **alert 乱码问题** - 所有 alert 替换为 window.showToast
+2. **重复代码** - 清理 showUpdateNotification 和 showCustomPrompt 重复实现
+3. **renderAssetsList 未导出** - 添加到 exposeGlobals 中
+4. **buildPromptFromTemplate 废弃** - 改用模板系统中的激活模板
+5. **自定义选项管理重复** - 注释掉 renderer.js 中的重复代码
+6. **模板系统改进** - AI 创建项目使用激活的模板而非硬编码
 
 ### Git 提交历史（最近 10 条）
 ```
-ef9e369 refactor: 修复属性面板函数调用并更新日志
-1889b8b docs: 更新开发日志 - 镜头管理模块拆分检查
-7257f38 docs: 更新开发日志 - 片段管理模块拆分检查
-fc8948e refactor: 清理片段管理模块相关导出和注释
-c230cbe docs: 更新开发日志 - 修复 window.settings 初始化顺序问题
-e43f372 fix: 修复 window.settings 在 loadProjects 调用前未初始化的问题
-7404d3b docs: 更新开发日志 - 修复 loadProjects 函数调用
-ff07273 fix: 修复 renderer.js 中 loadProjects 函数调用
-206fd79 docs: 更新开发日志 - 修复 window.settings 未定义问题
+89114a7 refactor: 清理重复和未使用的代码区域
+3b7e8c3 refactor: 替换所有 alert 为 window.showToast
+d4325b2 docs: 添加 alert 替换日志
+101fadd fix: 重新添加 buildPromptFromTemplate 废弃标记
+f2f06b4 fix: 注释掉自定义选项管理重复代码
+39a4ea7 refactor: 使用模板系统中的激活模板替代硬编码提示词
+853c95b docs: 添加 renderer.js 代码结构整理报告
+345318a refactor: 整理 renderer.js 代码结构
+8a0244b refactor: 统一替换 alert/confirm 为模态框提示
+8326f40 fix: 修复快速添加选项弹窗无法关闭的问题
+```
 f01eac7 fix: 修复 loadProjects 中 window.settings 未定义的问题
 ```
 
