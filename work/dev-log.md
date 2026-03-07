@@ -149,6 +149,10 @@ async function showTemplateStoragePath() { ... }
 4. **window.settings.storagePath 被覆盖** - initializeApp 中 window.settings = settings 覆盖了 loadSettings 的设置
    - 改为 `settings = window.settings` 同步局部变量
    - projectList.js 直接从 window.settings 读取 storagePath
+5. **设置面板模板存储路径显示不正确** - showTemplateStoragePath 显示的是设置路径而非实际模板路径
+   - showTemplateStoragePath 改为异步函数，调用 getTemplatesPath() 获取实际路径
+   - showSettingsModal 改为异步函数，await showTemplateStoragePath()
+   - 如果获取失败，回退到显示设置中的 storagePath
 
 ### 测试验证
 - [x] 应用启动正常
@@ -1959,7 +1963,7 @@ characters: characters !== undefined && characters !== '' ? characters : (oldSho
 1. **数据不再覆盖** - 每个片段/镜头的数据保存到正确的对象
 2. **数据不再丢失** - 使用 `appState` 确保始终操作当前选中的对象
 3. **错误可追踪** - 新增错误日志便于调试
-4. **代码更清晰** - 移除闭包变量，逻辑更直观
+4. **代码更清晰** - 移除闭包��量，逻辑更直观
 
 ---
 
