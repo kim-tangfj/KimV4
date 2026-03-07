@@ -505,7 +505,7 @@ function setupEventListeners() {
     elements.assetsPanelToggleHeader.addEventListener('click', toggleAssetsPanelByHeader);
   }
   if (elements.viewToggleBtn) {
-    elements.viewToggleBtn.addEventListener('click', toggleSceneView);
+    elements.viewToggleBtn.addEventListener('click', () => window.showToast('视图切换功能待实现'));
   }
   
   // 模态框按钮
@@ -736,159 +736,6 @@ function setupEventListeners() {
 // ========== 设置管理 ==========
 // 【已迁移至 src/utils/settings.js】
 
-// 应用主题
-/* === 已注释 - 函数已迁移至 settings.js ===
-function applyTheme(theme) {
-  if (theme === 'dark') {
-    document.body.classList.add('dark-theme');
-  } else {
-    document.body.classList.remove('dark-theme');
-  }
-  currentTheme = theme;
-}
-
-// 切换主题
-function toggleTheme() {
-  currentTheme = currentTheme === 'light' ? 'dark' : 'light';
-  applyTheme(currentTheme);
-
-  elements.themeToggleBtns.forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.theme === currentTheme);
-  });
-
-  localStorage.setItem('kim_settings', JSON.stringify({ ...settings, theme: currentTheme }));
-}
-
-// 切换 API Key 可见性
-function toggleApiKeyVisibility(input) {
-  if (input.type === 'password') {
-    input.type = 'text';
-  } else {
-    input.type = 'password';
-  }
-}
-
-// 测试 API 连接
-async function testApiConnection(provider) {
-  if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
-    return;
-  }
-
-  // 直接从 DOM 获取 API Key，确保获取到最新输入的值
-  let apiKey, model;
-  if (provider === 'deepseek') {
-    apiKey = elements.deepseekApiKey?.value.trim() || '';
-    model = elements.deepseekModel?.value.trim() || 'deepseek-chat';
-  } else if (provider === 'doubao') {
-    apiKey = elements.doubaoApiKey?.value.trim() || '';
-    model = elements.doubaoModel?.value.trim() || 'doubao-pro-4k';
-  } else if (provider === 'qianwen') {
-    apiKey = elements.qianwenApiKey?.value.trim() || '';
-    model = elements.qianwenModel?.value.trim() || 'qwen3.5-plus';
-  } else if (provider === 'ailian') {
-    apiKey = elements.ailianApiKey?.value.trim() || '';
-    model = elements.ailianModel?.value.trim() || 'qwen3.5-plus';
-  }
-
-  if (!apiKey) {
-    alert('请先输入 API Key');
-    return;
-  }
-
-  showLoading('正在测试连接...');
-
-  try {
-    const result = await window.electronAPI.testApiConnection(provider, apiKey, model);
-    const statusEl = document.getElementById(`${provider}-status`);
-
-    if (result.success) {
-      if (statusEl) {
-        statusEl.textContent = '✓ 连接成功';
-        statusEl.className = 'connection-status success';
-      }
-    } else {
-      if (statusEl) {
-        statusEl.textContent = '✗ 连接失败：' + result.error;
-        statusEl.className = 'connection-status error';
-      }
-    }
-  } catch (error) {
-    const statusEl = document.getElementById(`${provider}-status`);
-    if (statusEl) {
-      statusEl.textContent = '✗ 连接失败：' + error.message;
-      statusEl.className = 'connection-status error';
-    }
-  } finally {
-    hideLoading();
-  }
-}
-
-// 检查 API 状态
-function checkApiStatus() {
-  const provider = elements.aiProvider?.value || 'deepseek';
-  const apiKey = settings.apiKeys[provider];
-  const statusEl = elements.aiApiStatus;
-
-  if (!apiKey) {
-    if (statusEl) {
-      statusEl.textContent = '未配置 API Key';
-      statusEl.className = 'status-value error';
-    }
-    return false;
-  }
-
-  if (statusEl) {
-    statusEl.textContent = '已配置';
-    statusEl.className = 'status-value success';
-  }
-  return true;
-}
-
-// 显示加载覆盖层
-function showLoading(text) {
-  if (elements.loadingOverlay) {
-    elements.loadingText.textContent = text || '正在处理...';
-    elements.loadingOverlay.style.display = 'flex';
-  }
-}
-
-// 隐藏加载覆盖层
-function hideLoading() {
-  if (elements.loadingOverlay) {
-    elements.loadingOverlay.style.display = 'none';
-  }
-}
-
-// 显示设置面板
-function showSettingsModal() {
-  if (!elements.settingsModal) return;
-
-  // 更新当前主题按钮状态
-  elements.themeToggleBtns.forEach(btn => {
-    btn.classList.toggle('active', btn.dataset.theme === currentTheme);
-  });
-
-  // 显示当前选择的提供商配置
-  const provider = elements.apiProviderSelect?.value || 'deepseek';
-  if (elements.deepseekConfig) elements.deepseekConfig.style.display = provider === 'deepseek' ? 'block' : 'none';
-  if (elements.doubaoConfig) elements.doubaoConfig.style.display = provider === 'doubao' ? 'block' : 'none';
-  if (elements.qianwenConfig) elements.qianwenConfig.style.display = provider === 'qianwen' ? 'block' : 'none';
-  if (elements.ailianConfig) elements.ailianConfig.style.display = provider === 'ailian' ? 'block' : 'none';
-
-  // 显示模板存储路径
-  showTemplateStoragePath();
-
-  elements.settingsModal.style.display = 'flex';
-}
-
-// 隐藏设置面板
-function hideSettingsModal() {
-  if (elements.settingsModal) {
-    elements.settingsModal.style.display = 'none';
-  }
-}
-=== 已注释结束 === */
 
 // 显示新建项目弹窗
 function showNewProjectModal() {
@@ -1128,47 +975,6 @@ async function createProjectManual() {
 // ========== UI 工具函数 ==========
 // 【已迁移至 src/utils/uiHelpers.js】
 
-// 显示输入错误提示（不阻塞）
-/* === 已注释 - 函数已迁移至 uiHelpers.js ===
-function showInputError(input, message) {
-  if (!input) return;
-
-  // 聚焦到输入框
-  input.focus();
-
-  // 添加错误样式
-  input.style.borderColor = '#d32f2f';
-  input.style.backgroundColor = '#ffebee';
-
-  // 检查是否已存在错误提示
-  const existingError = input.parentElement.querySelector('.input-error-message');
-  if (existingError) {
-    existingError.remove();
-  }
-
-  // 创建错误提示（显示在输入框下方）
-  const errorDiv = document.createElement('div');
-  errorDiv.className = 'input-error-message';
-  errorDiv.textContent = message;
-  errorDiv.style.cssText = `
-    color: #d32f2f;
-    font-size: 12px;
-    margin-top: 4px;
-    padding: 4px 0;
-  `;
-
-  input.parentElement.appendChild(errorDiv);
-
-  // 2 秒后移除
-  setTimeout(() => {
-    input.style.borderColor = '';
-    input.style.backgroundColor = '';
-    if (errorDiv.parentNode) {
-      errorDiv.parentNode.removeChild(errorDiv);
-    }
-  }, 2000);
-}
-=== 已注释结束 === */
 
 // 构建提示词模板
 function buildPromptFromTemplate(script) {
@@ -1501,115 +1307,10 @@ function hideTemplateEditor() {
 // ========== 设置管理 ==========
 // 【已迁移至 src/utils/settings.js】
 
-// 保存设置到本地存储
-/* === 已注释 - 函数已迁移至 settings.js ===
-function saveSettingsToStorage() {
-  // 保存基本设置到 localStorage
-  const basicSettings = {
-    storagePath: settings.storagePath,
-    apiProvider: settings.apiProvider,
-    apiKeys: settings.apiKeys,
-    models: settings.models,
-    theme: currentTheme,
-    autoSaveInterval: settings.autoSaveInterval
-  };
-  localStorage.setItem('kim_settings', JSON.stringify(basicSettings));
-
-  // 保存模板配置到本地文件
-  if (useElectronAPI) {
-    const templateConfig = {
-      templates: settings.templates,
-      activeTemplateId: settings.activeTemplateId
-    };
-    window.electronAPI.saveTemplates(templateConfig).then(result => {
-      if (!result.success) {
-        console.error('保存模板配置失败:', result.error);
-      }
-    });
-  }
-}
-=== 已注释结束 === */
 
 // ========== AI 生成提示词 ==========
 // 【已迁移至 src/utils/promptGenerator.js】
 
-// 生成提示词并调用 AI
-/* === 已注释 - 函数已迁移至 promptGenerator.js ===
-async function generatePromptFromAI() {
-  const script = elements.aiProjectScript?.value.trim();
-  const provider = elements.aiProvider?.value || 'deepseek';
-
-  if (!script) {
-    showInputError(elements.aiProjectScript, '请输入项目剧本内容');
-    return;
-  }
-
-  const apiKey = settings.apiKeys[provider];
-
-  if (!apiKey) {
-    alert('请先在设置中配置 API Key');
-    showSettingsModal();
-    return;
-  }
-
-  // 获取激活的模板
-  const activeTemplate = settings.templates.find(t => t.id === settings.activeTemplateId);
-  const template = activeTemplate || getDefaultTemplate();
-
-  // 替换 {剧本内容} 占位符
-  const prompt = template.content.replace('{剧本内容}', script);
-
-  // 显示加载状态
-  if (elements.generatePromptBtn) {
-    elements.generatePromptBtn.disabled = true;
-    elements.generatePromptBtn.textContent = '生成中...';
-  }
-
-  try {
-    const result = await window.electronAPI.callLlmApi(provider, apiKey, settings.models[provider], prompt);
-
-    if (result.success) {
-      // 提取 JSON 数据
-      let jsonData;
-      try {
-        const jsonMatch = result.content.match(/\{[\s\S]*\}/);
-
-        if (jsonMatch) {
-          jsonData = JSON.parse(jsonMatch[0]);
-        } else {
-          jsonData = JSON.parse(result.content);
-        }
-
-        // 格式化 JSON 并显示到预览框
-        if (elements.aiResponsePreview) {
-          elements.aiResponsePreview.value = JSON.stringify(jsonData, null, 2);
-        } else {
-          console.error('Preview element not found');
-        }
-
-        showUpdateNotification();
-      } catch (e) {
-        console.error('JSON parse error:', e);
-        // 如果解析失败，显示原始返回
-        if (elements.aiResponsePreview) {
-          elements.aiResponsePreview.value = result.content;
-        }
-        alert('AI 返回的数据格式可能有误，请检查预览内容');
-      }
-    } else {
-      alert('AI 调用失败：' + result.error);
-    }
-  } catch (error) {
-    console.error('API call error:', error);
-    alert('AI 调用失败：' + error.message);
-  } finally {
-    if (elements.generatePromptBtn) {
-      elements.generatePromptBtn.disabled = false;
-      elements.generatePromptBtn.textContent = '✨ 生成提示词';
-    }
-  }
-}
-=== 已注释结束 === */
 
 // 备份模板
 async function backupTemplates() {
@@ -1803,7 +1504,7 @@ function renderCustomOptionsList(options) {
     return;
   }
 
-  // 按使用次数排序�����降序）
+  // 按使用次数排序降序）
   const sortedOptions = [...options].sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
 
   customList.innerHTML = '';
@@ -2096,86 +1797,11 @@ async function deleteCustomOption(optionId) {
   }
 }
 
-// 备份自定义选项
-async function backupOptions() {
-  if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
-    return;
-  }
-  
-  const result = await window.electronAPI.backupOptions();
-  if (result.success) {
-    alert('选项备份成功！\n文件已保存到：' + result.filePath);
-  } else if (!result.canceled) {
-    alert('备份失败：' + result.error);
-  }
-}
 
-// 恢复自定义选项
-async function restoreOptions() {
-  if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
-    return;
-  }
 
-  const confirmed = await showConfirm('恢复选项将覆盖当前的自定义选项配置，确定继续吗？');
-  if (!confirmed) {
-    return;
-  }
 
-  const result = await window.electronAPI.restoreOptions();
-  if (result.success) {
-    showToast('选项恢复成功！请重新打开管理窗口以查看恢复的选项。');
-    hideCustomOptionsModal();
-  } else if (!result.canceled) {
-    showToast('恢复失败：' + result.error);
-  }
-}
-
-// 打开选项文件夹
-async function openOptionsFolder() {
-  if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
-    return;
-  }
-
-  try {
-    await window.electronAPI.openOptionsFolder();
-  } catch (error) {
-    alert('打开文件夹失败：' + error.message);
-  }
-}
-
-// [已移至 src/utils/propertyPanel.js] 设置选项提示监听 setupOptionHintListeners
-// [已移至 src/utils/propertyPanel.js] 设置镜头选项提示监听 setupSceneOptionHintListeners
-// [已移至 src/utils/propertyPanel.js] 设置添加选项按钮事件 setupAddOptionButtons
-// [已移至 src/utils/propertyPanel.js] 显示快速添加选项弹窗 showQuickAddOptionModal
-// [已移至 src/utils/propertyPanel.js] 显示片段属性表单 showShotProperties
-// [已移至 src/utils/propertyPanel.js] 自动保存片段属性相关变量和函数 autoSaveShotProperties
-// [已移至 src/utils/propertyPanel.js] 显示镜头属性表单 showSceneProperties
-// [已移至 src/utils/propertyPanel.js] 自动保存镜头属性相关变量和函数 autoSaveSceneProperties
-
-// ========== 设置管理 ==========
-// 【已迁移至 src/utils/settings.js】
-
-// 显示模板存储路径
-/* === 已注释 - 函数已迁移至 settings.js ===
-async function showTemplateStoragePath() {
-  if (!useElectronAPI) {
-    return;
-  }
-
-  try {
-    const result = await window.electronAPI.getTemplatesPath();
-    if (result.success && elements.templateStoragePath) {
-      // 显示文件夹路径
-      elements.templateStoragePath.value = result.path;
-    }
-  } catch (error) {
-    console.error('获取模板路径失败:', error);
-  }
-}
-=== 已注释结束 === */
+// ========== 项目加载和渲染 ==========
+// [已移至 projectList.js] 加载项目列表
 
 // AI 创建项目（使用预览的数据）
 async function createProjectAI() {
@@ -2273,107 +1899,8 @@ async function createProjectAI() {
   }
 }
 
-// ========== 项目加载和渲染 ==========
-// [已移至 projectList.js] 加载项目列表
-/* 注释开始 - 已移至 src/utils/projectList.js */
-// async function loadProjects() {
-//   if (useElectronAPI) {
-//     try {
-//       // 使用设置中的存储路径
-//       const result = await window.electronAPI.listProjects(settings.storagePath || '');
-//       if (result.success) {
-//         appState.projects = result.projects;
-//         window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
-//           window.showProjectContextMenu(project, e, selectProject, () => deleteCurrentProject(appState, elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm), window.openProjectFolderByProject);
-//         }, (project, e) => {
-//           // 点击状态标签时，弹出状态菜单
-//           window.showProjectStatusMenu(project, e, (p, newStatus) => {
-//             window.updateProjectStatus(p, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
-//           });
-//         });
-//       } else {
-//         appState.projects = [];
-//         window.renderProjectList([], elements, selectProject, () => {}, () => {}, () => {});
-//       }
-//     } catch (error) {
-//       console.error('加载项目异常:', error);
-//       appState.projects = [];
-//       window.renderProjectList([], elements, selectProject, () => {}, () => {}, () => {});
-//     }
-//   } else {
-//     const savedProjects = localStorage.getItem('kim_projects');
-//     if (savedProjects) {
-//       appState.projects = JSON.parse(savedProjects);
-//     } else {
-//       appState.projects = [];
-//     }
-//     // 使用模块中的 renderProjectList 函数
-//     window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
-//       window.showProjectContextMenu(project, e, selectProject, () => deleteCurrentProject(appState, elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm), window.openProjectFolderByProject);
-//     }, (project, e) => {
-//       // 点击状态标签时，弹出状态菜单
-//       window.showProjectStatusMenu(project, e, (p, newStatus) => {
-//         window.updateProjectStatus(p, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
-//       });
-//     });
-//   }
-// }
-/* 注释结束 */
-
 // 项目管理函数已移至 src/utils/projectList.js
 // [已移至 projectList.js] 选择项目
-/* 注释开始 - 已移至 src/utils/projectList.js */
-// async function selectProject(project) {
-//   appState.currentProject = project;
-//   appState.currentShot = null;
-//   appState.currentScene = null;
-
-//   // 使用模块中的 updateProjectSelection 函数
-//   if (window.updateProjectSelection) {
-//     window.updateProjectSelection(elements, project.id);
-//   }
-
-//   if (elements.newShotBtn) elements.newShotBtn.disabled = false;
-//   if (elements.deleteShotBtn) elements.deleteShotBtn.disabled = false;
-
-//   if (useElectronAPI && project.projectDir) {
-//     try {
-//       const result = await window.electronAPI.loadProject(project.projectDir);
-//       if (result.success) {
-//         appState.projectData = result.projectJson;
-//         renderShotList(result.projectJson.shots || []);
-//       } else {
-//         renderShotList(project.shots || []);
-//       }
-//     } catch (error) {
-//       console.error('加载项目数据失败:', error);
-//       renderShotList(project.shots || []);
-//     }
-//   } else {
-//     renderShotList(project.shots || []);
-//   }
-
-//   renderSceneList([]);
-
-//   // 清空提示词预览
-//   if (elements.promptPreview) {
-//     elements.promptPreview.innerHTML = '<div class="placeholder-text">请选择片段</div>';
-//   }
-
-//   // 清空属性栏
-//   if (elements.propertyForm) {
-//     elements.propertyForm.innerHTML = '<div class="placeholder-text">请选择片段或镜头以编辑属性</div>';
-//   }
-
-//   // 重置底部面板标题
-//   if (elements.bottomPanelTitle) {
-//     elements.bottomPanelTitle.textContent = '属性';
-//   }
-
-//   // 清空素材库
-//   renderAssetsList([]);
-// }
-/* 注释结束 */
 
 // ========== 镜头管理 ==========
 // 镜头管理函数已移至 src/utils/sceneList.js 模块
@@ -2389,183 +1916,21 @@ async function createProjectAI() {
 // showShotProperties, showSceneProperties, autoSaveShotProperties, autoSaveSceneProperties
 // saveShotProperties, saveSceneProperties, setupOptionHintListeners, setupSceneOptionHintListeners
 // setupAddOptionButtons, showQuickAddOptionModal
+// [已移至 src/utils/propertyPanel.js] 设置选项提示监听 setupOptionHintListeners
+// [已移至 src/utils/propertyPanel.js] 设置镜头选项提示监听 setupSceneOptionHintListeners
+// [已移至 src/utils/propertyPanel.js] 设置添加选项按钮事件 setupAddOptionButtons
+// [已移至 src/utils/propertyPanel.js] 显示快速添加选项弹窗 showQuickAddOptionModal
+// [已移至 src/utils/propertyPanel.js] 显示片段属性表单 showShotProperties
+// [已移至 src/utils/propertyPanel.js] 自动保存片段属性相关变量和函数 autoSaveShotProperties
+// [已移至 src/utils/propertyPanel.js] 显示镜头属性表单 showSceneProperties
+// [已移至 src/utils/propertyPanel.js] 自动保存镜头属性相关变量和函数 autoSaveSceneProperties
 
 // ========== 提示词 ==========
 // 【已迁移至 src/utils/promptGenerator.js】
+// 【已迁移至 src/utils/promptGenerator.js】
 
-// 提示词生成函数（按 defualt-prompt.md 模板）
-/* === 已注释 - 函数已迁移至 promptGenerator.js ===
-function generateScenePrompt(scene, index, cumulativeTime) {
-  if (!scene) return '';
-
-  const shotType = scene.shotType || '';
-  const angle = scene.angle || '';
-  const camera = scene.camera || '';
-  const content = scene.content || '';
-  const emotion = scene.emotion || '';
-  const dialogue = scene.dialogue || '';
-  const notes = scene.notes || '';
-
-  // 计算镜头时间
-  const duration = scene.duration || 2;
-  const startTime = cumulativeTime;
-  const endTime = cumulativeTime + duration;
-  const timeRange = `${startTime}-${endTime}秒`;
-
-  // 格式：## 镜头 1\n**0-1 秒**：[特写、俯视、固定镜头]，内容...（情绪）
-  let prompt = `## 镜头${index + 1}\n**${timeRange}**：`;
-
-  if (shotType || angle || camera) {
-    prompt += `[${[shotType, angle, camera].filter(Boolean).join('、')}]，`;
-  }
-
-  prompt += content;
-
-  if (emotion) {
-    prompt += `（${emotion}）`;
-  }
-
-  if (dialogue) {
-    prompt += `\n【对白】${dialogue}`;
-  }
-
-  if (notes) {
-    prompt += `\n【其他备注】${notes}`;
-  }
-
-  return prompt;
-}
-
-function generateShotPrompt(shot) {
-  if (!shot) return '';
-
-  // 片段头部信息
-  let prompt = '';
-
-  // **风格**：风格，情绪氛围
-  if (shot.style || shot.mood) {
-    prompt += `**风格**：${shot.style || ''}${shot.mood ? `，${shot.mood}` : ''}\n\n`;
-  }
-
-  // **时长**：视频时长（秒）
-  if (shot.duration) {
-    prompt += `**时长**：${shot.duration}秒\n\n`;
-  }
-
-  // **画幅**：画幅比例
-  if (shot.aspectRatio) {
-    prompt += `**画幅**：${shot.aspectRatio}\n\n`;
-  }
-
-  // **角色**：角色
-  if (shot.characters) {
-    prompt += `**角色**：${shot.characters}\n\n`;
-  }
-
-  // **场景**：场景设定
-  if (shot.sceneSetting) {
-    prompt += `**场景**：${shot.sceneSetting}\n\n`;
-  }
-
-  // **片段描述**：片段描述
-  if (shot.description) {
-    prompt += `**片段描述**：${shot.description}\n\n`;
-  }
-
-  // **声音**：对白 + 配乐风格 + 音效需求
-  const soundParts = [];
-  if (shot.musicStyle) soundParts.push(shot.musicStyle);
-  if (shot.soundEffect) soundParts.push(shot.soundEffect);
-  if (soundParts.length > 0) {
-    prompt += `**声音**：对白 + ${soundParts.join(' + ')}\n\n`;
-  }
-
-  // **参考**：图片参考，视频参考，音频参考
-  const refs = [];
-  if (shot.imageRef) refs.push(shot.imageRef);
-  if (shot.videoRef) refs.push(shot.videoRef);
-  if (shot.audioRef) refs.push(shot.audioRef);
-  if (refs.length > 0) {
-    prompt += `**参考**：${refs.join('，')}\n\n`;
-  }
-
-  // 自定义提示词部分
-  if (shot.customPrompt) {
-    prompt += `${shot.customPrompt}\n\n`;
-  }
-
-  // 镜头列表
-  const scenes = shot.scenes || [];
-  const enabledScenes = scenes.filter(scene => scene.enabled !== false);
-
-  if (enabledScenes.length > 0) {
-    prompt += '---\n# 镜头\n\n';
-
-    let cumulativeTime = 0;
-    enabledScenes.forEach((scene, index) => {
-      prompt += generateScenePrompt(scene, index, cumulativeTime);
-      cumulativeTime += scene.duration || 2;
-      prompt += '\n\n';
-    });
-  }
-
-  return prompt.trim();
-}
-
-function generateProjectPrompt(project, getStatusText) {
-  if (!project) return '';
-
-  const shotsPrompt = (project.shots || [])
-    .map(shot => generateShotPrompt(shot))
-    .join('\n\n---\n\n');
-
-  const statusText = window.getStatusText ? window.getStatusText(project.status || 'draft') : project.status || 'draft';
-
-  return `【项目名称】${project.name} 【状态】${statusText} 【默认画幅】${project.aspectRatio}\n\n${shotsPrompt}`;
-}
-
-function renderPromptWithHighlight(prompt) {
-  if (!prompt) return '';
-
-  const keywords = [
-    '风格', '时长', '画幅', '角色', '场景', '片段描述',
-    '情绪', '配乐', '音效', '声音', '图片参考', '视频参考', '音频参考',
-    '镜头', '对白'
-  ];
-
-  let highlighted = prompt;
-  keywords.forEach(keyword => {
-    const regex = new RegExp(`(\\*\\*${keyword}\\*\\*)`, 'g');
-    highlighted = highlighted.replace(regex, '<span class="prompt-tag">$1</span>');
-  });
-
-  highlighted = highlighted.replace(/(---)/g, '<span class="prompt-separator">$1</span>');
-  highlighted = highlighted.replace(/(\d+-\d+ 秒)/g, '<span class="prompt-scene-time">$1</span>');
-  highlighted = highlighted.replace(/(## 镜头\d+)/g, '<span class="prompt-scene-title">$1</span>');
-
-  return `<div class="prompt-content">${highlighted}</div>`;
-}
-
-function updatePromptPreview() {
-  if (!elements.promptPreview) return;
-
-  let prompt = '';
-
-  // 无论选中片段还是镜头，都显示片段级提示词
-  if (appState.currentShot) {
-    prompt = generateShotPrompt(appState.currentShot);
-  } else if (appState.currentProject) {
-    prompt = generateProjectPrompt(appState.currentProject, getStatusText);
-  } else {
-    elements.promptPreview.innerHTML = '<div class="placeholder-text">请选中项目 > 片段 > 镜头，自动生成提示词</div>';
-    return;
-  }
-
-  elements.promptPreview.innerHTML = renderPromptWithHighlight(prompt);
-}
-=== 已注释结束 === */
-
-// ========== 属性面板 ==========
+// ========== 设置管理 ==========
+// 【已迁移至 src/utils/settings.js】
 
 // 加载指定组别的选项
 async function loadOptionsByGroup(group) {
@@ -2596,36 +1961,6 @@ async function openProjectFolder() {
   }
 }
 
-// 【已迁移至 src/utils/promptGenerator.js】
-/* === 已注释 - 函数已迁移至 promptGenerator.js ===
-function copyPromptToClipboard() {
-  const prompt = elements.promptPreview?.textContent;
-  if (prompt) {
-    navigator.clipboard.writeText(prompt).then(() => {
-      showUpdateNotification();
-    });
-  }
-}
-
-function exportPrompt() {
-  const prompt = elements.promptPreview?.textContent;
-  if (prompt) {
-    const blob = new Blob([prompt], { type: 'text/plain;charset=utf-8' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = `prompt_${Date.now()}.txt`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-}
-
-function clearPrompt() {
-  if (elements.promptPreview) {
-    elements.promptPreview.innerHTML = '<div class="placeholder-text">请选中项目 > 片段 > 镜头，自动生成提示词</div>';
-  }
-}
-=== 已注释结束 === */
 
 function toggleBottomPanel() {
   if (elements.bottomPanel) {
@@ -2820,25 +2155,22 @@ function showConfirm(message) {
   });
 }
 
-// 替换 toggleSceneView 函数，使用 Toast 替代 alert
-function toggleSceneView() {
-  showToast('视图切换功能待实现');
-}
-
-// 全局替换 alert 和 confirm
+// 全局替换 alert 和 confirm（已移至 uiHelpers.js）
+/* === 已注释 - 功能已移至 uiHelpers.js ===
 const originalAlert = window.alert;
 const originalConfirm = window.confirm;
 
 window.alert = function(message) {
   showToast(message);
 };
+=== 已注释结束 === */
 
 /**
  * 显示自定义输入框（替代系统 prompt）
  * @param {string} message - 提示信息
  * @param {string} title - 标题
  * @returns {Promise<string>} 用户输入的内容
- */
+ 
 async function showCustomPrompt(message, title = '输入') {
   return new Promise((resolve) => {
     const overlay = document.createElement('div');
@@ -2991,10 +2323,6 @@ function renderAssetsList(assets) {
   });
 }
 
-// ========== UI 工具函数 ==========
-// 【已迁移至 src/utils/uiHelpers.js】
-
-/* === 已注释 - 函数已迁移至 uiHelpers.js ===
 function showUpdateNotification() {
   const notification = document.createElement('div');
   notification.textContent = '已更新';
@@ -3017,7 +2345,6 @@ function showUpdateNotification() {
     setTimeout(() => { document.body.removeChild(notification); }, 300);
   }, 2000);
 }
-=== 已注释结束 === */
 
 // ========== 全局变量暴露（供模块使用）==========
 // 注意：必须在 initializeApp 之后调用，确保 useElectronAPI 已更新
