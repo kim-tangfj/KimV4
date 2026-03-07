@@ -682,6 +682,22 @@ function setupAddOptionButtons() {
  * @param {string} defaultValue - 默认值
  */
 async function showQuickAddOptionModal(group, field, defaultValue = '') {
+  // 创建遮罩层
+  const overlay = document.createElement('div');
+  overlay.className = 'modal-overlay';
+  overlay.style.cssText = `
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: rgba(0, 0, 0, 0.5);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    z-index: 3000;
+  `;
+
   const modal = document.createElement('div');
   modal.className = 'modal';
   modal.style.display = 'flex';
@@ -689,7 +705,7 @@ async function showQuickAddOptionModal(group, field, defaultValue = '') {
     <div class="modal-content quick-add-modal">
       <div class="modal-header">
         <h3>添加"${group}"新选项</h3>
-        <button class="modal-close" onclick="this.closest('.modal').remove()">×</button>
+        <button class="modal-close" id="quick-add-close">×</button>
       </div>
       <div class="modal-body">
         <div class="form-group">
@@ -707,11 +723,42 @@ async function showQuickAddOptionModal(group, field, defaultValue = '') {
       </div>
       <div class="modal-footer">
         <button class="form-btn primary" id="quick-add-save">保存</button>
-        <button class="form-btn" onclick="this.closest('.modal').remove()">取消</button>
+        <button class="form-btn" id="quick-add-cancel">取消</button>
       </div>
     </div>
   `;
-  document.body.appendChild(modal);
+
+  overlay.appendChild(modal);
+  document.body.appendChild(overlay);
+
+  // 关闭函数
+  const closeModal = () => {
+    overlay.remove();
+  };
+
+  // 绑定关闭按钮
+  const closeBtn = modal.querySelector('#quick-add-close');
+  closeBtn.addEventListener('click', closeModal);
+
+  // 绑定取消按钮
+  const cancelBtn = modal.querySelector('#quick-add-cancel');
+  cancelBtn.addEventListener('click', closeModal);
+
+  // 点击遮罩关闭
+  overlay.addEventListener('click', (e) => {
+    if (e.target === overlay) {
+      closeModal();
+    }
+  });
+
+  // ESC 键关闭
+  const handleEscKey = (e) => {
+    if (e.key === 'Escape') {
+      closeModal();
+      document.removeEventListener('keydown', handleEscKey);
+    }
+  };
+  document.addEventListener('keydown', handleEscKey);
 
   const saveBtn = modal.querySelector('#quick-add-save');
   saveBtn.addEventListener('click', async () => {
@@ -720,7 +767,7 @@ async function showQuickAddOptionModal(group, field, defaultValue = '') {
     const description = document.getElementById('quick-option-description').value.trim();
 
     if (!type || !style || !description) {
-      alert('请填写所有必填字段');
+      window.showToast('请填写所有必填字段');
       return;
     }
 
@@ -734,7 +781,7 @@ async function showQuickAddOptionModal(group, field, defaultValue = '') {
       });
 
       if (result.success) {
-        modal.remove();
+        closeModal();
         window.showUpdateNotification();
         // 重新渲染当前属性表单
         if (window.appState.currentShot && field.startsWith('shot')) {
@@ -743,11 +790,11 @@ async function showQuickAddOptionModal(group, field, defaultValue = '') {
           await showSceneProperties(window.appState.currentScene);
         }
       } else {
-        alert('添加失败：' + result.error);
+        window.showToast('添加失败：' + result.error);
       }
     } catch (error) {
       console.error('[propertyPanel] showQuickAddOptionModal: 添加选项失败', error);
-      alert('添加失败：' + error.message);
+      window.showToast('添加失败：' + error.message);
     }
   });
 }
