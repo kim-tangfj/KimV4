@@ -131,7 +131,8 @@ function initOptionsIPC() {
   // 添加自定义选项
   ipcMain.handle('options:addCustom', (event, option) => {
     return withErrorHandler(async () => {
-      validateParams(option, ['name', 'group']);
+      // 验证参数：group, type, style, description 是必填的
+      validateParams(option, ['group', 'type', 'style', 'description']);
       const customOptions = loadCustomOptions();
 
       // 生成 ID
