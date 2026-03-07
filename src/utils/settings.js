@@ -8,10 +8,37 @@
  * 填充设置表单字段
  */
 async function loadSettings() {
+  // 初始化 window.settings（如果未定义）
+  if (!window.settings) {
+    window.settings = {
+      storagePath: '',
+      apiProvider: 'deepseek',
+      apiKeys: {
+        deepseek: '',
+        doubao: '',
+        qianwen: '',
+        ailian: ''
+      },
+      models: {
+        deepseek: 'deepseek-chat',
+        doubao: 'doubao-pro-4k',
+        qianwen: 'qwen3.5-plus',
+        ailian: 'qwen3.5-plus'
+      },
+      templates: [],
+      activeTemplateId: null
+    };
+  }
+
   const settings = window.settings;
-  const elements = window.elements;
-  const useElectronAPI = window.useElectronAPI;
-  let currentTheme = window.currentTheme || 'light';
+  const elements = window.elements || {};
+  const useElectronAPI = window.useElectronAPI || false;
+  
+  // 初始化 window.currentTheme（如果未定义）
+  if (!window.currentTheme) {
+    window.currentTheme = 'light';
+  }
+  let currentTheme = window.currentTheme;
 
   // 从 localStorage 加载基本设置（主题、API 配置等）
   const savedSettings = localStorage.getItem('kim_settings');
