@@ -4,6 +4,45 @@
 
 ---
 
+## 2026-03-07 - 镜头管理模块拆分检查
+
+### 检查内容
+检查所有镜头（scene）相关的函数是否都已完成拆分迁移到 `sceneList.js` 和 `propertyPanel.js`。
+
+### 已迁移的函数（sceneList.js）
+| 函数 | 说明 | 状态 |
+|------|------|------|
+| `renderSceneList` | 渲染镜头列表 | ✅ 已迁移 |
+| `selectScene` | 选择镜头 | ✅ 已迁移 |
+| `createNewScene` | 新建镜头 | ✅ 已迁移 |
+| `deleteSelectedScene` | 删除镜头 | ✅ 已迁移 |
+
+### 已迁移的函数（propertyPanel.js）
+| 函数 | 说明 | 状态 |
+|------|------|------|
+| `showSceneProperties` | 显示镜头属性表单 | ✅ 已迁移 |
+| `autoSaveSceneProperties` | 自动保存镜头属性 | ✅ 已迁移 |
+| `saveSceneProperties` | 保存镜头属性 | ✅ 已迁移 |
+| `setupSceneOptionHintListeners` | 设置镜头选项提示监听 | ✅ 已迁移 |
+
+### 保留在 renderer.js 中的函数
+| 函数 | 说明 | 原因 |
+|------|------|------|
+| `generateScenePrompt` | 生成镜头提示词 | 提示词生成功能 |
+| `toggleSceneView` | 切换视图（待实现） | UI 交互功能 |
+
+### 注释标记（renderer.js 第 2330-2332 行）
+```javascript
+// ========== 镜头管理 ==========
+// 镜头管理函数已移至 src/utils/sceneList.js 模块
+// renderSceneList, selectScene, createNewScene, deleteSelectedScene
+```
+
+### 提交
+- 待提交
+
+---
+
 ## 2026-03-07 - 片段管理模块拆分检查
 
 ### 检查内容
