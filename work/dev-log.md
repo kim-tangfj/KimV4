@@ -4,6 +4,93 @@
 
 ---
 
+## 2026-03-07 - 属性面板模块拆分
+
+### 修改内容
+
+**1. 创建属性面板模块** (`src/utils/propertyPanel.js` - 约 650 行)
+- `showShotProperties(shot)` - 显示片段属性表单
+- `showSceneProperties(scene)` - 显示镜头属性表单
+- `autoSaveShotProperties()` - 自动保存片段属性
+- `autoSaveSceneProperties()` - 自动保存镜头属性
+- `saveShotProperties(isAutoSave)` - 保存片段属性
+- `saveSceneProperties(isAutoSave)` - 保存镜头属性
+- `setupOptionHintListeners()` - 片段选项提示监听
+- `setupSceneOptionHintListeners()` - 镜头选项提示监听
+- `setupAddOptionButtons()` - 添加选项按钮事件
+- `showQuickAddOptionModal(group, field)` - 快速添加选项弹窗
+
+**2. 更新 renderer.js**
+- 重复代码已注释保留（约 687 行）
+- 注释位置：
+  - `setupOptionHintListeners()` - 第 2099-2128 行
+  - `setupSceneOptionHintListeners()` - 第 2131-2151 行
+  - `setupAddOptionButtons()` - 第 2154-2165 行
+  - `showQuickAddOptionModal()` - 第 2168-2233 行
+  - `showShotProperties()` - 第 2636-2806 行
+  - `shotSaveTimeout, savingShotId, autoSaveShotProperties, saveShotProperties` - 第 2812-2948 行
+  - `showSceneProperties()` - 第 2952-3068 行
+  - `sceneSaveTimeout, savingSceneId, autoSaveSceneProperties, saveSceneProperties` - 第 3072-3204 行
+
+**3. 保留的变量声明**（在文件顶部）
+```javascript
+window.shotSaveTimeout = null;
+window.savingShotId = null;
+window.sceneSaveTimeout = null;
+window.savingSceneId = null;
+```
+
+**4. 更新 index.html**
+- 添加属性面板模块脚本引用
+
+**5. 模块依赖关系**
+```
+propertyPanel.js 依赖:
+- window.appState: 应用状态
+- window.elements: DOM 元素引用
+- window.useElectronAPI: Electron API 标志
+- window.electronAPI: Electron API 接口
+- window.renderShotList: 渲染片段列表
+- window.updatePromptPreview: 更新提示词
+- window.loadOptionsByGroup: 加载自定义选项
+- window.showUpdateNotification: 提示通知
+
+renderer.js 保留:
+- 变量声明（window.shotSaveTimeout 等）
+- 注释的重复代码（供参考）
+```
+
+**6. 调试日志**
+- 每个函数入口添加 `console.log` 输出
+- 保存操作添加详细步骤日志
+- 错误处理添加 `console.error` 输出
+
+### 模块拆分进度
+
+| 模块 | 文件 | 行数 | 状态 |
+|------|------|------|------|
+| 项目管理 | `src/utils/projectList.js` | ~340 行 | ✅ |
+| 片段管理 | `src/utils/shotList.js` | ~400 行 | ✅ |
+| 镜头管理 | `src/utils/sceneList.js` | ~230 行 | ✅ |
+| 属性面板 | `src/utils/propertyPanel.js` | ~650 行 | ✅ |
+| 提示词生成 | （在 renderer.js 中） | ~500 行 | ⏳ |
+| 设置管理 | （在 renderer.js 中） | ~400 行 | ⏳ |
+
+### renderer.js 代码变化
+
+| 阶段 | 行数 | 说明 |
+|------|------|------|
+| 原始 | 3629 行 | - |
+| 属性面板拆分后 | 3629 行 | 代码已注释保留 |
+| 注释代码 | ~687 行 | 重复代码已注释 |
+
+### 下一步计划
+- [ ] 测试属性面板模块功能
+- [ ] 设置管理模块拆分 (`src/utils/settings.js`)
+- [ ] 提示词生成模块拆分 (`src/utils/promptGenerator.js`)
+
+---
+
 ## 2026-03-07 - 清理调试日志
 
 ### 修改内容
