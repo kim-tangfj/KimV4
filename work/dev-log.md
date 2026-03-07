@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-03-07 - 修复 loadProjects 中 window.settings 未定义的问题
+
+### 问题描述
+加载项目时报错：`Cannot read properties of undefined (reading 'storagePath')`
+
+### 原因分析
+`loadProjects` 函数中使用了 `window.settings.storagePath`，但 `window.settings` 可能还没有被定义。
+
+### 修复内容
+**修改 `loadProjects` 函数**（`src/utils/projectList.js` 第 329-340 行）
+
+修复前：
+```javascript
+const result = await window.electronAPI.listProjects(window.settings.storagePath || '');
+```
+
+修复后：
+```javascript
+const storagePath = window.settings?.storagePath || '文档/KimStoryboard';
+const result = await window.electronAPI.listProjects(storagePath);
+```
+
+### 提交
+- `fix: 修复 loadProjects 中 window.settings 未定义的问题`
+
+---
+
 ## 2026-03-07 - 迁移 loadProjects 和 selectProject 到 projectList.js
 
 ### 检查项目模块拆分状态
