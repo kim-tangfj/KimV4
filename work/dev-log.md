@@ -4,6 +4,56 @@
 
 ---
 
+## 2026-03-07 - 片段管理模块拆分检查
+
+### 检查内容
+检查所有片段（shot）相关的函数是否都已完成拆分迁移到 `shotList.js`。
+
+### 已迁移的函数（shotList.js）
+| 函数 | 说明 | 状态 |
+|------|------|------|
+| `renderShotList` | 渲染片段列表 | ✅ 已迁移 |
+| `selectShot` | 选择片段 | ✅ 已迁移 |
+| `createNewShot` | 新建片段 | ✅ 已迁移 |
+| `deleteSelectedShot` | 删除片段 | ✅ 已迁移 |
+| `showShotStatusMenu` | 显示片段状态菜单 | ✅ 已迁移 |
+| `updateShotStatus` | 更新片段状态 | ✅ 已迁移 |
+| `getStatusText` | 获取状态文本 | ✅ 已迁移 |
+
+### 保留在 renderer.js 中的函数
+| 函数 | 说明 | 原因 |
+|------|------|------|
+| `generateShotPrompt` | 生成片段提示词 | 提示词生成功能 |
+| `generateScenePrompt` | 生成镜头提示词 | 提示词生成功能 |
+| `generateProjectPrompt` | 生成项目提示词 | 提示词生成功能 |
+| `renderPromptWithHighlight` | 渲染提示词并高亮 | 提示词生成功能 |
+
+### 清理内容
+**移除 renderer.js exposeGlobals 中的重复导出**：
+- `window.renderShotList` - 已在 shotList.js 中导出
+- `window.renderSceneList` - 已在 sceneList.js 中导出
+- `window.selectScene` - 已在 sceneList.js 中导出
+- `window.selectProject` - 已在 projectList.js 中导出
+- `window.showShotProperties` - 已在 propertyPanel.js 中导出
+- `window.showSceneProperties` - 已在 propertyPanel.js 中导出
+
+**添加模块拆分注释标记**（renderer.js 第 2330-2348 行）：
+```javascript
+// ========== 片段管理 ==========
+// 片段管理函数已移至 src/utils/shotList.js 模块
+// renderShotList, selectShot, createNewShot, deleteSelectedShot
+// showShotStatusMenu, updateShotStatus, getStatusText
+
+// ========== 属性面板 ==========
+// 属性面板函数已移至 src/utils/propertyPanel.js 模块
+// ...
+```
+
+### 提交
+- `refactor: 清理片段管理模块相关导出和注释`
+
+---
+
 ## 2026-03-07 - 修复 window.settings 在 loadProjects 调用前未初始化的问题
 
 ### 问题描述
