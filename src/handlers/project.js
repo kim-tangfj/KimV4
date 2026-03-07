@@ -148,10 +148,7 @@ function initProjectIPC(mainWindow) {
       fs.writeFileSync(path.join(projectDir, 'project.json'), JSON.stringify(projectJson, null, 2), 'utf8');
 
       return { success: true, projectDir: projectDir, projectJson: projectJson };
-    } catch (error) {
-      console.error('创建项目失败:', error);
-      return { success: false, error: error.message };
-    }
+    }, '创建项目');
   });
 
   ipcMain.handle('project:load', async (event, projectDir) => {
