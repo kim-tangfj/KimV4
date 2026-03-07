@@ -2,6 +2,12 @@
 // Kim 多级分镜提示词助手 - 渲染进程
 //
 
+// ========== 模块导入 ==========
+// 提示词生成模块已移至 src/utils/promptGenerator.js
+// 包含函数：generateScenePrompt, generateShotPrompt, generateProjectPrompt,
+//          renderPromptWithHighlight, updatePromptPreview, copyPromptToClipboard,
+//          exportPrompt, clearPrompt, generatePromptFromAI
+
 // 应用数据状态
 let appState = {
   projects: [],
@@ -1496,8 +1502,10 @@ function saveSettingsToStorage() {
 }
 
 // ========== AI 生成提示词 ==========
+// 【已迁移至 src/utils/promptGenerator.js】
 
 // 生成提示词并调用 AI
+/* === 已注释 - 函数已迁移至 promptGenerator.js ===
 async function generatePromptFromAI() {
   const script = elements.aiProjectScript?.value.trim();
   const provider = elements.aiProvider?.value || 'deepseek';
@@ -1508,7 +1516,7 @@ async function generatePromptFromAI() {
   }
 
   const apiKey = settings.apiKeys[provider];
-  
+
   if (!apiKey) {
     alert('请先在设置中配置 API Key');
     showSettingsModal();
@@ -1536,7 +1544,7 @@ async function generatePromptFromAI() {
       let jsonData;
       try {
         const jsonMatch = result.content.match(/\{[\s\S]*\}/);
-        
+
         if (jsonMatch) {
           jsonData = JSON.parse(jsonMatch[0]);
         } else {
@@ -1572,6 +1580,7 @@ async function generatePromptFromAI() {
     }
   }
 }
+=== 已注释结束 === */
 
 // 备份模板
 async function backupTemplates() {
@@ -2343,11 +2352,13 @@ async function createProjectAI() {
 // setupAddOptionButtons, showQuickAddOptionModal
 
 // ========== 提示词 ==========
+// 【已迁移至 src/utils/promptGenerator.js】
 
 // 提示词生成函数（按 defualt-prompt.md 模板）
+/* === 已注释 - 函数已迁移至 promptGenerator.js ===
 function generateScenePrompt(scene, index, cumulativeTime) {
   if (!scene) return '';
-  
+
   const shotType = scene.shotType || '';
   const angle = scene.angle || '';
   const camera = scene.camera || '';
@@ -2355,34 +2366,34 @@ function generateScenePrompt(scene, index, cumulativeTime) {
   const emotion = scene.emotion || '';
   const dialogue = scene.dialogue || '';
   const notes = scene.notes || '';
-  
+
   // 计算镜头时间
   const duration = scene.duration || 2;
   const startTime = cumulativeTime;
   const endTime = cumulativeTime + duration;
   const timeRange = `${startTime}-${endTime}秒`;
-  
+
   // 格式：## 镜头 1\n**0-1 秒**：[特写、俯视、固定镜头]，内容...（情绪）
   let prompt = `## 镜头${index + 1}\n**${timeRange}**：`;
-  
+
   if (shotType || angle || camera) {
     prompt += `[${[shotType, angle, camera].filter(Boolean).join('、')}]，`;
   }
-  
+
   prompt += content;
-  
+
   if (emotion) {
     prompt += `（${emotion}）`;
   }
-  
+
   if (dialogue) {
     prompt += `\n【对白】${dialogue}`;
   }
-  
+
   if (notes) {
     prompt += `\n【其他备注】${notes}`;
   }
-  
+
   return prompt;
 }
 
@@ -2391,37 +2402,37 @@ function generateShotPrompt(shot) {
 
   // 片段头部信息
   let prompt = '';
-  
+
   // **风格**：风格，情绪氛围
   if (shot.style || shot.mood) {
     prompt += `**风格**：${shot.style || ''}${shot.mood ? `，${shot.mood}` : ''}\n\n`;
   }
-  
+
   // **时长**：视频时长（秒）
   if (shot.duration) {
     prompt += `**时长**：${shot.duration}秒\n\n`;
   }
-  
+
   // **画幅**：画幅比例
   if (shot.aspectRatio) {
     prompt += `**画幅**：${shot.aspectRatio}\n\n`;
   }
-  
+
   // **角色**：角色
   if (shot.characters) {
     prompt += `**角色**：${shot.characters}\n\n`;
   }
-  
+
   // **场景**：场景设定
   if (shot.sceneSetting) {
     prompt += `**场景**：${shot.sceneSetting}\n\n`;
   }
-  
+
   // **片段描述**：片段描述
   if (shot.description) {
     prompt += `**片段描述**：${shot.description}\n\n`;
   }
-  
+
   // **声音**：对白 + 配乐风格 + 音效需求
   const soundParts = [];
   if (shot.musicStyle) soundParts.push(shot.musicStyle);
@@ -2429,7 +2440,7 @@ function generateShotPrompt(shot) {
   if (soundParts.length > 0) {
     prompt += `**声音**：对白 + ${soundParts.join(' + ')}\n\n`;
   }
-  
+
   // **参考**：图片参考，视频参考，音频参考
   const refs = [];
   if (shot.imageRef) refs.push(shot.imageRef);
@@ -2438,19 +2449,19 @@ function generateShotPrompt(shot) {
   if (refs.length > 0) {
     prompt += `**参考**：${refs.join('，')}\n\n`;
   }
-  
+
   // 自定义提示词部分
   if (shot.customPrompt) {
     prompt += `${shot.customPrompt}\n\n`;
   }
-  
+
   // 镜头列表
   const scenes = shot.scenes || [];
   const enabledScenes = scenes.filter(scene => scene.enabled !== false);
-  
+
   if (enabledScenes.length > 0) {
     prompt += '---\n# 镜头\n\n';
-    
+
     let cumulativeTime = 0;
     enabledScenes.forEach((scene, index) => {
       prompt += generateScenePrompt(scene, index, cumulativeTime);
@@ -2458,7 +2469,7 @@ function generateShotPrompt(shot) {
       prompt += '\n\n';
     });
   }
-  
+
   return prompt.trim();
 }
 
@@ -2488,7 +2499,7 @@ function renderPromptWithHighlight(prompt) {
     const regex = new RegExp(`(\\*\\*${keyword}\\*\\*)`, 'g');
     highlighted = highlighted.replace(regex, '<span class="prompt-tag">$1</span>');
   });
-  
+
   highlighted = highlighted.replace(/(---)/g, '<span class="prompt-separator">$1</span>');
   highlighted = highlighted.replace(/(\d+-\d+ 秒)/g, '<span class="prompt-scene-time">$1</span>');
   highlighted = highlighted.replace(/(## 镜头\d+)/g, '<span class="prompt-scene-title">$1</span>');
@@ -2513,6 +2524,7 @@ function updatePromptPreview() {
 
   elements.promptPreview.innerHTML = renderPromptWithHighlight(prompt);
 }
+=== 已注释结束 === */
 
 // ========== 属性面板 ==========
 
@@ -2545,6 +2557,8 @@ async function openProjectFolder() {
   }
 }
 
+// 【已迁移至 src/utils/promptGenerator.js】
+/* === 已注释 - 函数已迁移至 promptGenerator.js ===
 function copyPromptToClipboard() {
   const prompt = elements.promptPreview?.textContent;
   if (prompt) {
@@ -2572,6 +2586,7 @@ function clearPrompt() {
     elements.promptPreview.innerHTML = '<div class="placeholder-text">请选中项目 > 片段 > 镜头，自动生成提示词</div>';
   }
 }
+=== 已注释结束 === */
 
 function toggleBottomPanel() {
   if (elements.bottomPanel) {
@@ -2965,8 +2980,11 @@ function exposeGlobals() {
   // 镜头管理函数已在 sceneList.js 中导出：renderSceneList, selectScene
   // 属性面板函数已在 propertyPanel.js 中导出：showShotProperties, showSceneProperties
   // 项目管理函数已在 projectList.js 中导出：selectProject
-  
-  window.updatePromptPreview = updatePromptPreview;
+  // 提示词生成函数已在 promptGenerator.js 中导出：generateScenePrompt, generateShotPrompt,
+  //   generateProjectPrompt, renderPromptWithHighlight, updatePromptPreview, copyPromptToClipboard,
+  //   exportPrompt, clearPrompt, generatePromptFromAI
+
+  // 注意：updatePromptPreview 已在 promptGenerator.js 中导出，此处无需重复导出
   window.showToast = showToast;
   window.showConfirm = showConfirm;
   window.loadOptionsByGroup = loadOptionsByGroup;

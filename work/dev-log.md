@@ -4,6 +4,119 @@
 
 ---
 
+## 2026-03-07 - 提示词生成模块拆分
+
+### 拆分内容
+将 `renderer.js` 中的提示词生成相关函数拆分到独立的 `src/utils/promptGenerator.js` 模块中。
+
+### 已迁移的函数（promptGenerator.js）
+| 函数 | 说明 | 行数 |
+|------|------|------|
+| `generateScenePrompt` | 生成单个镜头的提示词 | ~50 行 |
+| `generateShotPrompt` | 生成片段的提示词 | ~75 行 |
+| `generateProjectPrompt` | 生成项目的提示词 | ~12 行 |
+| `renderPromptWithHighlight` | 渲染提示词并添加语法高亮 | ~20 行 |
+| `updatePromptPreview` | 更新提示词预览区域 | ~20 行 |
+| `copyPromptToClipboard` | 复制提示词到剪贴板 | ~8 行 |
+| `exportPrompt` | 导出提示词为文本文件 | ~12 行 |
+| `clearPrompt` | 清空提示词预览区域 | ~6 行 |
+| `generatePromptFromAI` | 从 AI 生成提示词（AI 模式） | ~70 行 |
+
+### 模块文件
+- **新文件**: `src/utils/promptGenerator.js` (266 行)
+- **原文件**: `src/renderer.js` (2998 行 → 2567 行，减少 431 行，-14.4%)
+
+### 注释标记（renderer.js）
+
+**文件头部（第 5-9 行）**：
+```javascript
+// ========== 模块导入 ==========
+// 提示词生成模块已移至 src/utils/promptGenerator.js
+// 包含函数：generateScenePrompt, generateShotPrompt, generateProjectPrompt,
+//          renderPromptWithHighlight, updatePromptPreview, copyPromptToClipboard,
+//          exportPrompt, clearPrompt, generatePromptFromAI
+```
+
+**AI 生成提示词函数（第 1504-1586 行）**：
+```javascript
+// ========== AI 生成提示词 ==========
+// 【已迁移至 src/utils/promptGenerator.js】
+
+// 生成提示词并调用 AI
+/* === 已注释 - 函数已迁移至 promptGenerator.js ===
+async function generatePromptFromAI() { ... }
+=== 已注释结束 === */
+```
+
+**提示词生成核心函数（第 2354-2528 行）**：
+```javascript
+// ========== 提示词 ==========
+// 【已迁移至 src/utils/promptGenerator.js】
+
+// 提示词生成函数（按 defualt-prompt.md 模板）
+/* === 已注释 - 函数已迁移至 promptGenerator.js ===
+function generateScenePrompt(...) { ... }
+function generateShotPrompt(...) { ... }
+function generateProjectPrompt(...) { ... }
+function renderPromptWithHighlight(...) { ... }
+function updatePromptPreview() { ... }
+=== 已注释结束 === */
+```
+
+**提示词操作函数（第 2559-2590 行）**：
+```javascript
+// 【已迁移至 src/utils/promptGenerator.js】
+/* === 已注释 - 函数已迁移至 promptGenerator.js ===
+function copyPromptToClipboard() { ... }
+function exportPrompt() { ... }
+function clearPrompt() { ... }
+=== 已注释结束 === */
+```
+
+**exposeGlobals 函数更新（第 2984-2987 行）**：
+```javascript
+// 提示词生成函数已在 promptGenerator.js 中导出：generateScenePrompt, generateShotPrompt,
+//   generateProjectPrompt, renderPromptWithHighlight, updatePromptPreview, copyPromptToClipboard,
+//   exportPrompt, clearPrompt, generatePromptFromAI
+
+// 注意：updatePromptPreview 已在 promptGenerator.js 中导出，此处无需重复导出
+```
+
+### 代码统计
+| 文件 | 拆分前 | 拆分后 | 变化 |
+|------|--------|--------|------|
+| `renderer.js` | 2998 行 | 2567 行 | -431 行 (-14.4%) |
+| `promptGenerator.js` | - | 266 行 | +266 行 |
+
+### 累计模块拆分进度
+| 模块 | 文件 | 行数 | 状态 |
+|------|------|------|------|
+| 项目管理 | `src/utils/projectList.js` | 436 行 | ✅ 已完成 |
+| 片段管理 | `src/utils/shotList.js` | 413 行 | ✅ 已完成 |
+| 镜头管理 | `src/utils/sceneList.js` | 230 行 | ✅ 已完成 |
+| 属性面板 | `src/utils/propertyPanel.js` | 766 行 | ✅ 已完成 |
+| **提示词生成** | **`src/utils/promptGenerator.js`** | **266 行** | **✅ 已完成** |
+| 设置管理 | （在 renderer.js 中） | ~200 行 | ⏳ 待拆分 |
+| 自定义选项 | （在 renderer.js 中） | ~300 行 | ⏳ 待拆分 |
+| 工具函数 | （在 renderer.js 中） | ~150 行 | ⏳ 待拆分 |
+
+### renderer.js 代码变化
+| 阶段 | 行数 | 减少 |
+|------|------|------|
+| 原始 | 3988 行 | - |
+| 模块拆分前 | 2998 行 | -990 行 (-24.8%) |
+| 提示词模块拆分后 | 2567 行 | -431 行 (-14.4%) |
+| **累计减少** | | **-1421 行 (-35.6%)** |
+
+### 测试验证
+- [x] 应用启动正常
+- [ ] 提示词自动生成功能
+- [ ] 复制提示词功能
+- [ ] 导出提示词功能
+- [ ] AI 生成提示词功能
+
+---
+
 ## 2026-03-07 - 属性面板模块拆分检查
 
 ### 检查内容
