@@ -2,7 +2,7 @@
 // Kim 多级分镜提示词助手 - 渲染进程
 //
 
-// ======= 文件头注释和模块导入说明 开始 ========
+/**  ======= 文件头注释和模块导入说明 开始 ======== */
 // 提示词生成模块已移至 src/utils/promptGenerator.js
 // 包含函数：generateScenePrompt, generateShotPrompt, generateProjectPrompt,
 //          renderPromptWithHighlight, updatePromptPreview, copyPromptToClipboard,
@@ -19,10 +19,10 @@
 // UI 工具函数模块已移至 src/utils/uiHelpers.js
 // 包含函数：showInputError, initPanelResizers, handleResizerMouseMove, handleResizerMouseUp,
 //          getPanelConstraints, showToast, showConfirm, showCustomPrompt, showUpdateNotification
-// ======= 文件头注释和模块导入说明 结束 ========
+/** ======= 文件头注释和模块导入说明 结束 ======== */
 
 
-// ======= 全局变量定义 开始 ========
+/**  ======= 全局变量定义 开始 ======== */
 // 应用数据状态
 let appState = {
   projects: [],
@@ -64,10 +64,10 @@ let currentResizer = null;
 let startX = 0;
 let startWidth = 0;
 let currentPanel = null;
-// ======= 全局变量定义 结束 ========
+/** ======= 全局变量定义 结束 ======== */
 
 
-// ======= DOM 元素缓存 开始 ========
+/** ======= DOM 元素缓存 开始 ======== */
 // DOM 元素引用
 const elements = {};
 
@@ -240,7 +240,7 @@ function cacheDOMElements() {
   elements.bottomPanelTitle = document.getElementById('bottom-panel-title');
   elements.panelToggleHeader = document.getElementById('panel-toggle-header');
 }
-// ======= DOM 元素缓存 结束 ========
+/** ======= DOM 元素缓存 结束 ======== */
 
 
 // ======= 应用初始化 开始 ========
@@ -555,11 +555,6 @@ function setupEventListeners() {
 
 
 // ======= 项目管理功能 开始 ========
-// 项目管理函数已移至 src/utils/projectList.js
-// [已移至 projectList.js] 加载项目列表
-// [已移至 projectList.js] 选择项目
-// showProjectContextMenu, openProjectFolderByProject, showProjectStatusMenu
-
 // AI 创建项目（使用预览的数据）
 async function createProjectAI() {
   const name = elements.aiProjectName?.value.trim();
@@ -850,12 +845,7 @@ async function createProjectManual() {
         return;
       }
 
-      // 使用激活的模板而不是硬编码的提示词
-      const activeTemplate = settings.templates.find(t => t.id === settings.activeTemplateId);
-      const template = activeTemplate || getDefaultTemplate();
-      
-      // 替换 {剧本内容} 占位符
-      const prompt = template.content.replace('{剧本内容}', script);
+      const prompt = buildPromptFromTemplate(script);
 
       const result = await window.electronAPI.callLlmApi(provider, apiKey, model, prompt);
 
@@ -900,10 +890,6 @@ async function createProjectManual() {
   }
 }
 
-// ========== 已废弃的函数 ==========
-// buildPromptFromTemplate - 已废弃，改用模板系统中的激活模板
-
-/* === 已废弃 - 改用模板系统中的激活模板 ===
 // 构建提示词模板
 function buildPromptFromTemplate(script) {
   return `你是一位专业的视频分镜脚本助手。请将以下剧本内容转换为结构化的 JSON 格式片段数据。
@@ -999,7 +985,6 @@ ${script}
 - 返回标准 JSON 格式，可直接解析
 - 所有字段都要填写，没有内容的字段填空字符串""`;
 }
-=== 已废弃结束 === */
 
 // 复制模板（使用激活的模板）
 function copyTemplate() {
@@ -1337,7 +1322,9 @@ async function openTemplateFolder() {
 // 包含函数：showCustomOptionsModal, hideCustomOptionsModal, loadGroupFilter, loadCustomOptionsList,
 // renderBuiltinOptionsList, renderCustomOptionsList, showAddCustomOptionForm, showEditCustomOptionForm,
 // loadGroupFilterForEditForm, hideCustomOptionEditModal, saveCustomOptionEdit, saveCustomOption,
-// deleteCustomOption, hideCustomOptionForm, backupOptions, restoreOptions, openOptionsFolder
+// deleteCustomOption, hideCustomOptionForm
+
+/* === 已注释 - 函数已迁移至 customOptions.js ===
 
 // 显示自定义选项管理弹窗
 async function showCustomOptionsModal() {
@@ -1765,6 +1752,8 @@ async function deleteCustomOption(optionId) {
   }
 }
 
+=== 已注释结束 === */
+
 // 加载指定组别的选项
 async function loadOptionsByGroup(group) {
   if (!useElectronAPI) return [];
@@ -1778,86 +1767,6 @@ async function loadOptionsByGroup(group) {
 }
 // ======= 自定义选项管理功能（已迁移，保留注释）结束 ========
 
-
-// ======= 项目加载和渲染 开始 ========
-// [已移至 projectList.js] 加载项目列表
-// [已移至 projectList.js] 选择项目
-// ======= 项目加载和渲染 结束 ========
-
-
-// ======= 镜头管理功能（已迁移，保留注释）开始 ========
-// ========== 镜头管理 ==========
-// 镜头管理函数已移至 src/utils/sceneList.js 模块
-// renderSceneList, selectScene, createNewScene, deleteSelectedScene
-// ======= 镜头管理功能（已迁移，保留注释）结束 ========
-
-
-// ======= 片段管理功能（已迁移，保留注释）开始 ========
-// ========== 片段管理 ==========
-// 片段管理函数已移至 src/utils/shotList.js 模块
-// renderShotList, selectShot, createNewShot, deleteSelectedShot
-// showShotStatusMenu, updateShotStatus, getStatusText
-// ======= 片段管理功能（已迁移，保留注释）结束 ========
-
-
-// ======= 属性面板功能（已迁移，保留注释）开始 ========
-// ========== 属性面板 ==========
-// 属性面板函数已移至 src/utils/propertyPanel.js 模块
-// showShotProperties, showSceneProperties, autoSaveShotProperties, autoSaveSceneProperties
-// saveShotProperties, saveSceneProperties, setupOptionHintListeners, setupSceneOptionHintListeners
-// setupAddOptionButtons, showQuickAddOptionModal
-// [已移至 src/utils/propertyPanel.js] 设置选项提示监听 setupOptionHintListeners
-// [已移至 src/utils/propertyPanel.js] 设置镜头选项提示监听 setupSceneOptionHintListeners
-// [已移至 src/utils/propertyPanel.js] 设置添加选项按钮事件 setupAddOptionButtons
-// [已移至 src/utils/propertyPanel.js] 显示快速添加选项弹窗 showQuickAddOptionModal
-// [已移至 src/utils/propertyPanel.js] 显示片段属性表单 showShotProperties
-// [已移至 src/utils/propertyPanel.js] 自动保存片段属性相关变量和函数 autoSaveShotProperties
-// [已移至 src/utils/propertyPanel.js] 显示镜头属性表单 showSceneProperties
-// [已移至 src/utils/propertyPanel.js] 自动保存镜头属性相关变量和函数 autoSaveSceneProperties
-// ======= 属性面板功能（已迁移，保留注释）结束 ========
-
-
-// ======= 提示词功能（已迁移，保留注释）开始 ========
-// ========== 提示词 ==========
-// 【已迁移至 src/utils/promptGenerator.js】
-// 【已迁移至 src/utils/promptGenerator.js】
-// ======= 提示词功能（已迁移，保留注释）结束 ========
-
-
-// ======= 设置管理功能（已迁移，保留注释）开始 ========
-// ========== 设置管理 ==========
-// 【已迁移至 src/utils/settings.js】
-
-// 保存设置
-/* === 已注释 - 函数已迁移至 settings.js ===
-function saveSettings() {
-  settings.storagePath = elements.storagePathInput?.value || '';
-  settings.apiProvider = elements.apiProviderSelect?.value || 'deepseek';
-  settings.apiKeys.deepseek = elements.deepseekApiKey?.value || '';
-  settings.apiKeys.doubao = elements.doubaoApiKey?.value || '';
-  settings.apiKeys.qianwen = elements.qianwenApiKey?.value || '';
-  settings.apiKeys.ailian = elements.ailianApiKey?.value || '';
-  settings.models.deepseek = elements.deepseekModel?.value || 'deepseek-chat';
-  settings.models.doubao = elements.doubaoModel?.value || 'doubao-pro-4k';
-  settings.models.qianwen = elements.qianwenModel?.value || 'qwen3.5-plus';
-  settings.models.ailian = elements.ailianModel?.value || 'qwen3.5-plus';
-  settings.theme = currentTheme;
-  settings.autoSaveInterval = parseInt(elements.autoSaveInterval?.value) || 5;
-
-  localStorage.setItem('kim_settings', JSON.stringify(settings));
-  showUpdateNotification();
-}
-=== 已注释结束 === */
-// ======= 设置管理功能（已迁移，保留注释）结束 ========
-
-
-// ======= UI 工具函数（已迁移，保留注释）开始 ========
-// ========== UI 工具函数 ==========
-// 【已迁移至 src/utils/uiHelpers.js】
-
-// ========== 工具函数 ==========
-// 【已迁移至 src/utils/uiHelpers.js】
-// ======= UI 工具函数（已迁移，保留注释）结束 ========
 
 
 // ======= 面板控制功能 开始 ========
@@ -1886,35 +1795,11 @@ function toggleAssetsPanelByHeader(e) {
 // ======= 面板控制功能 结束 ========
 
 
-// ======= 包装函数（已删除，保留注释）开始 ========
-// 项目管理函数已移至 src/utils/projectList.js 模块
-// showProjectContextMenu, openProjectFolderByProject, showProjectStatusMenu
-
-// 片段管理函数已移至 src/utils/shotList.js 模块
-// renderShotList, selectShot, createNewShot, deleteSelectedShot, showShotStatusMenu, updateShotStatus, getStatusText
-// ======= 包装函数（已删除，保留注释）结束 ========
-
 
 // ======= 全局变量导出 开始 ========
 // ========== 全局变量暴露（供模块使用）==========
 // 注意：必须在 initializeApp 之后调用，确保 useElectronAPI 已更新
 function exposeGlobals() {
-  // 这些变量已在 initializeApp 中设置
-  // window.useElectronAPI = useElectronAPI;
-  // window.elements = elements;
-  // window.appState = appState;
-  // window.settings = settings;
-
-  // 导出 renderer.js 中的函数供模块使用
-  // 片段管理函数已在 shotList.js 中导出：renderShotList
-  // 镜头管理函数已在 sceneList.js 中导出：renderSceneList, selectScene
-  // 属性面板函数已在 propertyPanel.js 中导出：showShotProperties, showSceneProperties
-  // 项目管理函数已在 projectList.js 中导出：selectProject
-  // 提示词生成函数已在 promptGenerator.js 中导出：generateScenePrompt, generateShotPrompt,
-  //   generateProjectPrompt, renderPromptWithHighlight, updatePromptPreview, copyPromptToClipboard,
-  //   exportPrompt, clearPrompt, generatePromptFromAI
-
-  // 注意：updatePromptPreview 已在 promptGenerator.js 中导出，此处无需重复导出
   window.showToast = showToast;
   window.showConfirm = showConfirm;
   window.loadOptionsByGroup = loadOptionsByGroup;
