@@ -1287,22 +1287,7 @@ initializeApp = async function() {
 // ======= 全局变量导出 结束 ========
 
 
-// ======= 重复和未使用的代码区域 开始 ========
-// 以下函数已在 uiHelpers.js 中实现并导出，此处为重复代码，已注释
-
-/* === 已移除 - 函数已在 uiHelpers.js 中实现 ===
-
-// 显示更新通知
-function showUpdateNotification() {
-  // ... 已在 uiHelpers.js:386 实现 ...
-}
-
-// 显示自定义输入框
-async function showCustomPrompt(message, title = '输入') {
-  // ... 已在 uiHelpers.js:278 实现 ...
-}
-
-=== 已移除 - 函数已在 uiHelpers.js 中实现 === */
+// ======= 素材库 开始 ========
 
 // 渲染素材库列表
 // 注意：此函数仅在 renderer.js 中定义，已被 window.renderAssetsList 引用
@@ -1350,16 +1335,4 @@ function renderAssetsList(assets) {
     elements.assetsList.appendChild(assetElement);
   });
 }
-
-/* === 已移除 - 函数已在 uiHelpers.js 中实现 ===
-
-function showUpdateNotification() {
-  // 已在 uiHelpers.js:386 实现
-}
-
-async function showCustomPrompt(message, title = '输入') {
-  // 已在 uiHelpers.js:278 实现
-}
-
-=== 已移除 - 函数已在 uiHelpers.js 中实现 === */
-// ======= 重复和未使用的代码区域 结束 ========
+// ======= 素材库 结束 ========
