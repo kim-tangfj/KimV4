@@ -2219,101 +2219,106 @@ async function createProjectAI() {
 }
 
 // ========== 项目加载和渲染 ==========
-
-async function loadProjects() {
-  if (useElectronAPI) {
-    try {
-      // 使用设置中的存储路径
-      const result = await window.electronAPI.listProjects(settings.storagePath || '');
-      if (result.success) {
-        appState.projects = result.projects;
-        window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
-          window.showProjectContextMenu(project, e, selectProject, () => deleteCurrentProject(appState, elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm), window.openProjectFolderByProject);
-        }, (project, e) => {
-          // 点击状态标签时，弹出状态菜单
-          window.showProjectStatusMenu(project, e, (p, newStatus) => {
-            window.updateProjectStatus(p, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
-          });
-        });
-      } else {
-        appState.projects = [];
-        window.renderProjectList([], elements, selectProject, () => {}, () => {}, () => {});
-      }
-    } catch (error) {
-      console.error('加载项目异常:', error);
-      appState.projects = [];
-      window.renderProjectList([], elements, selectProject, () => {}, () => {}, () => {});
-    }
-  } else {
-    const savedProjects = localStorage.getItem('kim_projects');
-    if (savedProjects) {
-      appState.projects = JSON.parse(savedProjects);
-    } else {
-      appState.projects = [];
-    }
-    // 使用模块中的 renderProjectList 函数
-    window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
-      window.showProjectContextMenu(project, e, selectProject, () => deleteCurrentProject(appState, elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm), window.openProjectFolderByProject);
-    }, (project, e) => {
-      // 点击状态标签时，弹出状态菜单
-      window.showProjectStatusMenu(project, e, (p, newStatus) => {
-        window.updateProjectStatus(p, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
-      });
-    });
-  }
-}
+// [已移至 projectList.js] 加载项目列表
+/* 注释开始 - 已移至 src/utils/projectList.js */
+// async function loadProjects() {
+//   if (useElectronAPI) {
+//     try {
+//       // 使用设置中的存储路径
+//       const result = await window.electronAPI.listProjects(settings.storagePath || '');
+//       if (result.success) {
+//         appState.projects = result.projects;
+//         window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
+//           window.showProjectContextMenu(project, e, selectProject, () => deleteCurrentProject(appState, elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm), window.openProjectFolderByProject);
+//         }, (project, e) => {
+//           // 点击状态标签时，弹出状态菜单
+//           window.showProjectStatusMenu(project, e, (p, newStatus) => {
+//             window.updateProjectStatus(p, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
+//           });
+//         });
+//       } else {
+//         appState.projects = [];
+//         window.renderProjectList([], elements, selectProject, () => {}, () => {}, () => {});
+//       }
+//     } catch (error) {
+//       console.error('加载项目异常:', error);
+//       appState.projects = [];
+//       window.renderProjectList([], elements, selectProject, () => {}, () => {}, () => {});
+//     }
+//   } else {
+//     const savedProjects = localStorage.getItem('kim_projects');
+//     if (savedProjects) {
+//       appState.projects = JSON.parse(savedProjects);
+//     } else {
+//       appState.projects = [];
+//     }
+//     // 使用模块中的 renderProjectList 函数
+//     window.renderProjectList(appState.projects, elements, selectProject, (project, e) => {
+//       window.showProjectContextMenu(project, e, selectProject, () => deleteCurrentProject(appState, elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm), window.openProjectFolderByProject);
+//     }, (project, e) => {
+//       // 点击状态标签时，弹出状态菜单
+//       window.showProjectStatusMenu(project, e, (p, newStatus) => {
+//         window.updateProjectStatus(p, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
+//       });
+//     });
+//   }
+// }
+/* 注释结束 */
 
 // 项目管理函数已移至 src/utils/projectList.js
-async function selectProject(project) {
-  appState.currentProject = project;
-  appState.currentShot = null;
-  appState.currentScene = null;
+// [已移至 projectList.js] 选择项目
+/* 注释开始 - 已移至 src/utils/projectList.js */
+// async function selectProject(project) {
+//   appState.currentProject = project;
+//   appState.currentShot = null;
+//   appState.currentScene = null;
 
-  // 使用模块中的 updateProjectSelection 函数
-  if (window.updateProjectSelection) {
-    window.updateProjectSelection(elements, project.id);
-  }
+//   // 使用模块中的 updateProjectSelection 函数
+//   if (window.updateProjectSelection) {
+//     window.updateProjectSelection(elements, project.id);
+//   }
 
-  if (elements.newShotBtn) elements.newShotBtn.disabled = false;
-  if (elements.deleteShotBtn) elements.deleteShotBtn.disabled = false;
+//   if (elements.newShotBtn) elements.newShotBtn.disabled = false;
+//   if (elements.deleteShotBtn) elements.deleteShotBtn.disabled = false;
 
-  if (useElectronAPI && project.projectDir) {
-    try {
-      const result = await window.electronAPI.loadProject(project.projectDir);
-      if (result.success) {
-        appState.projectData = result.projectJson;
-        renderShotList(result.projectJson.shots || []);
-      } else {
-        renderShotList(project.shots || []);
-      }
-    } catch (error) {
-      console.error('加载项目数据失败:', error);
-      renderShotList(project.shots || []);
-    }
-  } else {
-    renderShotList(project.shots || []);
-  }
+//   if (useElectronAPI && project.projectDir) {
+//     try {
+//       const result = await window.electronAPI.loadProject(project.projectDir);
+//       if (result.success) {
+//         appState.projectData = result.projectJson;
+//         renderShotList(result.projectJson.shots || []);
+//       } else {
+//         renderShotList(project.shots || []);
+//       }
+//     } catch (error) {
+//       console.error('加载项目数据失败:', error);
+//       renderShotList(project.shots || []);
+//     }
+//   } else {
+//     renderShotList(project.shots || []);
+//   }
 
-  renderSceneList([]);
+//   renderSceneList([]);
 
-  // 清空提示词预览
-  if (elements.promptPreview) {
-    elements.promptPreview.innerHTML = '<div class="placeholder-text">请选择片段</div>';
-  }
+//   // 清空提示词预览
+//   if (elements.promptPreview) {
+//     elements.promptPreview.innerHTML = '<div class="placeholder-text">请选择片段</div>';
+//   }
 
-  // 清空属性栏
-  if (elements.propertyForm) {
-    elements.propertyForm.innerHTML = '<div class="placeholder-text">请选择片段或镜头以编辑属性</div>';
-  }
+//   // 清空属性栏
+//   if (elements.propertyForm) {
+//     elements.propertyForm.innerHTML = '<div class="placeholder-text">请选择片段或镜头以编辑属性</div>';
+//   }
 
-  // 重置底部面板标题
-  if (elements.bottomPanelTitle) {
-    elements.bottomPanelTitle.textContent = '属性';
-  }
+//   // 重置底部面板标题
+//   if (elements.bottomPanelTitle) {
+//     elements.bottomPanelTitle.textContent = '属性';
+//   }
 
-  // 清空素材库
-  renderAssetsList([]);
-}
+//   // 清空素材库
+//   renderAssetsList([]);
+// }
+/* 注释结束 */
 
 // ========== 镜头管理 ==========
 // 镜头管理函数已移至 src/utils/sceneList.js 模块

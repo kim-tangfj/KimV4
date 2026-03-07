@@ -323,6 +323,107 @@ async function deleteCurrentProject(appState, elements, useElectronAPI, loadProj
   }
 }
 
+/**
+ * 加载项目列表
+ */
+async function loadProjects() {
+  if (window.useElectronAPI) {
+    try {
+      // 使用设置中的存储路径
+      const result = await window.electronAPI.listProjects(window.settings.storagePath || '');
+      if (result.success) {
+        window.appState.projects = result.projects;
+        window.renderProjectList(window.appState.projects, window.elements, window.selectProject, (project, e) => {
+          window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(), window.openProjectFolderByProject);
+        }, (project, e) => {
+          // 点击状态标签时，弹出状态菜单
+          window.showProjectStatusMenu(project, e, (p, newStatus) => {
+            window.updateProjectStatus(p, newStatus, window.appState, window.useElectronAPI, loadProjects, window.showUpdateNotification);
+          });
+        });
+      } else {
+        window.appState.projects = [];
+        window.renderProjectList([], window.elements, window.selectProject, () => {}, () => {}, () => {});
+      }
+    } catch (error) {
+      console.error('加载项目异常:', error);
+      window.appState.projects = [];
+      window.renderProjectList([], window.elements, window.selectProject, () => {}, () => {}, () => {});
+    }
+  } else {
+    const savedProjects = localStorage.getItem('kim_projects');
+    if (savedProjects) {
+      window.appState.projects = JSON.parse(savedProjects);
+    } else {
+      window.appState.projects = [];
+    }
+    // 使用模块中的 renderProjectList 函数
+    window.renderProjectList(window.appState.projects, window.elements, window.selectProject, (project, e) => {
+      window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(), window.openProjectFolderByProject);
+    }, (project, e) => {
+      // 点击状态标签时，弹出状态菜单
+      window.showProjectStatusMenu(project, e, (p, newStatus) => {
+        window.updateProjectStatus(p, newStatus, window.appState, window.useElectronAPI, loadProjects, window.showUpdateNotification);
+      });
+    });
+  }
+}
+
+/**
+ * 选择项目
+ * @param {Object} project - 项目对象
+ */
+async function selectProject(project) {
+  window.appState.currentProject = project;
+  window.appState.currentShot = null;
+  window.appState.currentScene = null;
+
+  // 使用模块中的 updateProjectSelection 函数
+  if (window.updateProjectSelection) {
+    window.updateProjectSelection(window.elements, project.id);
+  }
+
+  if (window.elements.newShotBtn) window.elements.newShotBtn.disabled = false;
+  if (window.elements.deleteShotBtn) window.elements.deleteShotBtn.disabled = false;
+
+  if (window.useElectronAPI && project.projectDir) {
+    try {
+      const result = await window.electronAPI.loadProject(project.projectDir);
+      if (result.success) {
+        window.appState.projectData = result.projectJson;
+        window.renderShotList(result.projectJson.shots || []);
+      } else {
+        window.renderShotList(project.shots || []);
+      }
+    } catch (error) {
+      console.error('加载项目数据失败:', error);
+      window.renderShotList(project.shots || []);
+    }
+  } else {
+    window.renderShotList(project.shots || []);
+  }
+
+  window.renderSceneList([]);
+
+  // 清空提示词预览
+  if (window.elements.promptPreview) {
+    window.elements.promptPreview.innerHTML = '<div class="placeholder-text">请选择片段</div>';
+  }
+
+  // 清空属性栏
+  if (window.elements.propertyForm) {
+    window.elements.propertyForm.innerHTML = '<div class="placeholder-text">请选择项目、片段或镜头以编辑属性</div>';
+  }
+
+  // 重置底部面板标题
+  if (window.elements.bottomPanelTitle) {
+    window.elements.bottomPanelTitle.textContent = '属性';
+  }
+
+  // 清空素材库
+  window.renderAssetsList([]);
+}
+
 // 将函数暴露到全局作用域
 window.renderProjectList = renderProjectList;
 window.getStatusText = getStatusText;
@@ -332,3 +433,5 @@ window.showProjectStatusMenu = showProjectStatusMenu;
 window.openProjectFolderByProject = openProjectFolderByProject;
 window.updateProjectStatus = updateProjectStatus;
 window.deleteCurrentProject = deleteCurrentProject;
+window.loadProjects = loadProjects;
+window.selectProject = selectProject;
