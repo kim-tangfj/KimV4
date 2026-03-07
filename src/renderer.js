@@ -11,6 +11,12 @@
 // 包含函数：loadSettings, saveSettings, saveSettingsToStorage, applyTheme, toggleTheme,
 //          toggleApiKeyVisibility, testApiConnection, checkApiStatus, showSettingsModal,
 //          hideSettingsModal, showLoading, hideLoading, getDefaultTemplate, showTemplateStoragePath
+// 自定义选项管理模块已移至 src/utils/customOptions.js
+// 包含函数：showCustomOptionsModal, hideCustomOptionsModal, loadGroupFilter, loadCustomOptionsList,
+//          renderBuiltinOptionsList, renderCustomOptionsList, showAddCustomOptionForm,
+//          showEditCustomOptionForm, loadGroupFilterForEditForm, hideCustomOptionEditModal,
+//          saveCustomOptionEdit, saveCustomOption, deleteCustomOption, hideCustomOptionForm,
+//          backupOptions, restoreOptions, openOptionsFolder
 
 // 应用数据状态
 let appState = {
@@ -1660,6 +1666,11 @@ async function openTemplateFolder() {
 }
 
 // ========== 自定义选项管理 ==========
+// 【已迁移至 src/utils/customOptions.js】
+// 包含函数：showCustomOptionsModal, hideCustomOptionsModal, loadGroupFilter, loadCustomOptionsList,
+// renderBuiltinOptionsList, renderCustomOptionsList, showAddCustomOptionForm, showEditCustomOptionForm,
+// loadGroupFilterForEditForm, hideCustomOptionEditModal, saveCustomOptionEdit, saveCustomOption,
+// deleteCustomOption, hideCustomOptionForm, backupOptions, restoreOptions, openOptionsFolder
 
 // 显示自定义选项管理弹窗
 async function showCustomOptionsModal() {
