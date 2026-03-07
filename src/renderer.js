@@ -33,47 +33,23 @@
 
 
 /**  ======= 全局变量定义 开始 ======== */
-// 应用数据状态
-let appState = {
-  projects: [],
-  currentProject: null,
-  currentShot: null,
-  currentScene: null,
-  projectData: null
-};
-let currentTheme = 'light';
-let useElectronAPI = false;
-let settings = {
-  storagePath: '',
-  apiProvider: 'deepseek',
-  apiKeys: {
-    deepseek: '',
-    doubao: '',
-    qianwen: '',
-    ailian: ''
-  },
-  models: {
-    deepseek: 'deepseek-chat',
-    doubao: 'doubao-pro-4k',
-    qianwen: 'qwen3.5-plus',
-    ailian: 'qwen3.5-plus'
-  },
-  templates: [],
-  activeTemplateId: null
-};
+// 导入状态管理器
+const { appStateManager } = require('./utils/appStateManager');
 
-// 自动保存相关全局变量
-window.shotSaveTimeout = null;
-window.savingShotId = null;
-window.sceneSaveTimeout = null;
-window.savingSceneId = null;
+// 初始化状态管理器
+appStateManager.init();
 
-// 面板拖拽相关全局变量
-let isResizing = false;
-let currentResizer = null;
-let startX = 0;
-let startWidth = 0;
-let currentPanel = null;
+// 使用状态管理器访问状态（避免局部变量）
+// - appStateManager.getState() / appStateManager.setState()
+// - appStateManager.getSettings() / appStateManager.setSettings()
+// - appStateManager.getTheme() / appStateManager.setTheme()
+// - window.appState / window.settings（向后兼容）
+
+// 自动保存相关全局变量（使用状态管理器）
+// window.shotSaveTimeout, window.savingShotId, window.sceneSaveTimeout, window.savingSceneId
+
+// 面板拖拽相关全局变量（使用状态管理器）
+// window.isResizing, window.currentResizer, window.currentPanel
 /** ======= 全局变量定义 结束 ======== */
 
 
@@ -395,21 +371,20 @@ document.addEventListener('DOMContentLoaded', () => {
 
 // 初始化应用
 async function initializeApp() {
-  useElectronAPI = !!(window.electronAPI);
-
+  // 从 window 对象读取（loadSettings 已经设置好了）
+  // 使用状态管理器，避免局部变量
+  appStateManager.setUseElectronAPI(!!(window.electronAPI));
+  
   await window.loadSettings();
-
+  
   // 从 window.settings 读取（loadSettings 已经设置好了）
-  // 同步到局部 settings 变量，保持代码兼容
-  settings = window.settings;
-
-  window.useElectronAPI = useElectronAPI;
-  window.elements = elements;
-  window.appState = appState;
-
+  // 状态管理器已自动同步
+  
+  appStateManager.setSettings(window.settings);
+  
   setupEventListeners();
   window.loadProjects();
-  window.applyTheme(window.currentTheme);
+  window.applyTheme(appStateManager.getTheme());
 }
 // ======= 应用初始化 结束 ========
 
