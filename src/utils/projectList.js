@@ -329,9 +329,11 @@ async function deleteCurrentProject(appState, elements, useElectronAPI, loadProj
 async function loadProjects() {
   if (window.useElectronAPI) {
     try {
-      // 使用设置中的存储路径
+      // 使用设置中的存储路径 - 直接从 window.settings 读取
       const storagePath = window.settings?.storagePath || '文档/KimStoryboard';
+      
       const result = await window.electronAPI.listProjects(storagePath);
+      
       if (result.success) {
         window.appState.projects = result.projects || [];
         window.renderProjectList(window.appState.projects, window.elements, window.selectProject, (project, e) => {

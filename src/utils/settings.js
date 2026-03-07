@@ -32,7 +32,8 @@ async function loadSettings() {
 
   const settings = window.settings;
   const elements = window.elements || {};
-  const useElectronAPI = window.useElectronAPI || false;
+  // 直接检查 window.electronAPI 而不是 window.useElectronAPI
+  const useElectronAPI = !!(window.electronAPI);
   
   // 初始化 window.currentTheme（如果未定义）
   if (!window.currentTheme) {

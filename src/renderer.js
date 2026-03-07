@@ -238,15 +238,17 @@ async function initializeApp() {
 
   await window.loadSettings();
 
-  // 先导出全局变量，确保 loadProjects 能访问到 settings
+  // 从 window.settings 读取（loadSettings 已经设置好了）
+  // 同步到局部 settings 变量，保持代码兼容
+  settings = window.settings;
+  
   window.useElectronAPI = useElectronAPI;
   window.elements = elements;
   window.appState = appState;
-  window.settings = settings;
 
   setupEventListeners();
   window.loadProjects();
-  window.applyTheme(currentTheme);
+  window.applyTheme(window.currentTheme);
 }
 
 // ========== 设置管理 ==========
