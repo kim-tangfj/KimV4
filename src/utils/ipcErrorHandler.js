@@ -3,6 +3,8 @@
 // 提供统一的 IPC 错误处理包装器
 //
 
+const { getUserFriendlyMessage } = require('./userFriendlyErrors');
+
 /**
  * 统一的 IPC 错误处理包装器
  * @param {Function} handler - IPC 处理函数
@@ -15,11 +17,15 @@ async function withErrorHandler(handler, operation) {
   } catch (error) {
     console.error(`[IPC 错误] ${operation}:`, error.message);
     
+    // 获取用户友好的错误消息
+    const friendlyMessage = getUserFriendlyMessage(error, error.message);
+    
     // 返回统一的错误格式
     return {
       success: false,
-      error: error.message,
+      error: friendlyMessage,
       code: error.code || 'UNKNOWN_ERROR',
+      // 仅开发环境暴露堆栈跟踪
       stack: process.env.NODE_ENV === 'development' ? error.stack : undefined
     };
   }

@@ -245,6 +245,46 @@ function cacheDOMElements() {
 
 // ========== 全局错误处理 开始 ==========
 
+// 用户友好错误消息映射
+const RENDERER_ERROR_MESSAGES = {
+  'EACCES': '权限不足，无法访问文件',
+  'EPERM': '权限错误，操作被拒绝',
+  'ENOENT': '文件或目录不存在',
+  'ENOSPC': '磁盘空间不足',
+  'NETWORK_ERROR': '网络连接失败，请检查网络设置',
+  'TIMEOUT': '请求超时，请稍后重试',
+  'API_KEY_INVALID': 'API Key 无效，请在设置中检查',
+  'TEMPLATE_NOT_FOUND': '模板不存在，请重新选择',
+  'PROJECT_NOT_FOUND': '项目不存在',
+  'JSON_PARSE_ERROR': '数据格式错误，无法解析',
+  'UNKNOWN_ERROR': '发生未知错误，请稍后重试'
+};
+
+// 获取用户友好的错误消息
+window.getUserFriendlyMessage = function(error, defaultMsg = '操作失败，请稍后重试') {
+  if (!error) return defaultMsg;
+  if (typeof error === 'string') {
+    for (const [code, message] of Object.entries(RENDERER_ERROR_MESSAGES)) {
+      if (error.includes(code) || error.toLowerCase().includes(code.toLowerCase())) {
+        return message;
+      }
+    }
+    return error;
+  }
+  if (error.code && RENDERER_ERROR_MESSAGES[error.code]) {
+    return RENDERER_ERROR_MESSAGES[error.code];
+  }
+  if (error.message) {
+    for (const [code, message] of Object.entries(RENDERER_ERROR_MESSAGES)) {
+      if (error.message.includes(code)) {
+        return message;
+      }
+    }
+    return error.message;
+  }
+  return defaultMsg;
+};
+
 // 捕获未处理的 Promise 拒绝
 window.addEventListener('unhandledrejection', (event) => {
   console.error('[渲染进程] 未处理的 Promise 拒绝:', event.reason);
@@ -275,11 +315,22 @@ window.safeIpcCall = async function(ipcName, ...args) {
     const result = await window.electronAPI[ipcName](...args);
     // 检查 IPC 返回的错误
     if (result && result.success === false) {
-      throw new Error(result.error || '操作失败');
+      // 使用用户友好的错误消息
+      const friendlyError = window.getUserFriendlyMessage
+        ? window.getUserFriendlyMessage(result.error, result.error)
+        : result.error;
+      throw new Error(friendlyError || '操作失败');
     }
     return result;
   } catch (error) {
-    console.error(`[IPC 调用失败] ${ipcName}:`, error);
+    console.error(`[IPC 调用失败] ${ipcName}:`, error.message);
+    // 显示用户友好的错误提示
+    const friendlyMessage = window.getUserFriendlyMessage
+      ? window.getUserFriendlyMessage(error, '操作失败')
+      : error.message;
+    if (window.showToast) {
+      window.showToast(friendlyMessage, 'error');
+    }
     throw error;
   }
 };
