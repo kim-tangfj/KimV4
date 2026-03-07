@@ -4,6 +4,36 @@
 
 ---
 
+## 2026-03-08 - 所有模块统一使用状态管理器
+
+### 修改的模块
+
+| 模块 | 修改内容 |
+|------|----------|
+| projectList.js | 使用 updateState/getState |
+| shotList.js | 使用 updateState/getState |
+| sceneList.js | 使用 updateState/getState |
+| propertyPanel.js | 使用 updateState/getState |
+
+### 修改规则
+
+| 原代码 | 新代码 |
+|--------|--------|
+| `window.appState.projects = x` | `window.updateState('projects', x)` |
+| `window.appState.currentProject = x` | `window.updateState('currentProject', x)` |
+| `window.appState.currentShot = x` | `window.updateState('currentShot', x)` |
+| `window.appState.currentScene = x` | `window.updateState('currentScene', x)` |
+| `window.appState` | `window.getState()` |
+| `window.appState.currentProject` | `window.getState().currentProject` |
+
+### 优势
+
+- ✅ 单一数据源，避免状态不同步
+- ✅ 集中管理状态变更
+- ✅ 便于调试和追踪状态变化
+
+---
+
 ## 2026-03-08 - 状态管理改进 - 使用单一数据源
 
 ### 问题
