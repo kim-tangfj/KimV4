@@ -4,6 +4,56 @@
 
 ---
 
+## 2026-03-07 - 修复镜头属性变更后提示词不更新
+
+### 问题描述
+镜头属性变更和清空后，提示词没有实时更新。
+
+### 原因分析
+1. `updatePromptPreview` 函数只使用了 `appState.currentShot`，没有使用 `appState.currentScene`
+2. 当选中镜头时，应该显示镜头的提示词，而不是片段的提示词
+
+### 修复内容
+**修改 `updatePromptPreview` 函数**（`src/utils/propertyPanel.js` 第 2604-2625 行）
+
+修复前：
+```javascript
+function updatePromptPreview() {
+  // 无论选中片段还是镜头，都显示片段级提示词
+  if (appState.currentShot) {
+    prompt = generateShotPrompt(appState.currentShot);
+  }
+  // ...
+}
+```
+
+修复后：
+```javascript
+function updatePromptPreview() {
+  // 优先显示镜头提示词，如果没有选中镜头则显示片段提示词
+  if (appState.currentScene && appState.currentShot) {
+    // 计算镜头累计时间
+    const scenes = appState.currentShot.scenes || [];
+    let cumulativeTime = 0;
+    for (let i = 0; i < scenes.length; i++) {
+      if (scenes[i].id === appState.currentScene.id) {
+        break;
+      }
+      cumulativeTime += scenes[i].duration || 0;
+    }
+    prompt = generateScenePrompt(appState.currentScene, scenes.indexOf(appState.currentScene), cumulativeTime);
+  } else if (appState.currentShot) {
+    prompt = generateShotPrompt(appState.currentShot);
+  }
+  // ...
+}
+```
+
+### 提交
+- `fix: 修复镜头属性变更后提示词不更新的问题`
+
+---
+
 ## 2026-03-07 - 修复片段属性字段清空后提示词不更新
 
 ### 问题描述
