@@ -320,7 +320,7 @@ function checkApiStatus() {
 /**
  * 显示设置面板弹窗
  */
-function showSettingsModal() {
+async function showSettingsModal() {
   const elements = window.elements;
   const currentTheme = window.currentTheme;
 
@@ -338,8 +338,8 @@ function showSettingsModal() {
   if (elements.qianwenConfig) elements.qianwenConfig.style.display = provider === 'qianwen' ? 'block' : 'none';
   if (elements.ailianConfig) elements.ailianConfig.style.display = provider === 'ailian' ? 'block' : 'none';
 
-  // 显示模板存储路径
-  showTemplateStoragePath();
+  // 显示模板存储路径（异步）
+  await showTemplateStoragePath();
 
   elements.settingsModal.style.display = 'flex';
 }
@@ -469,9 +469,25 @@ function getDefaultTemplate() {
 /**
  * 显示模板存储路径（辅助函数）
  */
-function showTemplateStoragePath() {
+async function showTemplateStoragePath() {
   const elements = window.elements;
-  if (elements.templateStoragePath) {
+  const useElectronAPI = window.useElectronAPI;
+  
+  if (!useElectronAPI) {
+    return;
+  }
+  
+  try {
+    const result = await window.electronAPI.getTemplatesPath();
+    if (result.success && elements.templateStoragePath) {
+      // 显示文件夹路径
+      elements.templateStoragePath.value = result.path;
+    } else {
+      // 如果获取失败，显示设置中的存储路径
+      elements.templateStoragePath.value = '模板配置文件存储在：' + (window.settings.storagePath || '文档/KimStoryboard');
+    }
+  } catch (error) {
+    console.error('获取模板路径失败:', error);
     elements.templateStoragePath.value = '模板配置文件存储在：' + (window.settings.storagePath || '文档/KimStoryboard');
   }
 }
