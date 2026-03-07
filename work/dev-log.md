@@ -4,6 +4,27 @@
 
 ---
 
+## 2026-03-07 - 清理调试日志
+
+### 修改内容
+
+**1. 清理 shotList.js**
+- 删除所有 `console.log` 调试日志
+- 移除 `showCustomPrompt` 函数（移至 renderer.js 统一实现）
+
+**2. 清理 renderer.js**
+- 移除项目加载成功/失败的 `console.log`
+- 移除 `saveShotProperties` 调试日志
+- 移除 `saveSceneProperties` 调试日志
+- 移除 `initializeApp` 完成日志
+- 保留 `console.error` 错误日志用于异常处理
+
+**3. 控制台输出对比**
+- 清理前：每次操作输出 10+ 行日志
+- 清理后：仅异常时输出错误日志
+
+---
+
 ## 2026-03-07 - 镜头管理模块拆分
 
 ### 修改内容
