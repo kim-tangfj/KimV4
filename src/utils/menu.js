@@ -128,6 +128,12 @@ function openLogWindow(type) {
   const userDataPath = require('electron').app.getPath('userData');
   const logPath = path.join(userDataPath, 'logs', `${type}-log.md`);
 
+  // 同步工作目录的日志文件到用户数据目录
+  const workLogPath = path.join(__dirname, `../../../work/${type}-log.md`);
+  if (fs.existsSync(workLogPath)) {
+    fs.copyFileSync(workLogPath, logPath);
+  }
+
   // 如果日志文件不存在，创建空文件
   if (!fs.existsSync(logPath)) {
     const logDir = path.dirname(logPath);
