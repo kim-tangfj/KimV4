@@ -2096,6 +2096,8 @@ async function openOptionsFolder() {
   }
 }
 
+// [已移至 propertyPanel.js] 设置选项提示监听
+/* 注释开始 - 已移至 src/utils/propertyPanel.js */
 // 设置选项提示监听 - 使用 appState 而不是闭包变量
 function setupOptionHintListeners() {
   const hintMap = {
@@ -2119,7 +2121,10 @@ function setupOptionHintListeners() {
     }
   });
 }
+/* 注释结束 */
 
+// [已移至 propertyPanel.js] 设置镜头选项提示监听
+/* 注释开始 - 已移至 src/utils/propertyPanel.js */
 // 设置镜头选项提示监听 - 使用 appState 而不是闭包变量
 function setupSceneOptionHintListeners() {
   const hintMap = {
@@ -2142,7 +2147,10 @@ function setupSceneOptionHintListeners() {
     }
   });
 }
+/* 注释结束 */
 
+// [已移至 propertyPanel.js] 设置添加选项按钮事件
+/* 注释开始 - 已移至 src/utils/propertyPanel.js */
 // 设置添加选项按钮事件 - 使用 appState 而不是闭包变量
 function setupAddOptionButtons() {
   document.querySelectorAll('.add-option-btn').forEach(btn => {
@@ -2154,7 +2162,10 @@ function setupAddOptionButtons() {
     });
   });
 }
+/* 注释结束 */
 
+// [已移至 propertyPanel.js] 显示快速添加选项弹窗
+/* 注释开始 - 已移至 src/utils/propertyPanel.js */
 // 显示快速添加选项弹窗 - 使用 appState 而不是闭包变量
 async function showQuickAddOptionModal(group, field, defaultValue = '') {
   const modal = document.createElement('div');
@@ -2219,6 +2230,7 @@ async function showQuickAddOptionModal(group, field, defaultValue = '') {
     }
   });
 }
+/* 注释结束 */
 
 // 显示模板存储路径
 async function showTemplateStoragePath() {
@@ -2621,6 +2633,8 @@ async function loadOptionsByGroup(group) {
   }
 }
 
+// [已移至 propertyPanel.js] 显示片段属性表单
+/* 注释开始 - 已移至 src/utils/propertyPanel.js */
 // 显示片段属性表单（两列布局）
 async function showShotProperties(shot) {
   if (!elements.propertyForm) return;
@@ -2656,7 +2670,7 @@ async function showShotProperties(shot) {
           <label for="shotDescription">片段描述</label>
           <textarea id="shotDescription" rows="3" placeholder="输入片段描述" data-autosave="true">${shot.description || ''}</textarea>
         </div>
-        
+
         <h4 class="property-section-title" style="margin-top: 16px;">角色与场景</h4>
         <div class="form-group">
           <label for="shotCharacters">角色</label>
@@ -2666,7 +2680,7 @@ async function showShotProperties(shot) {
           <label for="shotSceneSetting">场景设定</label>
           <input type="text" id="shotSceneSetting" value="${shot.sceneSetting || ''}" placeholder="如：室内演播室" data-autosave="true">
         </div>
-        
+
         <h4 class="property-section-title" style="margin-top: 16px;">参考素材</h4>
         <div class="form-group">
           <label for="shotImageRef">图片参考（≤9 张）</label>
@@ -2694,7 +2708,7 @@ async function showShotProperties(shot) {
           <select id="shotStyle" data-autosave="true">
             <option value="">请选择风格</option>
             ${styleOptions.map(opt => `
-              <option value="${opt.style}" ${shot.style === opt.style ? 'selected' : ''} 
+              <option value="${opt.style}" ${shot.style === opt.style ? 'selected' : ''}
                 data-description="${opt.description || ''}">
                 ${opt.style} - ${opt.type}
               </option>
@@ -2718,7 +2732,7 @@ async function showShotProperties(shot) {
           </select>
           <small class="setting-hint" id="shotMoodHint">${moodOptions.find(o => o.style === shot.mood)?.description || '选择情绪'}</small>
         </div>
-        
+
         <h4 class="property-section-title" style="margin-top: 16px;">视频参数</h4>
         <div class="form-group">
           <label for="shotAspectRatio">画幅比例</label>
@@ -2738,7 +2752,7 @@ async function showShotProperties(shot) {
           <input type="number" id="shotDuration" value="${shot.duration || 10}" min="1" max="15" step="0.5" data-autosave="true">
           <small class="setting-hint">每个片段最长 15 秒</small>
         </div>
-        
+
         <h4 class="property-section-title" style="margin-top: 16px;">声音设计</h4>
         <div class="form-group">
           <label for="shotMusicStyle">
@@ -2772,7 +2786,7 @@ async function showShotProperties(shot) {
           </select>
           <small class="setting-hint" id="shotSoundEffectHint">${soundOptions.find(o => o.style === shot.soundEffect)?.description || '选择音效'}</small>
         </div>
-        
+
         <h4 class="property-section-title" style="margin-top: 16px;">自定义提示词</h4>
         <div class="form-group">
           <label for="shotCustomPrompt">补充提示词</label>
@@ -2793,7 +2807,10 @@ async function showShotProperties(shot) {
   // 绑定添加选项按钮事件 - 不再传递闭包变量
   setupAddOptionButtons();
 }
+/* 注释结束 */
 
+// [已移至 propertyPanel.js] 自动保存片段属性相关变量和函数
+/* 注释开始 - 已移至 src/utils/propertyPanel.js */
 // 自动保存片段属性 - 使用 appState.currentShot 而不是闭包变量
 let shotSaveTimeout = null;
 let savingShotId = null; // 正在保存的片段 ID
@@ -2928,7 +2945,10 @@ async function saveShotProperties(isAutoSave = false) {
     }
   }
 }
+/* 注释结束 */
 
+// [已移至 propertyPanel.js] 显示镜头属性表单
+/* 注释开始 - 已移至 src/utils/propertyPanel.js */
 // 显示镜头属性表单（两列布局）
 async function showSceneProperties(scene) {
   if (!elements.propertyForm) return;
@@ -2957,7 +2977,7 @@ async function showSceneProperties(scene) {
           <textarea id="sceneImage" rows="2" placeholder="点击上传或拖放图片，支持多张图片" data-autosave="true">${scene.image || ''}</textarea>
           <small class="setting-hint">支持上传和拖放图片</small>
         </div>
-        
+
         <h4 class="property-section-title" style="margin-top: 16px;">镜头信息</h4>
         <div class="form-group">
           <label for="sceneShotType">
@@ -3047,7 +3067,10 @@ async function showSceneProperties(scene) {
   // 绑定添加选项按钮事件 - 不再传递闭包变量
   setupAddOptionButtons();
 }
+/* 注释结束 */
 
+// [已移至 propertyPanel.js] 自动保存镜头属性相关变量和函数
+/* 注释开始 - 已移至 src/utils/propertyPanel.js */
 // 自动保存镜头属性 - 使用 appState.currentScene 而不是闭包变量
 let sceneSaveTimeout = null;
 let savingSceneId = null; // 正在保存的镜头 ID
@@ -3177,6 +3200,7 @@ async function saveSceneProperties(isAutoSave = false) {
     }
   }
 }
+/* 注释结束 */
 
 async function openProjectFolder() {
   if (!appState.currentProject) {
