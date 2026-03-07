@@ -16,6 +16,9 @@
 //          renderBuiltinOptionsList, renderCustomOptionsList, showAddCustomOptionForm,
 //          showEditCustomOptionForm, loadGroupFilterForEditForm, hideCustomOptionEditModal,
 //          saveCustomOptionEdit, saveCustomOption, deleteCustomOption, hideCustomOptionForm
+// UI 工具函数模块已移至 src/utils/uiHelpers.js
+// 包含函数：showInputError, initPanelResizers, handleResizerMouseMove, handleResizerMouseUp,
+//          getPanelConstraints, showToast, showConfirm, showCustomPrompt, showUpdateNotification
 
 // 应用数据状态
 let appState = {
@@ -1122,7 +1125,11 @@ async function createProjectManual() {
   }
 }
 
+// ========== UI 工具函数 ==========
+// 【已迁移至 src/utils/uiHelpers.js】
+
 // 显示输入错误提示（不阻塞）
+/* === 已注释 - 函数已迁移至 uiHelpers.js ===
 function showInputError(input, message) {
   if (!input) return;
 
@@ -1161,6 +1168,7 @@ function showInputError(input, message) {
     }
   }, 2000);
 }
+=== 已注释结束 === */
 
 // 构建提示词模板
 function buildPromptFromTemplate(script) {
@@ -1795,7 +1803,7 @@ function renderCustomOptionsList(options) {
     return;
   }
 
-  // 按使用次数排序（降序）
+  // 按使用次数排序�����降序）
   const sortedOptions = [...options].sort((a, b) => (b.usageCount || 0) - (a.usageCount || 0));
 
   customList.innerHTML = '';
@@ -2682,6 +2690,10 @@ let startX = 0;
 let startWidth = 0;
 let currentPanel = null;
 
+// ========== UI 工具函数 ==========
+// 【已迁移至 src/utils/uiHelpers.js】
+
+/* === 已注释 - 函数已迁移至 uiHelpers.js ===
 // 初始化面板拖拽
 function initPanelResizers() {
   const resizers = document.querySelectorAll('.panel-resizer');
@@ -2691,15 +2703,15 @@ function initPanelResizers() {
       currentResizer = resizer;
       currentPanel = resizer.dataset.panel;
       startX = e.pageX;
-      
+
       const panel = resizer.parentElement;
       startWidth = panel.offsetWidth;
-      
+
       resizer.classList.add('resizing');
-      
+
       document.addEventListener('mousemove', handleResizerMouseMove);
       document.addEventListener('mouseup', handleResizerMouseUp);
-      
+
       e.preventDefault();
     });
   });
@@ -2708,15 +2720,15 @@ function initPanelResizers() {
 // 处理拖拽移动
 function handleResizerMouseMove(e) {
   if (!isResizing || !currentResizer) return;
-  
+
   const diff = e.pageX - startX;
   const panel = currentResizer.parentElement;
   const newWidth = startWidth + diff;
-  
+
   // 根据面板类型设置最小/最大宽度
   const constraints = getPanelConstraints(currentPanel);
   const constrainedWidth = Math.max(constraints.min, Math.min(constraints.max, newWidth));
-  
+
   panel.style.width = `${constrainedWidth}px`;
   panel.style.flex = 'none';
 }
@@ -2729,7 +2741,7 @@ function handleResizerMouseUp() {
   }
   currentResizer = null;
   currentPanel = null;
-  
+
   document.removeEventListener('mousemove', handleResizerMouseMove);
   document.removeEventListener('mouseup', handleResizerMouseUp);
 }
@@ -2743,8 +2755,12 @@ function getPanelConstraints(panelType) {
   };
   return constraints[panelType] || { min: 150, max: 500 };
 }
+=== 已注释结束 === */
 
 // ========== 工具函数 ==========
+// 【已迁移至 src/utils/uiHelpers.js】
+
+/* === 已注释 - 函数已迁移至 uiHelpers.js ===
 
 // 自定义 Toast 提示（替代 alert）
 function showToast(message, duration = 2000) {
@@ -2927,6 +2943,7 @@ async function showCustomPrompt(message, title = '输入') {
     });
   });
 }
+=== 已注释结束 === */
 
 // 渲染素材库列表
 function renderAssetsList(assets) {
@@ -2974,6 +2991,10 @@ function renderAssetsList(assets) {
   });
 }
 
+// ========== UI 工具函数 ==========
+// 【已迁移至 src/utils/uiHelpers.js】
+
+/* === 已注释 - 函数已迁移至 uiHelpers.js ===
 function showUpdateNotification() {
   const notification = document.createElement('div');
   notification.textContent = '已更新';
@@ -2996,6 +3017,7 @@ function showUpdateNotification() {
     setTimeout(() => { document.body.removeChild(notification); }, 300);
   }, 2000);
 }
+=== 已注释结束 === */
 
 // ========== 全局变量暴露（供模块使用）==========
 // 注意：必须在 initializeApp 之后调用，确保 useElectronAPI 已更新
