@@ -6,8 +6,25 @@
 /**
  * 状态管理器类
  * 提供单一数据源，所有模块通过 getState 访问状态
+ * 
+ * @example
+ * // 获取状态
+ * const state = window.getState();
+ * 
+ * // 更新状态
+ * window.updateState('currentProject', project);
+ * 
+ * // 获取设置
+ * const settings = window.getSettings();
+ * 
+ * // 更新设置
+ * window.updateSetting('apiProvider', 'deepseek');
  */
 class AppStateManager {
+  /**
+   * 创建状态管理器实例
+   * 初始化所有状态为默认值
+   */
   constructor() {
     // 应用数据状态
     this.state = {
@@ -63,6 +80,11 @@ class AppStateManager {
   /**
    * 获取应用状态
    * @returns {Object} 应用状态对象
+   * @property {Array} projects - 项目列表
+   * @property {Object|null} currentProject - 当前选中的项目
+   * @property {Object|null} currentShot - 当前选中的片段
+   * @property {Object|null} currentScene - 当前选中的镜头
+   * @property {Object|null} projectData - 项目数据
    */
   getState() {
     return this.state;
@@ -70,7 +92,9 @@ class AppStateManager {
 
   /**
    * 设置应用状态
-   * @param {Object} newState - 新状态
+   * @param {Object} newState - 新状态对象
+   * @example
+   * window.setState({ currentProject: project, currentShot: null });
    */
   setState(newState) {
     this.state = { ...this.state, ...newState };
@@ -80,8 +104,10 @@ class AppStateManager {
 
   /**
    * 更新应用状态的某个属性
-   * @param {string} key - 状态键名
+   * @param {string} key - 状态键名（如 'currentProject', 'currentShot'）
    * @param {any} value - 新值
+   * @example
+   * window.updateState('currentProject', project);
    */
   updateState(key, value) {
     this.state[key] = value;
@@ -93,6 +119,12 @@ class AppStateManager {
   /**
    * 获取设置
    * @returns {Object} 设置对象
+   * @property {string} storagePath - 项目存储路径
+   * @property {string} apiProvider - 当前 API 提供商
+   * @property {Object} apiKeys - API 密钥配置
+   * @property {Object} models - 模型配置
+   * @property {Array} templates - 模板列表
+   * @property {string|null} activeTemplateId - 激活的模板 ID
    */
   getSettings() {
     return this.settings;
@@ -100,7 +132,9 @@ class AppStateManager {
 
   /**
    * 设置设置
-   * @param {Object} newSettings - 新设置
+   * @param {Object} newSettings - 新设置对象
+   * @example
+   * window.setSettings({ apiProvider: 'deepseek', storagePath: 'D:/Projects' });
    */
   setSettings(newSettings) {
     this.settings = { ...this.settings, ...newSettings };
@@ -110,8 +144,10 @@ class AppStateManager {
 
   /**
    * 更新设置的某个属性
-   * @param {string} key - 设置键名
+   * @param {string} key - 设置键名（如 'apiProvider', 'storagePath'）
    * @param {any} value - 新值
+   * @example
+   * window.updateSetting('apiProvider', 'deepseek');
    */
   updateSetting(key, value) {
     this.settings[key] = value;
@@ -122,6 +158,8 @@ class AppStateManager {
    * 更新嵌套设置（如 apiKeys.deepseek）
    * @param {string} path - 路径（如 'apiKeys.deepseek'）
    * @param {any} value - 新值
+   * @example
+   * window.updateNestedSetting('apiKeys.deepseek', 'sk-xxx');
    */
   updateNestedSetting(path, value) {
     const keys = path.split('.');
@@ -139,7 +177,7 @@ class AppStateManager {
 
   /**
    * 获取当前主题
-   * @returns {string} 当前主题
+   * @returns {string} 当前主题（'light' 或 'dark'）
    */
   getTheme() {
     return this.currentTheme;
@@ -147,7 +185,9 @@ class AppStateManager {
 
   /**
    * 设置当前主题
-   * @param {string} theme - 新主题
+   * @param {string} theme - 新主题（'light' 或 'dark'）
+   * @example
+   * window.setTheme('dark');
    */
   setTheme(theme) {
     this.currentTheme = theme;
@@ -167,6 +207,8 @@ class AppStateManager {
   /**
    * 设置 Electron API 标志
    * @param {boolean} value - 是否使用
+   * @example
+   * window.setUseElectronAPI(true);
    */
   setUseElectronAPI(value) {
     this.useElectronAPI = value;
@@ -216,6 +258,11 @@ class AppStateManager {
   /**
    * 设置拖拽状态
    * @param {Object} dragState - 拖拽状态对象
+   * @property {boolean} isResizing - 是否正在拖拽
+   * @property {Element} currentResizer - 当前拖拽的调整器
+   * @property {number} startX - 起始 X 坐标
+   * @property {number} startWidth - 起始宽度
+   * @property {string} currentPanel - 当前面板类型
    */
   setDragState(dragState) {
     this.isResizing = dragState.isResizing;
@@ -234,6 +281,7 @@ class AppStateManager {
   /**
    * 初始化状态管理器
    * 将所有状态同步到 window 对象
+   * 应在应用启动时调用
    */
   init() {
     window.appState = this.state;
@@ -248,6 +296,7 @@ class AppStateManager {
 
   /**
    * 从 window 对象加载状态（向后兼容）
+   * 如果 window 对象已有状态数据，则加载到管理器
    */
   loadFromWindow() {
     if (window.appState) {

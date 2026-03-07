@@ -6,7 +6,19 @@
 
 /**
  * AI 创建项目（使用预览的数据）
- * 使用全局变量：window.elements, window.settings, window.useElectronAPI, window.electronAPI, window.appState
+ * 
+ * 流程：
+ * 1. 获取表单数据（名称、描述、画幅比例）
+ * 2. 检查预览数据是否存在
+ * 3. 解析预览数据为 JSON
+ * 4. 调用 Electron API 创建项目
+ * 
+ * @async
+ * @returns {Promise<void>}
+ * 
+ * @example
+ * // 在 AI 模式按钮点击时调用
+ * elements.generatePromptBtn.addEventListener('click', createProjectAI);
  */
 async function createProjectAI() {
   const name = window.elements.aiProjectName?.value.trim();
@@ -113,7 +125,17 @@ async function createProjectAI() {
 
 /**
  * 手动创建项目
- * 使用全局变量：window.elements, window.settings, window.useElectronAPI, window.electronAPI
+ * 
+ * 支持两种模式：
+ * 1. JSON 模式：直接输入结构化 JSON 数据
+ * 2. 剧本模式：输入剧本文本，调用 AI 生成结构化数据
+ * 
+ * @async
+ * @returns {Promise<void>}
+ * 
+ * @example
+ * // 在手动模式确认按钮点击时调用
+ * elements.createProjectBtn.addEventListener('click', confirmCreateProject);
  */
 async function createProjectManual() {
   const name = window.elements.manualProjectName?.value.trim();
@@ -306,7 +328,15 @@ async function createProjectManual() {
 
 /**
  * 显示新建项目弹窗
- * 使用全局变量：window.elements, window.settings
+ * 
+ * 功能：
+ * - 显示模态框
+ * - 重置为手动模式
+ * - 清空表单数据
+ * 
+ * @example
+ * // 在新建项目按钮点击时调用
+ * elements.newProjectBtn.addEventListener('click', showNewProjectModal);
  */
 function showNewProjectModal() {
   if (!window.elements.newProjectModal) return;
@@ -373,7 +403,10 @@ function showNewProjectModal() {
 
 /**
  * 隐藏新建项目弹窗
- * 使用全局变量：window.elements
+ * 
+ * @example
+ * // 在取消按钮点击时调用
+ * elements.cancelNewProjectBtn.addEventListener('click', hideNewProjectModal);
  */
 function hideNewProjectModal() {
   if (window.elements.newProjectModal) {
@@ -383,6 +416,15 @@ function hideNewProjectModal() {
 
 /**
  * 确认创建项目
+ * 
+ * 根据当前激活的模式调用相应的创建函数：
+ * - AI 模式：createProjectAI()
+ * - 手动模式：createProjectManual()
+ * 
+ * @async
+ * @example
+ * // 在创建按钮点击时调用
+ * elements.createProjectBtn.addEventListener('click', confirmCreateProject);
  */
 async function confirmCreateProject() {
   const activeMode = document.querySelector('.mode-tab.active')?.dataset.mode;

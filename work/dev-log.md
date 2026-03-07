@@ -4,6 +4,49 @@
 
 ---
 
+## 2026-03-08 - 添加 JSDoc 注释
+
+### 已添加注释的模块
+
+#### 1. appStateManager.js
+- 类注释：包含使用示例
+- 构造函数注释
+- 所有公共方法注释：
+  - `getState()` / `setState()` / `updateState()`
+  - `getSettings()` / `setSettings()` / `updateSetting()` / `updateNestedSetting()`
+  - `getTheme()` / `setTheme()`
+  - `getUseElectronAPI()` / `setUseElectronAPI()`
+  - `init()` / `loadFromWindow()`
+
+#### 2. projectCreator.js
+- `createProjectAI()` - AI 创建项目流程说明
+- `createProjectManual()` - 手动创建项目模式说明
+- `showNewProjectModal()` - 弹窗功能说明
+- `hideNewProjectModal()` - 隐藏弹窗
+- `confirmCreateProject()` - 模式切换逻辑
+
+### 注释规范
+
+```javascript
+/**
+ * 函数描述
+ * 
+ * 流程说明（如适用）：
+ * 1. 步骤一
+ * 2. 步骤二
+ * 
+ * @async - 异步函数
+ * @param {type} name - 参数说明
+ * @returns {type} 返回值说明
+ * 
+ * @example
+ * // 使用示例
+ * code example;
+ */
+```
+
+---
+
 ## 2026-03-08 - 所有模块统一使用状态管理器
 
 ### 修改的模块
