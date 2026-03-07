@@ -63,7 +63,11 @@ function initProjectIPC(mainWindow) {
   // 项目 API
   ipcMain.handle('project:create', async (event, projectData) => {
     return withErrorHandler(async () => {
-      validateParams(projectData, ['name']);
+      // 验证参数：检查 projectData.project.name 或 projectData.name
+      if (!projectData.project && !projectData.name) {
+        throw new Error('缺少必填参数：name 或 project.name');
+      }
+      
       const baseDir = projectData.baseDir || path.join(require('electron').app.getPath('documents'), 'KimStoryboard');
 
       let projectInfo, shots, promptTemplates, selected, theme;
