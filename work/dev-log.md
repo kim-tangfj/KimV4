@@ -4,6 +4,85 @@
 
 ---
 
+## 2026-03-07 - 片段管理模块拆分
+
+### 修改内容
+
+**1. 创建片段管理模块** (`src/utils/shotList.js`)
+- `renderShotList(shots)` - 渲染片段列表（约 60 行）
+- `selectShot(shot)` - 选择片段（约 60 行）
+- `createNewShot()` - 新建片段（约 70 行）
+- `deleteSelectedShot()` - 删除片段（约 50 行）
+- `showShotStatusMenu(shot, event)` - 显示状态菜单（约 50 行）
+- `updateShotStatus(shot, newStatus)` - 更新片段状态（约 70 行）
+- `getStatusText(status)` - 获取状态文本（约 10 行）
+- `showCustomPrompt(message, title)` - 自定义输入框替代系统 prompt（约 80 行）
+
+**2. 更新 renderer.js**
+- 删除片段管理相关函数（约 200 行代码）
+- 添加全局变量导出（window.appState, window.elements, window.useElectronAPI 等）
+- 添加自动保存相关全局变量（window.shotSaveTimeout, window.savingShotId 等）
+- 更新 exposeGlobals 函数，导出必要函数供模块使用
+- `renderer.js` 从 3988 行减少到 3695 行（-293 行）
+
+**3. 更新 index.html**
+- 添加片段管理模块脚本引用：`<script src="./src/utils/shotList.js" defer></script>`
+
+**4. 模块依赖关系**
+```
+shotList.js 依赖:
+- window.appState: 应用状态
+- window.elements: DOM 元素引用
+- window.useElectronAPI: Electron API 标志
+- window.electronAPI: Electron API 接口
+- window.renderSceneList: 渲染镜头列表
+- window.updatePromptPreview: 更新提示词
+- window.showShotProperties: 显示片段属性
+- window.selectProject: 选择项目
+- window.showConfirm: 确认对话框
+- window.showToast: 提示框
+- window.loadOptionsByGroup: 加载自定义选项
+
+renderer.js 导出:
+- selectProject, renderSceneList, selectScene
+- updatePromptPreview, showShotProperties, showSceneProperties
+- showToast, showConfirm, loadOptionsByGroup, showUpdateNotification
+```
+
+**5. 代码优化**
+- 使用 `window.` 前缀访问全局变量，避免闭包依赖
+- 添加详细的控制台日志，便于调试
+- `showCustomPrompt` 替代系统 `prompt`，避免阻塞和失焦问题
+- 保持原有功能不变，仅做代码拆分
+
+### 技术细节
+
+**全局变量导出时机**
+```javascript
+// renderer.js 初始化时导出
+function exposeGlobals() {
+  window.useElectronAPI = useElectronAPI;
+  window.elements = elements;
+  window.appState = appState;
+  window.selectProject = selectProject;
+  // ...
+}
+```
+
+**模块加载顺序**
+```html
+<script src="./src/utils/projectList.js" defer></script>
+<script src="./src/utils/shotList.js" defer></script>
+<script src="./src/renderer.js"></script>
+```
+
+### 下一步计划
+- [ ] 镜头管理模块拆分 (`src/utils/sceneList.js`)
+- [ ] 属性面板模块拆分 (`src/utils/propertyPanel.js`)
+- [ ] 设置管理模块拆分 (`src/utils/settings.js`)
+
+---
+
 ## 2026-03-06 - 提示词生成功能拆分与优化
 
 ### 修改内容
