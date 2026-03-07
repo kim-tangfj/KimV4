@@ -146,6 +146,9 @@ async function showTemplateStoragePath() { ... }
    - 使用默认值处理 window.elements 和 window.useElectronAPI 未定义情况
 3. **loadProjects 未定义** - refreshProjectsBtn 事件监听器直接调用 loadProjects
    - 修改为 `window.loadProjects`
+4. **window.settings.storagePath 被覆盖** - initializeApp 中 window.settings = settings 覆盖了 loadSettings 的设置
+   - 改为 `settings = window.settings` 同步局部变量
+   - projectList.js 直接从 window.settings 读取 storagePath
 
 ### 测试验证
 - [x] 应用启动正常
@@ -1969,7 +1972,7 @@ characters: characters !== undefined && characters !== '' ? characters : (oldSho
 ### 原因分析
 
 **问题 1 原因**: 
-`saveShotProperties` 和 `saveSceneProperties` 函数中：
+`saveShotProperties` 和 `saveSceneProperties` 函���中：
 ```javascript
 if (!isAutoSave) {
   showUpdateNotification();
@@ -4241,7 +4244,7 @@ const { initTemplateIPC, initializeDefaultTemplates } = require('./template');
 
 ---
 
-## 2026-03-05 - 属性面板自动保存
+## 2026-03-05 - 属性面板自动���存
 
 ### 需求
 1. 移除保存/重置按钮
