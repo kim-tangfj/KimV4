@@ -4,6 +4,64 @@
 
 ---
 
+## 2026-03-08 - 状态管理改进 - 使用单一数据源
+
+### 问题
+
+- `renderer.js` 中有局部 `settings` 变量
+- 与 `window.settings` 可能不同步
+- 多个模块直接修改 `window` 对象导致状态混乱
+
+### 解决方案
+
+创建 `appStateManager.js` 状态管理器类：
+
+```javascript
+class AppStateManager {
+  // 统一管理状态
+  state = { projects, currentProject, currentShot, currentScene, projectData }
+  settings = { storagePath, apiProvider, apiKeys, models, templates, activeTemplateId }
+  currentTheme = 'light'
+  useElectronAPI = false
+  
+  // 提供统一 API
+  getState() / setState(newState) / updateState(key, value)
+  getSettings() / setSettings(newSettings) / updateSetting(key, value)
+  getTheme() / setTheme(theme)
+}
+```
+
+### 代码变化
+
+| 文件 | 变化 |
+|------|------|
+| `src/utils/appStateManager.js` | 新增 ~270 行 |
+| `src/renderer.js` | 移除局部变量，使用状态管理器 |
+| `index.html` | 添加状态管理器模块引用 |
+
+### 优势
+
+- ✅ 单一数据源，避免状态不同步
+- ✅ 集中管理状态变更
+- ✅ 保持向后兼容（window 对象仍然可用）
+- ✅ 便于调试和状态追踪
+
+### 使用示例
+
+```javascript
+// 之前（可能导致不同步）
+let settings = { ... };
+settings.apiProvider = 'deepseek';
+window.settings = settings;
+
+// 现在（统一使用状态管理器）
+appStateManager.updateSetting('apiProvider', 'deepseek');
+// 或
+window.updateSetting('apiProvider', 'deepseek');
+```
+
+---
+
 ## 2026-03-08 - 拆分 renderer.js 为独立模块
 
 ### 重构概述
