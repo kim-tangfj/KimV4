@@ -346,10 +346,8 @@ window.safeIpcCall = async function(ipcName, ...args) {
 
 
 // ======= 应用初始化 开始 ========
-// 导出全局变量供模块使用
-window.appState = appState;
+// 状态管理器已自动同步到 window 对象
 window.elements = elements;
-window.useElectronAPI = useElectronAPI;
 window.electronAPI = window.electronAPI || null;
 
 // 初始化应用
