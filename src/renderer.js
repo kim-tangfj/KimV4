@@ -2350,9 +2350,7 @@ async function loadProjects() {
             window.updateProjectStatus(p, newStatus, appState, useElectronAPI, loadProjects, showUpdateNotification);
           });
         });
-        console.log('项目加载成功，数量:', result.projects.length);
       } else {
-        console.error('项目加载失败:', result.error);
         appState.projects = [];
         window.renderProjectList([], elements, selectProject, () => {}, () => {}, () => {});
       }
@@ -2816,14 +2814,12 @@ async function saveShotProperties(isAutoSave = false) {
 
   // 关键修复：检查在保存过程中是否切换了片段
   if (savingShotId !== shot.id) {
-    console.log('[saveShotProperties] 片段已切换，取消保存', savingShotId, '->', shot.id);
     return;
   }
 
   // 关键修复：检查表单元素是否存在，如果不存在说明已切换到镜头或其他地方
   const nameElement = document.getElementById('shotName');
   if (!nameElement) {
-    console.log('[saveShotProperties] 表单元素不存在，可能已切换，取消保存');
     return;
   }
 
@@ -3073,14 +3069,12 @@ async function saveSceneProperties(isAutoSave = false) {
 
   // 关键修复：检查在保存过程中是否切换了镜头
   if (savingSceneId !== scene.id) {
-    console.log('[saveSceneProperties] 镜头已切换，取消保存', savingSceneId, '->', scene.id);
     return;
   }
 
   // 关键修复：检查表单元素是否存在，如果不存在说明已切换到片段或其他地方
   const nameElement = document.getElementById('sceneName');
   if (!nameElement) {
-    console.log('[saveSceneProperties] 表单元素不存在，可能已切换，取消保存');
     return;
   }
 
@@ -3631,5 +3625,4 @@ const originalInitializeApp = initializeApp;
 initializeApp = async function() {
   await originalInitializeApp();
   exposeGlobals();
-  console.log('[initializeApp] 全局变量已暴露，useElectronAPI:', useElectronAPI);
 };
