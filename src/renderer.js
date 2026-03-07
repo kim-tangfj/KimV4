@@ -1272,14 +1272,10 @@ function toggleAssetsPanelByHeader(e) {
 
 
 // ======= 全局变量导出 开始 ========
-// ========== 全局变量暴露（供模块使用）==========
 // 注意：必须在 initializeApp 之后调用，确保 useElectronAPI 已更新
 function exposeGlobals() {
-  window.showToast = showToast;
-  window.showConfirm = showConfirm;
-  window.loadOptionsByGroup = loadOptionsByGroup;
-  window.showUpdateNotification = showUpdateNotification;
-  window.showCustomPrompt = showCustomPrompt;
+  // 导出 renderAssetsList - 素材库列表渲染（仅在 renderer.js 中定义）
+  window.renderAssetsList = renderAssetsList;
 }
 
 // 在 initializeApp 中调用暴露
@@ -1292,7 +1288,24 @@ initializeApp = async function() {
 
 
 // ======= 重复和未使用的代码区域 开始 ========
+// 以下函数已在 uiHelpers.js 中实现并导出，此处为重复代码，已注释
+
+/* === 已移除 - 函数已在 uiHelpers.js 中实现 ===
+
+// 显示更新通知
+function showUpdateNotification() {
+  // ... 已在 uiHelpers.js:386 实现 ...
+}
+
+// 显示自定义输入框
+async function showCustomPrompt(message, title = '输入') {
+  // ... 已在 uiHelpers.js:278 实现 ...
+}
+
+=== 已移除 - 函数已在 uiHelpers.js 中实现 === */
+
 // 渲染素材库列表
+// 注意：此函数仅在 renderer.js 中定义，已被 window.renderAssetsList 引用
 function renderAssetsList(assets) {
   if (!elements.assetsList) return;
 
@@ -1338,137 +1351,15 @@ function renderAssetsList(assets) {
   });
 }
 
+/* === 已移除 - 函数已在 uiHelpers.js 中实现 ===
+
 function showUpdateNotification() {
-  const notification = document.createElement('div');
-  notification.textContent = '已更新';
-  notification.style.position = 'fixed';
-  notification.style.top = '10px';
-  notification.style.right = '10px';
-  notification.style.backgroundColor = '#333';
-  notification.style.color = '#fff';
-  notification.style.padding = '8px 16px';
-  notification.style.borderRadius = '4px';
-  notification.style.zIndex = '3000';
-  notification.style.opacity = '0';
-  notification.style.transition = 'opacity 0.3s';
-
-  document.body.appendChild(notification);
-
-  setTimeout(() => { notification.style.opacity = '1'; }, 10);
-  setTimeout(() => {
-    notification.style.opacity = '0';
-    setTimeout(() => { document.body.removeChild(notification); }, 300);
-  }, 2000);
+  // 已在 uiHelpers.js:386 实现
 }
 
-/**
- * 显示自定义输入框（替代系统 prompt）
- * @param {string} message - 提示信息
- * @param {string} title - 标题
- * @returns {Promise<string>} 用户输入的内容
- */
 async function showCustomPrompt(message, title = '输入') {
-  return new Promise((resolve) => {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 3000;
-    `;
-
-    const modal = document.createElement('div');
-    modal.className = 'modal-content';
-    modal.style.cssText = `
-      background: var(--bg-color, #fff);
-      border-radius: 8px;
-      padding: 24px;
-      min-width: 400px;
-      max-width: 500px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    `;
-
-    modal.innerHTML = `
-      <h3 style="margin: 0 0 16px 0; font-size: 18px; color: var(--text-color, #333);">${title}</h3>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--text-color, #333);">${message}</label>
-        <input type="text" id="custom-prompt-input" style="
-          width: 100%;
-          padding: 8px 12px;
-          border: 1px solid var(--border-color, #e0e0e0);
-          border-radius: 4px;
-          font-size: 14px;
-          box-sizing: border-box;
-        " placeholder="请输入...">
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 8px;">
-        <button id="custom-prompt-cancel" style="
-          padding: 8px 16px;
-          border: 1px solid var(--border-color, #e0e0e0);
-          background: var(--bg-color, #fff);
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
-          color: var(--text-color, #333);
-        ">取消</button>
-        <button id="custom-prompt-confirm" style="
-          padding: 8px 16px;
-          border: none;
-          background: #007bff;
-          color: white;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
-        ">确定</button>
-      </div>
-    `;
-
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-
-    const input = document.getElementById('custom-prompt-input');
-    const confirmBtn = document.getElementById('custom-prompt-confirm');
-    const cancelBtn = document.getElementById('custom-prompt-cancel');
-
-    // 聚焦输入框
-    setTimeout(() => input.focus(), 10);
-
-    // 确定按钮
-    confirmBtn.addEventListener('click', () => {
-      const value = input.value.trim();
-      overlay.remove();
-      resolve(value);
-    });
-
-    // 取消按钮
-    cancelBtn.addEventListener('click', () => {
-      overlay.remove();
-      resolve('');
-    });
-
-    // Enter 键确认
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const value = input.value.trim();
-        overlay.remove();
-        resolve(value);
-      }
-    });
-
-    // 点击遮罩关闭
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        overlay.remove();
-        resolve('');
-      }
-    });
-  });
+  // 已在 uiHelpers.js:278 实现
 }
+
+=== 已移除 - 函数已在 uiHelpers.js 中实现 === */
 // ======= 重复和未使用的代码区域 结束 ========
