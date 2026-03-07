@@ -4,6 +4,45 @@
 
 ---
 
+## 2026-03-07 - 修复镜头属性变更后片段提示词不更新
+
+### 问题描述
+镜头属性变更和清空后，片段级提示词没有实时更新。
+
+### 原因分析
+`saveSceneProperties` 函数只更新了 `appState.currentScene`，但没有更新 `appState.currentShot.scenes`。所以 `updatePromptPreview` 调用 `generateShotPrompt(appState.currentShot)` 时，使用的是旧的镜头数据。
+
+### 修复内容
+**修改 `saveSceneProperties` 函数**（`src/utils/propertyPanel.js` 第 618-628 行）
+
+修复前：
+```javascript
+if (saveResult.success) {
+  window.appState.currentScene = shot.scenes[sceneIndex];
+  // ...
+  window.updatePromptPreview();
+}
+```
+
+修复后：
+```javascript
+if (saveResult.success) {
+  // 更新 currentScene
+  window.appState.currentScene = shot.scenes[sceneIndex];
+  // 更新 currentShot.scenes（重要！否则提示词不会更新）
+  if (window.appState.currentShot) {
+    window.appState.currentShot.scenes = shot.scenes;
+  }
+  // ...
+  window.updatePromptPreview();
+}
+```
+
+### 提交
+- `fix: 修复镜头属性变更后片段提示词不更新的问题`
+
+---
+
 ## 2026-03-07 - 修复镜头属性变更后提示词不更新
 
 ### 问题描述
