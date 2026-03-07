@@ -144,6 +144,8 @@ async function showTemplateStoragePath() { ... }
    - 在 loadSettings 中检查并初始化 window.settings
    - 初始化 window.currentTheme
    - 使用默认值处理 window.elements 和 window.useElectronAPI 未定义情况
+3. **loadProjects 未定义** - refreshProjectsBtn 事件监听器直接调用 loadProjects
+   - 修改为 `window.loadProjects`
 
 ### 测试验证
 - [x] 应用启动正常
