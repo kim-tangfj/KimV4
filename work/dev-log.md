@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-03-07 - 修复 renderer.js 中 loadProjects 函数调用
+
+### 问题描述
+项目列表没有加载成功。
+
+### 原因分析
+`renderer.js` 中多处调用了 `loadProjects()` 函数，但该函数已迁移到 `projectList.js` 并导出到 `window.loadProjects`，原调用方式未更新。
+
+### 修复内容
+**更新 renderer.js 中的函数调用**（4 处）
+
+| 位置 | 修复前 | 修复后 |
+|------|--------|--------|
+| `initializeApp` | `loadProjects()` | `window.loadProjects()` |
+| `createProjectManual` | `await loadProjects()` | `await window.loadProjects()` |
+| `createProjectAI` | `await loadProjects()` | `await window.loadProjects()` |
+| `confirmCreateProject` | `await loadProjects()` | `await window.loadProjects()` |
+
+### 提交
+- `fix: 修复 renderer.js 中 loadProjects 函数调用`
+
+---
+
 ## 2026-03-07 - 修复 loadProjects 中 window.settings 未定义的问题
 
 ### 问题描述
@@ -2085,7 +2108,7 @@ function renderCustomOptionsList(options) {
   <!-- 下拉框：默认隐藏，聚焦时显示 -->
   <select id="shotStyle" size="1" style="display:none;">
     <option value="">请选择风格</option>
-    <!-- 动态加载的选项 -->
+    <!-- 动��加载的选项 -->
     <option value="__new__" style="border-top: 1px dashed #ccc;">+ 创建新选项</option>
   </select>
 </div>
