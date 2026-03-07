@@ -4,6 +4,47 @@
 
 ---
 
+## 2026-03-07 - 修复片段属性字段清空后提示词不更新
+
+### 问题描述
+片段属性中角色、场景设定、图片参考、视频参考、音频参考、配乐风格、音效需求、自定义提示词字段，填写后会实时更新提示词，但将这些字段清空后，提示词没有实时更新去掉对应内容。
+
+### 原因分析
+在 `saveShotProperties` 函数中，字段保存逻辑使用了以下判断：
+```javascript
+characters: characters !== undefined && characters !== '' ? characters : (oldShot.characters || '')
+```
+
+当字段值为空字符串时，会保留旧值而不是保存空值。
+
+### 修复内容
+**修改 saveShotProperties 函数**（`src/utils/propertyPanel.js` 第 316-330 行）
+
+修复前：
+```javascript
+characters: characters !== undefined && characters !== '' ? characters : (oldShot.characters || '')
+```
+
+修复后：
+```javascript
+characters: characters !== undefined ? characters : (oldShot.characters || '')
+```
+
+**修复的字段**：
+- `characters` - 角色
+- `sceneSetting` - 场景设定
+- `musicStyle` - 配乐风格
+- `soundEffect` - 音效需求
+- `imageRef` - 图片参考
+- `videoRef` - 视频参考
+- `audioRef` - 音频参考
+- `customPrompt` - 自定义提示词
+
+### 提交
+- `fix: 修复片段属性字段清空后提示词不更新的问题`
+
+---
+
 ## 2026-03-07 - 属性面板模块拆分
 
 ### 修改内容
@@ -2067,7 +2108,7 @@ const customPrompt = document.getElementById('shotCustomPrompt')?.value;
 | 配乐风格 | 配乐风格 | shotMusicStyle |
 | 音效 | 音效 | shotSoundEffect |
 
-#### 2. 新增函数 (`renderer.js`)
+#### 2. 新增函�� (`renderer.js`)
 
 **加载指定组别选项**:
 ```javascript
