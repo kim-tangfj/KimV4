@@ -120,6 +120,9 @@ function clearPrompt() { ... }
 1. **copyPromptToClipboard is not defined** - 事件监听器直接调用函数名，但函数已被注释
    - 修改为 `() => window.copyPromptToClipboard()`
    - 同样修复 `exportPrompt`, `clearPrompt`, `generatePromptFromAI`
+2. **window.updatePromptPreview is not a function** - promptGenerator.js 模块未被加载
+   - 在 `index.html` 中添加 `<script src="./src/utils/promptGenerator.js" defer></script>`
+   - 确保模块在 renderer.js 之前执行，函数导出到 window 对象
 
 ---
 
