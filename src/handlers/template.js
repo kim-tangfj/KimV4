@@ -29,10 +29,24 @@ function initTemplateIPC() {
         const config = JSON.parse(data);
         return { success: true, config: config };
       } else {
-        return {
-          success: true,
-          config: { templates: [], activeTemplateId: null }
-        };
+        // 配置文件不存在，从默认文件加载
+        try {
+          if (fs.existsSync(defaultTemplatesPath)) {
+            const defaultData = fs.readFileSync(defaultTemplatesPath, 'utf8');
+            const defaultConfig = JSON.parse(defaultData);
+            // 保存默认配置到用户数据目录
+            fs.writeFileSync(templatesConfigPath, JSON.stringify(defaultConfig, null, 2), 'utf8');
+            console.log('已从默认文件加载模板配置');
+            return { success: true, config: defaultConfig };
+          }
+        } catch (e) {
+          console.warn('默认模板文件不存在，创建空配置:', e.message);
+        }
+        
+        // 默认文件也不存在，返回空配置
+        const emptyConfig = { templates: [], activeTemplateId: null };
+        fs.writeFileSync(templatesConfigPath, JSON.stringify(emptyConfig, null, 2), 'utf8');
+        return { success: true, config: emptyConfig };
       }
     } catch (error) {
       console.error('加载模板配置失败:', error);
