@@ -4,6 +4,37 @@
 
 ---
 
+## 2026-03-07 - 清理属性面板模块控制台日志
+
+### 修改内容
+**清理 `propertyPanel.js` 中的调试日志**
+
+- 移除函数入口的 `console.log` 调试日志
+- 移除自动保存流程的 `console.log` 调试日志
+- 移除保存成功的 `console.log` 日志
+- 保留错误处理的 `console.error` 日志
+- 移除模块加载完成的 `console.log` 日志
+
+**清理的日志位置**：
+- `showShotProperties` - 移除 2 条日志
+- `autoSaveShotProperties` - 移除 3 条日志
+- `saveShotProperties` - 移除 4 条日志
+- `showSceneProperties` - 移除 2 条日志
+- `autoSaveSceneProperties` - 移除 3 条日志
+- `saveSceneProperties` - 移除 4 条日志
+- `setupOptionHintListeners` - 移除 1 条日志
+- `setupSceneOptionHintListeners` - 移除 1 条日志
+- `showQuickAddOptionModal` - 移除 1 条日志
+- 模块末尾 - 移除 1 条日志
+
+**保留的日志**：
+- 错误处理的 `console.error` 日志（用于异常排查）
+
+### 提交
+- `refactor: 清理 propertyPanel.js 不必要的控制台日志`
+
+---
+
 ## 2026-03-07 - 修复镜头属性更新后片段列表选中状态丢失
 
 ### 问题描述
