@@ -337,7 +337,7 @@ async function loadProjects() {
       if (result.success) {
         window.appState.projects = result.projects || [];
         window.renderProjectList(window.appState.projects, window.elements, window.selectProject, (project, e) => {
-          window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(), window.openProjectFolderByProject);
+          window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(window.appState, window.elements, window.useElectronAPI, loadProjects, window.renderShotList, window.renderSceneList, window.showToast, window.showConfirm), window.openProjectFolderByProject);
         }, (project, e) => {
           window.showProjectStatusMenu(project, e, (p, newStatus) => {
             window.updateProjectStatus(p, newStatus, window.appState, window.useElectronAPI, loadProjects, window.showUpdateNotification);
@@ -360,7 +360,7 @@ async function loadProjects() {
       window.appState.projects = [];
     }
     window.renderProjectList(window.appState.projects, window.elements, window.selectProject, (project, e) => {
-      window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(), window.openProjectFolderByProject);
+      window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(window.appState, window.elements, window.useElectronAPI, loadProjects, window.renderShotList, window.renderSceneList, window.showToast, window.showConfirm), window.openProjectFolderByProject);
     }, (project, e) => {
       window.showProjectStatusMenu(project, e, (p, newStatus) => {
         window.updateProjectStatus(p, newStatus, window.appState, window.useElectronAPI, loadProjects, window.showUpdateNotification);
