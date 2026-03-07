@@ -193,7 +193,8 @@ function initOptionsIPC() {
   });
 
   // 增加选项使用次数
-  ipcMain.handle('options:incrementUsage', (event, optionId) => {
+  // 更新选项使用次数（统一处理增减）
+  ipcMain.handle('options:updateUsage', (event, optionId, delta) => {
     return withErrorHandler(async () => {
       validateParams({ optionId }, ['optionId']);
       const customOptions = loadCustomOptions();
@@ -203,15 +204,40 @@ function initOptionsIPC() {
         throw new Error('选项不存在');
       }
 
-      customOptions[index].usageCount = (customOptions[index].usageCount || 0) + 1;
+      // delta 为正数增加，为负数减少
+      const newCount = Math.max(0, (customOptions[index].usageCount || 0) + delta);
+      customOptions[index].usageCount = newCount;
 
       const result = saveCustomOptions(customOptions);
       if (result.success) {
-        return { success: true, usageCount: customOptions[index].usageCount };
+        return { success: true, usageCount: newCount };
       } else {
         return result;
       }
-    }, '增加选项使用次数');
+    }, '更新选项使用次数');
+  });
+
+  // 批量更新选项使用次数
+  ipcMain.handle('options:batchUpdateUsage', (event, updates) => {
+    return withErrorHandler(async () => {
+      // updates: [{ optionId, delta }]
+      const customOptions = loadCustomOptions();
+      
+      for (const update of updates) {
+        const index = customOptions.findIndex(opt => opt.id === update.optionId);
+        if (index !== -1) {
+          const newCount = Math.max(0, (customOptions[index].usageCount || 0) + update.delta);
+          customOptions[index].usageCount = newCount;
+        }
+      }
+
+      const result = saveCustomOptions(customOptions);
+      if (result.success) {
+        return { success: true };
+      } else {
+        return result;
+      }
+    }, '批量更新选项使用次数');
   });
 
   // 检查选项是否被使用

@@ -207,6 +207,9 @@ async function deleteSelectedScene() {
 
       const shot = loadResult.projectJson.shots?.find(s => s.id === state.currentShot.id);
       if (shot && shot.scenes) {
+        // 减少要删除镜头使用的自定义选项计数
+        await decrementSceneOptionsUsage(state.currentScene);
+
         shot.scenes = shot.scenes.filter(s => s.id !== state.currentScene.id);
 
         const saveResult = await window.electronAPI.saveProject(
@@ -222,6 +225,40 @@ async function deleteSelectedScene() {
     } catch (error) {
       console.error('[deleteSelectedScene] 删除镜头异常:', error);
     }
+  }
+}
+
+/**
+ * 减少镜头使用的自定义选项计数
+ * @param {Object} scene - 镜头对象
+ */
+async function decrementSceneOptionsUsage(scene) {
+  if (!scene) return;
+
+  const usageUpdates = [];
+  const optionCounts = new Map();
+  
+  // 收集镜头使用的选项及其使用次数
+  if (scene.shotType) optionCounts.set(scene.shotType, (optionCounts.get(scene.shotType) || 0) + 1);
+  if (scene.angle) optionCounts.set(scene.angle, (optionCounts.get(scene.angle) || 0) + 1);
+  if (scene.camera) optionCounts.set(scene.camera, (optionCounts.get(scene.camera) || 0) + 1);
+  if (scene.emotion) optionCounts.set(scene.emotion, (optionCounts.get(scene.emotion) || 0) + 1);
+
+  // 获取所有自定义选项，减少匹配的选项计数
+  const customGroups = ['景别', '镜头角度', '运镜', '情绪氛围'];
+  for (const group of customGroups) {
+    const options = await window.loadOptionsByGroup(group);
+    for (const opt of options) {
+      if (!opt.builtin && optionCounts.has(opt.style)) {
+        const count = optionCounts.get(opt.style);
+        usageUpdates.push({ optionId: opt.id, delta: -count });
+      }
+    }
+  }
+
+  // 批量更新选项使用次数
+  if (usageUpdates.length > 0) {
+    await window.electronAPI.batchUpdateOptionUsage(usageUpdates);
   }
 }
 

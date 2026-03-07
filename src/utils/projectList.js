@@ -297,6 +297,13 @@ async function deleteCurrentProject(elements, useElectronAPI, loadProjects, rend
 
   if (useElectronAPI && state.currentProject.projectDir) {
     try {
+      // 加载项目数据，统计使用的自定义选项
+      const loadResult = await window.electronAPI.loadProject(state.currentProject.projectDir);
+      if (loadResult.success && loadResult.projectJson) {
+        // 减少所有使用的自定义选项计数
+        await decrementOptionsUsage(loadResult.projectJson);
+      }
+
       const result = await window.electronAPI.deleteProject(state.currentProject.projectDir);
       if (result.success) {
         window.updateState('currentProject', null);
@@ -320,6 +327,49 @@ async function deleteCurrentProject(elements, useElectronAPI, loadProjects, rend
       console.error('删除项目异常:', error);
       showToast('删除失败：' + error.message);
     }
+  }
+}
+
+/**
+ * 减少项目中所有自定义选项的使用计数
+ * @param {Object} projectJson - 项目 JSON 数据
+ */
+async function decrementOptionsUsage(projectJson) {
+  if (!projectJson || !projectJson.shots) return;
+
+  const usageUpdates = [];
+  const optionCounts = new Map();
+  
+  // 收集所有使用的自定义选项及其使用次数
+  for (const shot of projectJson.shots) {
+    if (shot.style) optionCounts.set(shot.style, (optionCounts.get(shot.style) || 0) + 1);
+    if (shot.mood) optionCounts.set(shot.mood, (optionCounts.get(shot.mood) || 0) + 1);
+    
+    if (shot.scenes) {
+      for (const scene of shot.scenes) {
+        if (scene.shotType) optionCounts.set(scene.shotType, (optionCounts.get(scene.shotType) || 0) + 1);
+        if (scene.angle) optionCounts.set(scene.angle, (optionCounts.get(scene.angle) || 0) + 1);
+        if (scene.camera) optionCounts.set(scene.camera, (optionCounts.get(scene.camera) || 0) + 1);
+        if (scene.emotion) optionCounts.set(scene.emotion, (optionCounts.get(scene.emotion) || 0) + 1);
+      }
+    }
+  }
+
+  // 获取所有自定义选项，减少匹配的选项计数
+  const customGroups = ['景别', '镜头角度', '运镜', '风格', '情绪氛围'];
+  for (const group of customGroups) {
+    const options = await window.loadOptionsByGroup(group);
+    for (const opt of options) {
+      if (!opt.builtin && optionCounts.has(opt.style)) {
+        const count = optionCounts.get(opt.style);
+        usageUpdates.push({ optionId: opt.id, delta: -count });
+      }
+    }
+  }
+
+  // 批量更新选项使用次数
+  if (usageUpdates.length > 0) {
+    await window.electronAPI.batchUpdateOptionUsage(usageUpdates);
   }
 }
 

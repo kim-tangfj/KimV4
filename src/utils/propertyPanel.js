@@ -264,34 +264,58 @@ async function saveShotProperties(isAutoSave = false) {
 
       const oldShot = loadResult.projectJson.shots[shotIndex];
 
-      // 检查选项是否变更，如果变更则增加使用次数
+      // 收集选项变更，批量更新使用次数
+      const usageUpdates = [];
+      
+      // 检查选项是否变更，如果变更则更新使用次数
       if (style && oldShot && style !== oldShot.style) {
         const styleOptions = await window.loadOptionsByGroup('风格');
         const selectedOption = styleOptions.find(opt => opt.style === style);
+        const oldOption = styleOptions.find(opt => opt.style === oldShot.style);
         if (selectedOption && !selectedOption.builtin) {
-          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+          usageUpdates.push({ optionId: selectedOption.id, delta: 1 });
+        }
+        if (oldOption && !oldOption.builtin) {
+          usageUpdates.push({ optionId: oldOption.id, delta: -1 });
         }
       }
       if (mood && oldShot && mood !== oldShot.mood) {
         const moodOptions = await window.loadOptionsByGroup('情绪氛围');
         const selectedOption = moodOptions.find(opt => opt.style === mood);
+        const oldOption = moodOptions.find(opt => opt.style === oldShot.mood);
         if (selectedOption && !selectedOption.builtin) {
-          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+          usageUpdates.push({ optionId: selectedOption.id, delta: 1 });
+        }
+        if (oldOption && !oldOption.builtin) {
+          usageUpdates.push({ optionId: oldOption.id, delta: -1 });
         }
       }
-      if (musicStyle && oldShot && musicStyle !== oldShot.musicStyle) {
+      if (musicStyle !== undefined && oldShot && musicStyle !== oldShot.musicStyle) {
         const musicOptions = await window.loadOptionsByGroup('配乐风格');
         const selectedOption = musicOptions.find(opt => opt.style === musicStyle);
+        const oldOption = musicOptions.find(opt => opt.style === oldShot.musicStyle);
         if (selectedOption && !selectedOption.builtin) {
-          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+          usageUpdates.push({ optionId: selectedOption.id, delta: 1 });
+        }
+        if (oldOption && !oldOption.builtin) {
+          usageUpdates.push({ optionId: oldOption.id, delta: -1 });
         }
       }
-      if (soundEffect && oldShot && soundEffect !== oldShot.soundEffect) {
+      if (soundEffect !== undefined && oldShot && soundEffect !== oldShot.soundEffect) {
         const soundOptions = await window.loadOptionsByGroup('音效');
         const selectedOption = soundOptions.find(opt => opt.style === soundEffect);
+        const oldOption = soundOptions.find(opt => opt.style === oldShot.soundEffect);
         if (selectedOption && !selectedOption.builtin) {
-          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+          usageUpdates.push({ optionId: selectedOption.id, delta: 1 });
         }
+        if (oldOption && !oldOption.builtin) {
+          usageUpdates.push({ optionId: oldOption.id, delta: -1 });
+        }
+      }
+
+      // 批量更新选项使用次数
+      if (usageUpdates.length > 0) {
+        await window.electronAPI.batchUpdateOptionUsage(usageUpdates);
       }
 
       loadResult.projectJson.shots[shotIndex] = {
@@ -543,27 +567,58 @@ async function saveSceneProperties(isAutoSave = false) {
 
       const oldScene = shot.scenes[sceneIndex];
 
-      // 检查选项是否变更
+      // 收集选项变更，批量更新使用次数
+      const usageUpdates = [];
+      
+      // 检查选项是否变更，如果变更则更新使用次数
       if (shotType && oldScene && shotType !== oldScene.shotType) {
         const shotTypeOptions = await window.loadOptionsByGroup('景别');
         const selectedOption = shotTypeOptions.find(opt => opt.style === shotType);
+        const oldOption = shotTypeOptions.find(opt => opt.style === oldScene.shotType);
         if (selectedOption && !selectedOption.builtin) {
-          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+          usageUpdates.push({ optionId: selectedOption.id, delta: 1 });
+        }
+        if (oldOption && !oldOption.builtin) {
+          usageUpdates.push({ optionId: oldOption.id, delta: -1 });
         }
       }
       if (angle && oldScene && angle !== oldScene.angle) {
         const angleOptions = await window.loadOptionsByGroup('镜头角度');
         const selectedOption = angleOptions.find(opt => opt.style === angle);
+        const oldOption = angleOptions.find(opt => opt.style === oldScene.angle);
         if (selectedOption && !selectedOption.builtin) {
-          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+          usageUpdates.push({ optionId: selectedOption.id, delta: 1 });
+        }
+        if (oldOption && !oldOption.builtin) {
+          usageUpdates.push({ optionId: oldOption.id, delta: -1 });
         }
       }
       if (camera && oldScene && camera !== oldScene.camera) {
         const cameraOptions = await window.loadOptionsByGroup('运镜');
         const selectedOption = cameraOptions.find(opt => opt.style === camera);
+        const oldOption = cameraOptions.find(opt => opt.style === oldScene.camera);
         if (selectedOption && !selectedOption.builtin) {
-          await window.electronAPI.incrementOptionUsage(selectedOption.id);
+          usageUpdates.push({ optionId: selectedOption.id, delta: 1 });
         }
+        if (oldOption && !oldOption.builtin) {
+          usageUpdates.push({ optionId: oldOption.id, delta: -1 });
+        }
+      }
+      if (emotion && oldScene && emotion !== oldScene.emotion) {
+        const emotionOptions = await window.loadOptionsByGroup('情绪氛围');
+        const selectedOption = emotionOptions.find(opt => opt.style === emotion);
+        const oldOption = emotionOptions.find(opt => opt.style === oldScene.emotion);
+        if (selectedOption && !selectedOption.builtin) {
+          usageUpdates.push({ optionId: selectedOption.id, delta: 1 });
+        }
+        if (oldOption && !oldOption.builtin) {
+          usageUpdates.push({ optionId: oldOption.id, delta: -1 });
+        }
+      }
+
+      // 批量更新选项使用次数
+      if (usageUpdates.length > 0) {
+        await window.electronAPI.batchUpdateOptionUsage(usageUpdates);
       }
 
       shot.scenes[sceneIndex] = {

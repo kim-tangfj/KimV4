@@ -236,6 +236,9 @@ async function deleteSelectedShot() {
         return;
       }
 
+      // 减少要删除片段使用的自定义选项计数
+      await decrementShotOptionsUsage(state.currentShot);
+
       // 过滤掉要删除的片段
       loadResult.projectJson.shots = (loadResult.projectJson.shots || []).filter(
         s => s.id !== state.currentShot.id
@@ -261,6 +264,48 @@ async function deleteSelectedShot() {
     }
   } else {
     window.showToast('请在 Electron 环境中使用此功能');
+  }
+}
+
+/**
+ * 减少片段使用的自定义选项计数
+ * @param {Object} shot - 片段对象
+ */
+async function decrementShotOptionsUsage(shot) {
+  if (!shot) return;
+
+  const usageUpdates = [];
+  const optionCounts = new Map();
+  
+  // 收集片段使用的选项及其使用次数
+  if (shot.style) optionCounts.set(shot.style, (optionCounts.get(shot.style) || 0) + 1);
+  if (shot.mood) optionCounts.set(shot.mood, (optionCounts.get(shot.mood) || 0) + 1);
+  
+  // 收集镜头使用的选项
+  if (shot.scenes) {
+    for (const scene of shot.scenes) {
+      if (scene.shotType) optionCounts.set(scene.shotType, (optionCounts.get(scene.shotType) || 0) + 1);
+      if (scene.angle) optionCounts.set(scene.angle, (optionCounts.get(scene.angle) || 0) + 1);
+      if (scene.camera) optionCounts.set(scene.camera, (optionCounts.get(scene.camera) || 0) + 1);
+      if (scene.emotion) optionCounts.set(scene.emotion, (optionCounts.get(scene.emotion) || 0) + 1);
+    }
+  }
+
+  // 获取所有自定义选项，减少匹配的选项计数
+  const customGroups = ['景别', '镜头角度', '运镜', '风格', '情绪氛围'];
+  for (const group of customGroups) {
+    const options = await window.loadOptionsByGroup(group);
+    for (const opt of options) {
+      if (!opt.builtin && optionCounts.has(opt.style)) {
+        const count = optionCounts.get(opt.style);
+        usageUpdates.push({ optionId: opt.id, delta: -count });
+      }
+    }
+  }
+
+  // 批量更新选项使用次数
+  if (usageUpdates.length > 0) {
+    await window.electronAPI.batchUpdateOptionUsage(usageUpdates);
   }
 }
 
