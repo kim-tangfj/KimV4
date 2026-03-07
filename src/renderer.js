@@ -227,6 +227,13 @@ async function initializeApp() {
   useElectronAPI = !!(window.electronAPI);
 
   await loadSettings();
+  
+  // 先导出全局变量，确保 loadProjects 能访问到 settings
+  window.useElectronAPI = useElectronAPI;
+  window.elements = elements;
+  window.appState = appState;
+  window.settings = settings;
+  
   setupEventListeners();
   window.loadProjects();
   applyTheme(currentTheme);
@@ -2936,17 +2943,17 @@ function showUpdateNotification() {
 // ========== 全局变量暴露（供模块使用）==========
 // 注意：必须在 initializeApp 之后调用，确保 useElectronAPI 已更新
 function exposeGlobals() {
-  window.useElectronAPI = useElectronAPI;
-  window.elements = elements;
-  window.appState = appState;
-  
+  // 这些变量已在 initializeApp 中设置
+  // window.useElectronAPI = useElectronAPI;
+  // window.elements = elements;
+  // window.appState = appState;
+  // window.settings = settings;
+
   // 导出 renderer.js 中的函数供模块使用
-  window.selectProject = selectProject;
+  window.renderShotList = renderShotList;
   window.renderSceneList = renderSceneList;
   window.selectScene = selectScene;
   window.updatePromptPreview = updatePromptPreview;
-  window.showShotProperties = showShotProperties;
-  window.showSceneProperties = showSceneProperties;
   window.showToast = showToast;
   window.showConfirm = showConfirm;
   window.loadOptionsByGroup = loadOptionsByGroup;

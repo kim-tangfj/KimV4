@@ -337,7 +337,6 @@ async function loadProjects() {
         window.renderProjectList(window.appState.projects, window.elements, window.selectProject, (project, e) => {
           window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(), window.openProjectFolderByProject);
         }, (project, e) => {
-          // 点击状态标签时，弹出状态菜单
           window.showProjectStatusMenu(project, e, (p, newStatus) => {
             window.updateProjectStatus(p, newStatus, window.appState, window.useElectronAPI, loadProjects, window.showUpdateNotification);
           });
@@ -347,7 +346,7 @@ async function loadProjects() {
         window.renderProjectList([], window.elements, window.selectProject, () => {}, () => {}, () => {});
       }
     } catch (error) {
-      console.error('加载项目异常:', error);
+      console.error('[projectList] loadProjects: 加载异常', error);
       window.appState.projects = [];
       window.renderProjectList([], window.elements, window.selectProject, () => {}, () => {}, () => {});
     }
@@ -358,11 +357,9 @@ async function loadProjects() {
     } else {
       window.appState.projects = [];
     }
-    // 使用模块中的 renderProjectList 函数
     window.renderProjectList(window.appState.projects, window.elements, window.selectProject, (project, e) => {
       window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(), window.openProjectFolderByProject);
     }, (project, e) => {
-      // 点击状态标签时，弹出状态菜单
       window.showProjectStatusMenu(project, e, (p, newStatus) => {
         window.updateProjectStatus(p, newStatus, window.appState, window.useElectronAPI, loadProjects, window.showUpdateNotification);
       });
