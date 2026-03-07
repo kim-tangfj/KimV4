@@ -34,6 +34,7 @@ function renderProjectList(projects, elements, onSelectProject, onContextMenu, o
         </div>
       </div>
       <span class="status-tag status-${project.status || 'draft'}" data-project-id="${project.id}" data-status="${project.status || 'draft'}">${statusText}</span>
+      <button class="assets-btn" title="项目素材库" data-project-id="${project.id}" data-project-name="${project.name}">📁</button>
     `;
 
     // 项目卡片点击
@@ -56,6 +57,19 @@ function renderProjectList(projects, elements, onSelectProject, onContextMenu, o
       statusTag.addEventListener('click', (e) => {
         e.stopPropagation();
         if (onStatusClick) onStatusClick(project, e);
+      });
+    }
+
+    // 素材按钮点击
+    const assetsBtn = projectElement.querySelector('.assets-btn');
+    if (assetsBtn) {
+      assetsBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        const projectId = assetsBtn.dataset.projectId;
+        const projectName = assetsBtn.dataset.projectName;
+        if (window.openAssetsSidebar) {
+          window.openAssetsSidebar(projectId, projectName);
+        }
       });
     }
 

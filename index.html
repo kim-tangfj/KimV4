@@ -553,6 +553,51 @@
     </div>
   </div>
 
+  <!-- 项目素材库侧边窗体 -->
+  <div id="project-assets-sidebar" class="assets-sidebar" style="display: none;">
+    <div class="assets-sidebar-header">
+      <h4>项目素材库</h4>
+      <button class="assets-sidebar-close" title="关闭">×</button>
+    </div>
+
+    <div class="assets-sidebar-content">
+      <!-- 项目信息 -->
+      <div class="assets-project-info">
+        <span class="info-label">当前项目：</span>
+        <span class="info-value" id="assets-project-name">-</span>
+      </div>
+
+      <!-- 搜索框 -->
+      <div class="assets-search">
+        <input type="text" id="assets-search-input" placeholder="🔍 搜索素材..." />
+      </div>
+
+      <!-- 分类筛选 -->
+      <div class="assets-categories">
+        <div class="assets-category active" data-type="all">📁 全部素材 (<span id="assets-count-all">0</span>)</div>
+        <div class="assets-category" data-type="images">📁 图片 (<span id="assets-count-images">0</span>)</div>
+        <div class="assets-category" data-type="videos">📁 视频 (<span id="assets-count-videos">0</span>)</div>
+        <div class="assets-category" data-type="audios">📁 音频 (<span id="assets-count-audios">0</span>)</div>
+      </div>
+
+      <!-- 上传按钮 -->
+      <button class="assets-upload-btn" id="assets-upload-btn">📤 上传素材</button>
+
+      <!-- 素材列表 -->
+      <div class="assets-list" id="assets-list">
+        <!-- 动态渲染素材列表 -->
+      </div>
+
+      <!-- 存储使用情况 -->
+      <div class="assets-usage">
+        <div class="usage-bar">
+          <div class="usage-fill" id="assets-usage-fill" style="width: 0%"></div>
+        </div>
+        <span class="usage-text" id="assets-usage-text">已用 0MB / 限制 500MB</span>
+      </div>
+    </div>
+  </div>
+
   <!-- 模块化组件脚本 -->
   <script src="./src/utils/appStateManager.js" defer></script>
   <script src="./src/utils/uiHelpers.js" defer></script>
@@ -566,6 +611,7 @@
   <script src="./src/utils/eventListeners.js" defer></script>
   <script src="./src/utils/templateLibrary.js" defer></script>
   <script src="./src/utils/projectCreator.js" defer></script>
+  <script src="./src/utils/projectAssets.js" defer></script>
 
   <!-- 主渲染进程脚本 -->
   <script src="./src/renderer.js"></script>
