@@ -459,7 +459,7 @@ function setupEventListeners() {
     elements.newProjectBtn.addEventListener('click', showNewProjectModal);
   }
   if (elements.refreshProjectsBtn) {
-    elements.refreshProjectsBtn.addEventListener('click', loadProjects);
+    elements.refreshProjectsBtn.addEventListener('click', window.loadProjects);
   }
   if (elements.newShotBtn) {
     elements.newShotBtn.addEventListener('click', createNewShot);
