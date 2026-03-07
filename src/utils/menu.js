@@ -126,7 +126,10 @@ function openLogWindow(type) {
   logWindows.push(logWindow);
 
   // 直接读取 work 目录下的日志文件
-  const logPath = path.join(__dirname, `../../../work/${type}-log.md`);
+  // __dirname = E:\AI\KimV4\src\utils
+  // 需要到达 E:\AI\KimV4\work\dev-log.md
+  // 所以需要 ../../work/dev-log.md
+  const logPath = path.join(__dirname, `../../work/${type}-log.md`);
 
   // 如果日志文件不存在，创建空文件
   if (!fs.existsSync(logPath)) {
