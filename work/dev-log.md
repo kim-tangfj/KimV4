@@ -110,10 +110,16 @@ function clearPrompt() { ... }
 
 ### 测试验证
 - [x] 应用启动正常
+- [x] 修复事件监听器函数调用（copyPromptToClipboard, exportPrompt, clearPrompt, generatePromptFromAI）
 - [ ] 提示词自动生成功能
 - [ ] 复制提示词功能
 - [ ] 导出提示词功能
 - [ ] AI 生成提示词功能
+
+### 修复的问题
+1. **copyPromptToClipboard is not defined** - 事件监听器直接调用函数名，但函数已被注释
+   - 修改为 `() => window.copyPromptToClipboard()`
+   - 同样修复 `exportPrompt`, `clearPrompt`, `generatePromptFromAI`
 
 ---
 
