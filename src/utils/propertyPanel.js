@@ -636,6 +636,11 @@ async function saveSceneProperties(isAutoSave = false) {
         }
         window.updatePromptPreview();
         window.renderShotList(loadResult.projectJson.shots || []);
+        // 恢复片段列表选中状态
+        const shotItem = document.querySelector(`#shot-list .list-item[data-id="${window.appState.currentShot.id}"]`);
+        if (shotItem) {
+          shotItem.classList.add('selected');
+        }
         window.renderSceneList(shot.scenes || []);
         const sceneItem = document.querySelector(`#scene-list .list-item[data-id="${scene.id}"]`);
         if (sceneItem) {
