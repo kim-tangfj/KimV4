@@ -243,6 +243,50 @@ function cacheDOMElements() {
 /** ======= DOM 元素缓存 结束 ======== */
 
 
+// ========== 全局错误处理 开始 ==========
+
+// 捕获未处理的 Promise 拒绝
+window.addEventListener('unhandledrejection', (event) => {
+  console.error('[渲染进程] 未处理的 Promise 拒绝:', event.reason);
+  // 显示错误提示
+  if (window.showToast) {
+    window.showToast('操作失败：' + (event.reason?.message || '未知错误'), 'error');
+  }
+  // 阻止默认行为
+  event.preventDefault();
+});
+
+// 捕获全局 JavaScript 错误
+window.addEventListener('error', (event) => {
+  console.error('[渲染进程] 全局错误:', event.error);
+  // 显示错误提示
+  if (window.showToast) {
+    window.showToast('发生错误：' + event.message, 'error');
+  }
+  // 不阻止默认行为，让错误在控制台显示
+});
+
+// IPC 调用错误处理包装器
+window.safeIpcCall = async function(ipcName, ...args) {
+  try {
+    if (!window.electronAPI || !window.electronAPI[ipcName]) {
+      throw new Error(`IPC 方法不存在：${ipcName}`);
+    }
+    const result = await window.electronAPI[ipcName](...args);
+    // 检查 IPC 返回的错误
+    if (result && result.success === false) {
+      throw new Error(result.error || '操作失败');
+    }
+    return result;
+  } catch (error) {
+    console.error(`[IPC 调用失败] ${ipcName}:`, error);
+    throw error;
+  }
+};
+
+// ========== 全局错误处理 结束 ==========
+
+
 // ======= 应用初始化 开始 ========
 // 导出全局变量供模块使用
 window.appState = appState;

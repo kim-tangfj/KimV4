@@ -3,6 +3,7 @@
 //
 
 const { ipcMain, net } = require('electron');
+const { withErrorHandler, validateParams } = require('../utils/ipcErrorHandler');
 
 // API 配置
 const API_CONFIGS = {
@@ -28,7 +29,9 @@ const API_CONFIGS = {
 function initApiIPC() {
   // 测试 API 连接
   ipcMain.handle('api:testConnection', async (event, provider, apiKey, model) => {
-    try {
+    return withErrorHandler(async () => {
+      validateParams({ provider, apiKey }, ['provider', 'apiKey']);
+      
       const config = getApiConfig(provider);
       const url = `${config.baseUrl}/chat/completions`;
 
@@ -51,15 +54,14 @@ function initApiIPC() {
         const errorText = await response.text();
         return { success: false, error: errorText };
       }
-    } catch (error) {
-      console.error('测试连接失败:', error);
-      return { success: false, error: error.message };
-    }
+    }, 'API 连接测试');
   });
 
   // 调用 LLM API
   ipcMain.handle('api:callLlm', async (event, provider, apiKey, model, prompt) => {
-    try {
+    return withErrorHandler(async () => {
+      validateParams({ provider, apiKey, prompt }, ['provider', 'apiKey', 'prompt']);
+      
       const config = getApiConfig(provider);
       const url = `${config.baseUrl}/chat/completions`;
 
@@ -93,9 +95,7 @@ function initApiIPC() {
         const errorText = await response.text();
         return { success: false, error: errorText };
       }
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    }, 'LLM API 调用');
   });
 }
 

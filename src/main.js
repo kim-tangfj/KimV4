@@ -18,6 +18,50 @@ const { initializeDefaultTemplates } = require('./handlers/template');
 // 主窗口对象
 let mainWindow;
 
+// ========== 全局错误处理 开始 ==========
+
+// 捕获未处理的 Promise 拒绝
+process.on('unhandledRejection', (reason, promise) => {
+  console.error('[主进程] 未处理的 Promise 拒绝:', reason);
+  // 记录到日志文件
+  try {
+    const fs = require('fs');
+    const logPath = path.join(app.getPath('userData'), 'logs', 'main-process-error.log');
+    const logDir = path.dirname(logPath);
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    fs.appendFileSync(logPath, `[${new Date().toISOString()}] unhandledRejection: ${reason}\n\n`);
+  } catch (e) {
+    console.error('记录日志失败:', e);
+  }
+});
+
+// 捕获未捕获的异常
+process.on('uncaughtException', (error) => {
+  console.error('[主进程] 未捕获的异常:', error);
+  // 记录到日志文件
+  try {
+    const fs = require('fs');
+    const logPath = path.join(app.getPath('userData'), 'logs', 'main-process-error.log');
+    const logDir = path.dirname(logPath);
+    if (!fs.existsSync(logDir)) {
+      fs.mkdirSync(logDir, { recursive: true });
+    }
+    fs.appendFileSync(logPath, `[${new Date().toISOString()}] uncaughtException: ${error.stack}\n\n`);
+  } catch (e) {
+    console.error('记录日志失败:', e);
+  }
+  
+  // 如果是致命错误，通知用户并退出
+  if (error.code === 'EACCES' || error.code === 'EPERM') {
+    console.error('[主进程] 权限错误，应用将无法正常运行');
+    app.quit();
+  }
+});
+
+// ========== 全局错误处理 结束 ==========
+
 // 创建主窗口
 function createWindow() {
   mainWindow = new BrowserWindow({
