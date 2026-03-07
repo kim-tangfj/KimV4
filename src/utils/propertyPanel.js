@@ -617,7 +617,12 @@ async function saveSceneProperties(isAutoSave = false) {
 
       if (saveResult.success) {
         console.log('[propertyPanel] saveSceneProperties: 保存成功');
+        // 更新 currentScene
         window.appState.currentScene = shot.scenes[sceneIndex];
+        // 更新 currentShot.scenes（重要！否则提示词不会更新）
+        if (window.appState.currentShot) {
+          window.appState.currentShot.scenes = shot.scenes;
+        }
         if (window.elements.bottomPanelTitle) {
           window.elements.bottomPanelTitle.textContent = `${name || '镜头'} 属性`;
         }

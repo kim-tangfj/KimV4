@@ -2606,19 +2606,8 @@ function updatePromptPreview() {
 
   let prompt = '';
 
-  // 优先显示镜头提示词，如果没有选中镜头则显示片段提示词
-  if (appState.currentScene && appState.currentShot) {
-    // 计算镜头累计时间
-    const scenes = appState.currentShot.scenes || [];
-    let cumulativeTime = 0;
-    for (let i = 0; i < scenes.length; i++) {
-      if (scenes[i].id === appState.currentScene.id) {
-        break;
-      }
-      cumulativeTime += scenes[i].duration || 0;
-    }
-    prompt = generateScenePrompt(appState.currentScene, scenes.indexOf(appState.currentScene), cumulativeTime);
-  } else if (appState.currentShot) {
+  // 无论选中片段还是镜头，都显示片段级提示词
+  if (appState.currentShot) {
     prompt = generateShotPrompt(appState.currentShot);
   } else if (appState.currentProject) {
     prompt = generateProjectPrompt(appState.currentProject, getStatusText);
