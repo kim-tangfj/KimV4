@@ -331,25 +331,27 @@ async function loadProjects() {
     try {
       // 使用设置中的存储路径 - 直接从 window.settings 读取
       const storagePath = window.settings?.storagePath || '文档/KimStoryboard';
-      
+
       const result = await window.electronAPI.listProjects(storagePath);
-      
+
       if (result.success) {
-        window.appState.projects = result.projects || [];
-        window.renderProjectList(window.appState.projects, window.elements, window.selectProject, (project, e) => {
-          window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(window.appState, window.elements, window.useElectronAPI, loadProjects, window.renderShotList, window.renderSceneList, window.showToast, window.showConfirm), window.openProjectFolderByProject);
+        // 使用状态管理器更新状态
+        const projects = result.projects || [];
+        window.updateState('projects', projects);
+        window.renderProjectList(projects, window.elements, window.selectProject, (project, e) => {
+          window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(window.getState(), window.elements, window.useElectronAPI, loadProjects, window.renderShotList, window.renderSceneList, window.showToast, window.showConfirm), window.openProjectFolderByProject);
         }, (project, e) => {
           window.showProjectStatusMenu(project, e, (p, newStatus) => {
-            window.updateProjectStatus(p, newStatus, window.appState, window.useElectronAPI, loadProjects, window.showUpdateNotification);
+            window.updateProjectStatus(p, newStatus, window.getState(), window.useElectronAPI, loadProjects, window.showUpdateNotification);
           });
         });
       } else {
-        window.appState.projects = [];
+        window.updateState('projects', []);
         window.renderProjectList([], window.elements, window.selectProject, () => {}, () => {}, () => {});
       }
     } catch (error) {
       console.error('[projectList] loadProjects: 加载异常', error);
-      window.appState.projects = [];
+      window.updateState('projects', []);
       window.renderProjectList([], window.elements, window.selectProject, () => {}, () => {}, () => {});
     }
   } else {
