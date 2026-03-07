@@ -570,7 +570,7 @@ async function createProjectAI() {
   }
 
   if (!previewData) {
-    alert('请先生成提示词并获取 AI 返回数据');
+    window.showToast('请先生成提示词并获取 AI 返回数据');
     return;
   }
 
@@ -579,7 +579,7 @@ async function createProjectAI() {
   try {
     jsonData = JSON.parse(previewData);
   } catch (e) {
-    alert('预览数据格式错误：' + e.message);
+    window.showToast('预览数据格式错误：' + e.message);
     return;
   }
 
@@ -642,11 +642,11 @@ async function createProjectAI() {
         await window.loadProjects();
         showUpdateNotification();
       } else {
-        alert('创建项目失败：' + result.error);
+        window.showToast('创建项目失败：' + result.error);
       }
     } catch (error) {
       console.error('创建项目异常:', error);
-      alert('创建项目失败：' + error.message);
+      window.showToast('创建项目失败：' + error.message);
     }
   }
 }
@@ -818,11 +818,11 @@ async function createProjectManual() {
           await window.loadProjects();
           showUpdateNotification();
         } else {
-          alert('创建项目失败：' + result.error);
+          window.showToast('创建项目失败：' + result.error);
         }
       } catch (error) {
         console.error('创建项目异常:', error);
-        alert('创建项目失败：' + error.message);
+        window.showToast('创建项目失败：' + error.message);
       }
     }
     return;
@@ -840,7 +840,7 @@ async function createProjectManual() {
 
       if (!apiKey) {
         hideLoading();
-        alert('请先在设置中配置 API Key');
+        window.showToast('请先在设置中配置 API Key');
         window.showSettingsModal();
         return;
       }
@@ -877,17 +877,17 @@ async function createProjectManual() {
             await window.loadProjects();
             showUpdateNotification();
           } else {
-            alert('创建项目失败：' + createResult.error);
+            window.showToast('创建项目失败：' + createResult.error);
           }
         } catch (e) {
-          alert('AI 返回的数据格式错误：' + e.message);
+          window.showToast('AI 返回的数据格式错误：' + e.message);
         }
       } else {
-        alert('AI 调用失败：' + result.error);
+        window.showToast('AI 调用失败：' + result.error);
       }
     } catch (error) {
       console.error('AI 调用异常:', error);
-      alert('AI 调用失败：' + error.message);
+      window.showToast('AI 调用失败：' + error.message);
     } finally {
       hideLoading();
     }
@@ -895,113 +895,14 @@ async function createProjectManual() {
   }
 }
 
-// ========== 已废弃的函数 ==========
-// buildPromptFromTemplate - 已废弃，改用模板系统中的激活模板
 
-/* === 已废弃 - 改用模板系统中的激活模板 ===
-// 构建提示词模板
-function buildPromptFromTemplate(script) {
-  return `你是一位专业的视频分镜脚本助手。请将以下剧本内容转换为结构化的 JSON 格式片段数据。
-
-剧本内容：
-${script}
-
-重要约束：
-1. 每个片段 (shot) 的总时长不能超过 15 秒
-2. 片段内所有镜头 (scenes) 的时长相加不能超过 15 秒
-3. 每个镜头的时长建议在 2-5 秒之间
-4. 镜头描述要简洁明确，便于视觉化呈现
-5. 必须包含景别和运镜信息
-6. 【重要】对话台词格式要求：如果镜头中有多人对话，必须标明说话人，格式为：角色名："台词内容"。例如：张三："你好吗？" 李四："我很好，谢谢！"
-7. 【重要】时长分配要求：必须根据台词长度合理分配镜头时长。一般情况下，每个汉字需要约 0.3-0.5 秒的朗读时间，请确保 duration 足够角色说完所有台词
-
-景别选项（shotType）：
-- 特写 (Close-up)
-- 近景 (Medium Close-up)
-- 中景 (Medium Shot)
-- 全景 (Full Shot)
-- 远景 (Long Shot)
-- 大远景 (Extreme Long Shot)
-
-镜头角度（angle）：
-- 平视 (Eye Level)
-- 俯视 (High Angle)
-- 仰视 (Low Angle)
-- 过肩 (Over the Shoulder)
-- 鸟瞰 (Bird's Eye View)
-- 倾斜 (Dutch Angle)
-
-运镜方式（camera）：
-- 固定镜头 (Static)
-- 推镜头 (Push In)
-- 拉镜头 (Pull Out)
-- 摇镜头 (Pan)
-- 跟镜头 (Follow)
-- 升降镜头 (Crane)
-- 环绕镜头 (Orbit)
-- 手持镜头 (Handheld)
-
-请严格按照以下 JSON 格式返回数据（只返回 JSON，不要其他说明文字）：
-
-{
-  "project": {
-    "name": "项目名称",
-    "description": "项目描述",
-    "aspectRatio": "16:9",
-    "status": "draft"
-  },
-  "shots": [
-    {
-      "name": "片段名称",
-      "description": "片段描述",
-      "duration": 10,
-      "aspectRatio": "16:9",
-      "style": "风格",
-      "mood": "情绪",
-      "scenes": [
-        {
-          "name": "镜头描述",
-          "shotType": "中景",
-          "angle": "平视",
-          "camera": "推镜头",
-          "content": "详细的画面内容描述",
-          "duration": 5,
-          "dialogue": "张三：\\"你好，很高兴见到你！\\"",
-          "emotion": "情绪氛围",
-          "notes": "备注说明"
-        }
-      ]
-    }
-  ]
-}
-
-要求：
-- 镜头名称要简洁有力
-- 片段描述 (name) 要具体可视化
-- 景别 (shotType) 必须从上述选项中选择
-- 镜头角度 (angle) 必须从上述选项中选择
-- 运镜 (camera) 必须从上述选项中选择
-- 内容 (content) 要详细描述画面
-- 时长分配要合理，特别注意：
-  * 如果有台词，请计算台词字数，按每个汉字 0.3-0.5 秒估算朗读时间
-  * duration 必须大于等于台词朗读所需时间
-  * 例如：20 个字的台词至少需要 6-10 秒的 duration
-- 对话台词 (dialogue) 格式：
-  * 单人台词：直接写台词内容
-  * 多人对话：必须标明说话人，格式为 角色名："台词" 角色名："台词"
-  * 示例：张三："你好吗？" 李四："我很好！"
-- 确保每个镜头总时长≤15 秒
-- 返回标准 JSON 格式，可直接解析
-- 所有字段都要填写，没有内容的字段填空字符串""`;
-}
-=== 已废弃结束 === */
 
 // 复制模板（使用激活的模板）
 function copyTemplate() {
   const scriptContent = elements.manualProjectScript?.value.trim() || elements.aiProjectScript?.value.trim() || '';
 
   if (!scriptContent) {
-    alert('请先输入项目剧本内容');
+    window.showToast('请先输入项目剧本内容');
     if (elements.manualProjectScript) elements.manualProjectScript.focus();
     return;
   }
@@ -1022,7 +923,7 @@ function copyTemplate() {
     }, 2000);
   }).catch(err => {
     console.error('复制失败:', err);
-    alert('复制失败，请手动复制');
+    window.showToast('复制失败，请手动复制');
   });
 }
 
@@ -1054,7 +955,7 @@ async function deleteCurrentProject() {
 
 async function openProjectFolder() {
   if (!appState.currentProject) {
-    alert('请先选择一个项目');
+    window.showToast('请先选择一个项目');
     return;
   }
 
@@ -1203,13 +1104,13 @@ function saveTemplate() {
   const mode = elements.saveTemplateBtn.dataset.mode;
 
   if (!name) {
-    alert('请输入模板名称');
+    window.showToast('请输入模板名称');
     elements.templateName?.focus();
     return;
   }
 
   if (!content) {
-    alert('请输入模板内容');
+    window.showToast('请输入模板内容');
     elements.templateContent?.focus();
     return;
   }
@@ -1275,42 +1176,42 @@ function hideTemplateEditor() {
 // 备份模板
 async function backupTemplates() {
   if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
+    window.showToast('请在 Electron 环境中使用此功能');
     return;
   }
 
   const result = await window.electronAPI.backupTemplates();
   if (result.success) {
-    alert('模板备份成功！\n文件已保存到：' + result.filePath);
+    window.showToast('模板备份成功！文件已保存到：' + result.filePath);
   } else if (!result.canceled) {
-    alert('备份失败：' + result.error);
+    window.showToast('备份失败：' + result.error);
   }
 }
 
 // 恢复模板
 async function restoreTemplates() {
   if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
+    window.showToast('请在 Electron 环境中使用此功能');
     return;
   }
 
-  const confirmed = await showConfirm('恢复模板将覆盖当前的模板配置，确定继续吗？');
+  const confirmed = await window.showConfirm('恢复模板将覆盖当前的模板配置，确定继续吗？');
   if (!confirmed) {
     return;
   }
 
   const result = await window.electronAPI.restoreTemplates();
   if (result.success) {
-    showToast('模板恢复成功！请重启应用以加载恢复的模板。');
+    window.showToast('模板恢复成功！请重启应用以加载恢复的模板。');
   } else if (!result.canceled) {
-    showToast('恢复失败：' + result.error);
+    window.showToast('恢复失败：' + result.error);
   }
 }
 
 // 打开模板文件夹
 async function openTemplateFolder() {
   if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
+    window.showToast('请在 Electron 环境中使用此功能');
     return;
   }
 
@@ -1320,7 +1221,7 @@ async function openTemplateFolder() {
       await window.electronAPI.openPath(result.path);
     }
   } catch (error) {
-    alert('打开文件夹失败：' + error.message);
+    window.showToast('打开文件夹失败：' + error.message);
   }
 }
 // ======= 模板库管理功能 结束 ========
