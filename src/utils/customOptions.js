@@ -288,13 +288,9 @@ async function loadGroupFilterForEditForm() {
   try {
     const result = await window.electronAPI.getGroups();
     if (result.success && result.groups) {
-      elements.editCustomOptionGroup.innerHTML = '';
-
-      // 添加"新建组别"选项
-      const newOption = document.createElement('option');
-      newOption.value = '__new__';
-      newOption.textContent = '【新建组别】';
-      elements.editCustomOptionGroup.appendChild(newOption);
+      // 清空选项
+      elements.editCustomOptionGroup.innerHTML = '<option value="">请选择组别</option>';
+      elements.editCustomOptionGroup.innerHTML += '<option value="__new__">-- 新建组别 --</option>';
 
       // 添加所有组别
       result.groups.forEach(group => {
