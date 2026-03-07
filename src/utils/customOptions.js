@@ -282,7 +282,7 @@ async function showEditCustomOptionForm(option) {
 async function loadGroupFilterForEditForm() {
   const useElectronAPI = window.useElectronAPI;
   const elements = window.elements;
-  
+
   if (!useElectronAPI || !elements.editCustomOptionGroup) return;
 
   try {
@@ -290,12 +290,32 @@ async function loadGroupFilterForEditForm() {
     if (result.success && result.groups) {
       elements.editCustomOptionGroup.innerHTML = '';
 
+      // 添加"新建组别"选项
+      const newOption = document.createElement('option');
+      newOption.value = '__new__';
+      newOption.textContent = '【新建组别】';
+      elements.editCustomOptionGroup.appendChild(newOption);
+
+      // 添加所有组别
       result.groups.forEach(group => {
         const option = document.createElement('option');
         option.value = group;
         option.textContent = group;
         elements.editCustomOptionGroup.appendChild(option);
       });
+
+      // 添加切换逻辑
+      elements.editCustomOptionGroup.onchange = () => {
+        if (elements.editCustomOptionGroup.value === '__new__') {
+          // 选择"新建组别"，显示输入框
+          if (elements.editCustomOptionGroup) elements.editCustomOptionGroup.style.display = 'none';
+          if (elements.editCustomOptionGroupInput) {
+            elements.editCustomOptionGroupInput.style.display = 'block';
+            elements.editCustomOptionGroupInput.value = '';
+            elements.editCustomOptionGroupInput.focus();
+          }
+        }
+      };
     }
   } catch (error) {
     console.error('加载组别失败:', error);
