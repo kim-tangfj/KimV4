@@ -24,10 +24,7 @@ let savingSceneId = null;
  * @param {Object} shot - 片段对象
  */
 async function showShotProperties(shot) {
-  console.log('[propertyPanel] showShotProperties: 显示片段属性', shot.name);
-  
   if (!window.elements.propertyForm) {
-    console.error('[propertyPanel] propertyForm 元素不存在');
     return;
   }
 
@@ -188,8 +185,6 @@ async function showShotProperties(shot) {
     </div>
   `;
 
-  console.log('[propertyPanel] showShotProperties: 属性表单已渲染');
-
   // 为所有输入框添加失焦自动保存
   document.querySelectorAll('#property-form [data-autosave="true"]').forEach(input => {
     input.addEventListener('blur', autoSaveShotProperties);
@@ -200,24 +195,17 @@ async function showShotProperties(shot) {
 
   // 绑定添加选项按钮事件
   setupAddOptionButtons();
-  
-  console.log('[propertyPanel] showShotProperties: 事件监听器已绑定');
 }
 
 /**
  * 自动保存片段属性
  */
 function autoSaveShotProperties() {
-  console.log('[propertyPanel] autoSaveShotProperties: 触发自动保存');
-  
   if (shotSaveTimeout) {
     clearTimeout(shotSaveTimeout);
   }
   savingShotId = window.appState.currentShot?.id;
-  console.log('[propertyPanel] autoSaveShotProperties: 保存 ID:', savingShotId);
-  
   shotSaveTimeout = setTimeout(async () => {
-    console.log('[propertyPanel] autoSaveShotProperties: 执行保存');
     await saveShotProperties(true);
   }, 500);
 }
@@ -227,24 +215,19 @@ function autoSaveShotProperties() {
  * @param {boolean} isAutoSave - 是否为自动保存
  */
 async function saveShotProperties(isAutoSave = false) {
-  console.log('[propertyPanel] saveShotProperties: 开始保存，isAutoSave:', isAutoSave);
-  
   const shot = window.appState.currentShot;
   if (!shot) {
-    console.warn('[propertyPanel] saveShotProperties: 当前片段为空，取消保存');
     return;
   }
 
   // 检查在保存过程中是否切换了片段
   if (savingShotId !== shot.id) {
-    console.log('[propertyPanel] saveShotProperties: 片段已切换，取消保存', savingShotId, '->', shot.id);
     return;
   }
 
   // 检查表单元素是否存在
   const nameElement = document.getElementById('shotName');
   if (!nameElement) {
-    console.warn('[propertyPanel] saveShotProperties: 表单元素不存在，取消保存');
     return;
   }
 
@@ -263,13 +246,10 @@ async function saveShotProperties(isAutoSave = false) {
   const audioRef = document.getElementById('shotAudioRef')?.value;
   const customPrompt = document.getElementById('shotCustomPrompt')?.value;
 
-  console.log('[propertyPanel] saveShotProperties: 表单数据已获取');
-
   if (window.useElectronAPI && window.appState.currentProject?.projectDir) {
     try {
       const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
       if (!loadResult.success) {
-        console.error('[propertyPanel] saveShotProperties: 加载项目失败', loadResult.error);
         return;
       }
 
@@ -336,7 +316,6 @@ async function saveShotProperties(isAutoSave = false) {
       );
 
       if (saveResult.success) {
-        console.log('[propertyPanel] saveShotProperties: 保存成功');
         // 更新 appState 中的 currentShot 引用为最新数据
         window.appState.currentShot = loadResult.projectJson.shots[shotIndex];
         if (window.elements.bottomPanelTitle) {
@@ -364,8 +343,6 @@ async function saveShotProperties(isAutoSave = false) {
     } catch (error) {
       console.error('[propertyPanel] saveShotProperties: 保存异常', error);
     }
-  } else {
-    console.warn('[propertyPanel] saveShotProperties: 非 Electron 环境');
   }
 }
 
@@ -374,10 +351,7 @@ async function saveShotProperties(isAutoSave = false) {
  * @param {Object} scene - 镜头对象
  */
 async function showSceneProperties(scene) {
-  console.log('[propertyPanel] showSceneProperties: 显示镜头属性', scene.name);
-  
   if (!window.elements.propertyForm) {
-    console.error('[propertyPanel] propertyForm 元素不存在');
     return;
   }
 
@@ -484,8 +458,6 @@ async function showSceneProperties(scene) {
     </div>
   `;
 
-  console.log('[propertyPanel] showSceneProperties: 属性表单已渲染');
-
   // 为所有输入框添加失焦自动保存
   document.querySelectorAll('#property-form [data-autosave="true"]').forEach(input => {
     input.addEventListener('blur', autoSaveSceneProperties);
@@ -496,24 +468,17 @@ async function showSceneProperties(scene) {
 
   // 绑定添加选项按钮事件
   setupAddOptionButtons();
-  
-  console.log('[propertyPanel] showSceneProperties: 事件监听器已绑定');
 }
 
 /**
  * 自动保存镜头属性
  */
 function autoSaveSceneProperties() {
-  console.log('[propertyPanel] autoSaveSceneProperties: 触发自动保存');
-  
   if (sceneSaveTimeout) {
     clearTimeout(sceneSaveTimeout);
   }
   savingSceneId = window.appState.currentScene?.id;
-  console.log('[propertyPanel] autoSaveSceneProperties: 保存 ID:', savingSceneId);
-  
   sceneSaveTimeout = setTimeout(async () => {
-    console.log('[propertyPanel] autoSaveSceneProperties: 执行保存');
     await saveSceneProperties(true);
   }, 500);
 }
@@ -523,25 +488,20 @@ function autoSaveSceneProperties() {
  * @param {boolean} isAutoSave - 是否为自动保存
  */
 async function saveSceneProperties(isAutoSave = false) {
-  console.log('[propertyPanel] saveSceneProperties: 开始保存，isAutoSave:', isAutoSave);
-  
   const scene = window.appState.currentScene;
   const currentShot = window.appState.currentShot;
   if (!scene || !currentShot) {
-    console.warn('[propertyPanel] saveSceneProperties: 当前镜头或片段为空，取消保存');
     return;
   }
 
   // 检查在保存过程中是否切换了镜头
   if (savingSceneId !== scene.id) {
-    console.log('[propertyPanel] saveSceneProperties: 镜头已切换，取消保存', savingSceneId, '->', scene.id);
     return;
   }
 
   // 检查表单元素是否存在
   const nameElement = document.getElementById('sceneName');
   if (!nameElement) {
-    console.warn('[propertyPanel] saveSceneProperties: 表单元素不存在，取消保存');
     return;
   }
 
@@ -556,13 +516,10 @@ async function saveSceneProperties(isAutoSave = false) {
   const emotion = document.getElementById('sceneEmotion')?.value;
   const notes = document.getElementById('sceneNotes')?.value;
 
-  console.log('[propertyPanel] saveSceneProperties: 表单数据已获取');
-
   if (window.useElectronAPI && window.appState.currentProject?.projectDir) {
     try {
       const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
       if (!loadResult.success) {
-        console.error('[propertyPanel] saveSceneProperties: 加载项目失败', loadResult.error);
         return;
       }
 
@@ -624,7 +581,6 @@ async function saveSceneProperties(isAutoSave = false) {
       );
 
       if (saveResult.success) {
-        console.log('[propertyPanel] saveSceneProperties: 保存成功');
         // 更新 currentScene
         window.appState.currentScene = shot.scenes[sceneIndex];
         // 更新 currentShot.scenes（重要！否则提示词不会更新）
@@ -653,8 +609,6 @@ async function saveSceneProperties(isAutoSave = false) {
     } catch (error) {
       console.error('[propertyPanel] saveSceneProperties: 保存异常', error);
     }
-  } else {
-    console.warn('[propertyPanel] saveSceneProperties: 非 Electron 环境');
   }
 }
 
@@ -662,8 +616,6 @@ async function saveSceneProperties(isAutoSave = false) {
  * 设置片段选项提示监听
  */
 function setupOptionHintListeners() {
-  console.log('[propertyPanel] setupOptionHintListeners: 设置片段选项提示监听');
-  
   const hintMap = {
     'shotStyle': 'shotStyleHint',
     'shotMood': 'shotMoodHint',
@@ -689,8 +641,6 @@ function setupOptionHintListeners() {
  * 设置镜头选项提示监听
  */
 function setupSceneOptionHintListeners() {
-  console.log('[propertyPanel] setupSceneOptionHintListeners: 设置镜头选项提示监听');
-  
   const hintMap = {
     'sceneShotType': 'sceneShotTypeHint',
     'sceneAngle': 'sceneAngleHint',
@@ -732,8 +682,6 @@ function setupAddOptionButtons() {
  * @param {string} defaultValue - 默认值
  */
 async function showQuickAddOptionModal(group, field, defaultValue = '') {
-  console.log('[propertyPanel] showQuickAddOptionModal: 显示快速添加选项弹窗', group, field);
-  
   const modal = document.createElement('div');
   modal.className = 'modal';
   modal.style.display = 'flex';
@@ -803,8 +751,6 @@ async function showQuickAddOptionModal(group, field, defaultValue = '') {
     }
   });
 }
-
-// 导出函数到全局
 window.showShotProperties = showShotProperties;
 window.showSceneProperties = showSceneProperties;
 window.autoSaveShotProperties = autoSaveShotProperties;
@@ -815,5 +761,3 @@ window.setupOptionHintListeners = setupOptionHintListeners;
 window.setupSceneOptionHintListeners = setupSceneOptionHintListeners;
 window.setupAddOptionButtons = setupAddOptionButtons;
 window.showQuickAddOptionModal = showQuickAddOptionModal;
-
-console.log('[propertyPanel.js] 模块已加载');
