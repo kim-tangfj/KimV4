@@ -2040,7 +2040,7 @@ async function deleteCustomOption(optionId) {
 
       // 刷新当前片段属性表单的选项
       if (appState.currentShot) {
-        await showShotProperties(appState.currentShot);
+        await window.showShotProperties(appState.currentShot);
       }
 
       showUpdateNotification();

@@ -4,6 +4,55 @@
 
 ---
 
+## 2026-03-07 - 属性面板模块拆分检查
+
+### 检查内容
+检查所有属性面板相关的函数是否都已完成拆分迁移到 `propertyPanel.js`。
+
+### 已迁移的函数（propertyPanel.js）
+| 函数 | 说明 | 状态 |
+|------|------|------|
+| `showShotProperties` | 显示片段属性表单 | ✅ 已迁移 |
+| `showSceneProperties` | 显示镜头属性表单 | ✅ 已迁移 |
+| `autoSaveShotProperties` | 自动保存片段属性 | ✅ 已迁移 |
+| `autoSaveSceneProperties` | 自动保存镜头属性 | ✅ 已迁移 |
+| `saveShotProperties` | 保存片段属性 | ✅ 已迁移 |
+| `saveSceneProperties` | 保存镜头属性 | ✅ 已迁移 |
+| `setupOptionHintListeners` | 设置片段选项提示监听 | ✅ 已迁移 |
+| `setupSceneOptionHintListeners` | 设置镜头选项提示监听 | ✅ 已迁移 |
+| `setupAddOptionButtons` | 设置添加选项按钮事件 | ✅ 已迁移 |
+| `showQuickAddOptionModal` | 显示快速添加选项弹窗 | ✅ 已迁移 |
+
+### 保留在 renderer.js 中的函数
+无。所有属性面板相关函数都已迁移。
+
+### 修复内容
+**更新 renderer.js 中的函数调用**（第 2043 行）
+
+修复前：
+```javascript
+await showShotProperties(appState.currentShot);
+```
+
+修复后：
+```javascript
+await window.showShotProperties(appState.currentShot);
+```
+
+### 注释标记（renderer.js 第 2339-2343 行）
+```javascript
+// ========== 属性面板 ==========
+// 属性面板函数已移至 src/utils/propertyPanel.js 模块
+// showShotProperties, showSceneProperties, autoSaveShotProperties, autoSaveSceneProperties
+// saveShotProperties, saveSceneProperties, setupOptionHintListeners, setupSceneOptionHintListeners
+// setupAddOptionButtons, showQuickAddOptionModal
+```
+
+### 提交
+- 待提交
+
+---
+
 ## 2026-03-07 - 镜头管理模块拆分检查
 
 ### 检查内容
