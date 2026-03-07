@@ -5,6 +5,7 @@
 const { ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { withErrorHandler } = require('../utils/ipcErrorHandler');
 
 // 模板配置文件路径
 const userDataPath = require('electron').app.getPath('userData');
@@ -22,8 +23,8 @@ if (!fs.existsSync(configDir)) {
 // 初始化模板管理 IPC
 function initTemplateIPC() {
   // 加载模板
-  ipcMain.handle('template:load', async () => {
-    try {
+  ipcMain.handle('template:load', () => {
+    return withErrorHandler(async () => {
       if (fs.existsSync(templatesConfigPath)) {
         const data = fs.readFileSync(templatesConfigPath, 'utf8');
         const config = JSON.parse(data);
@@ -42,36 +43,26 @@ function initTemplateIPC() {
         } catch (e) {
           console.warn('默认模板文件不存在，创建空配置:', e.message);
         }
-        
+
         // 默认文件也不存在，返回空配置
         const emptyConfig = { templates: [], activeTemplateId: null };
         fs.writeFileSync(templatesConfigPath, JSON.stringify(emptyConfig, null, 2), 'utf8');
         return { success: true, config: emptyConfig };
       }
-    } catch (error) {
-      console.error('加载模板配置失败:', error);
-      return {
-        success: false,
-        error: error.message,
-        config: { templates: [], activeTemplateId: null }
-      };
-    }
+    }, '加载模板配置');
   });
 
   // 保存模板
-  ipcMain.handle('template:save', async (event, config) => {
-    try {
+  ipcMain.handle('template:save', (event, config) => {
+    return withErrorHandler(async () => {
       fs.writeFileSync(templatesConfigPath, JSON.stringify(config, null, 2), 'utf8');
       return { success: true };
-    } catch (error) {
-      console.error('保存模板配置失败:', error);
-      return { success: false, error: error.message };
-    }
+    }, '保存模板配置');
   });
 
   // 备份模板
-  ipcMain.handle('template:backup', async () => {
-    try {
+  ipcMain.handle('template:backup', () => {
+    return withErrorHandler(async () => {
       const result = await dialog.showSaveDialog({
         title: '备份模板配置',
         defaultPath: 'templates-backup.json',
@@ -94,15 +85,12 @@ function initTemplateIPC() {
       }
 
       return { success: false, canceled: true };
-    } catch (error) {
-      console.error('备份模板配置失败:', error);
-      return { success: false, error: error.message };
-    }
+    }, '备份模板配置');
   });
 
   // 恢复模板
-  ipcMain.handle('template:restore', async () => {
-    try {
+  ipcMain.handle('template:restore', () => {
+    return withErrorHandler(async () => {
       const result = await dialog.showOpenDialog({
         title: '恢复模板配置',
         properties: ['openFile'],
@@ -116,19 +104,18 @@ function initTemplateIPC() {
       }
 
       return { success: false, canceled: true };
-    } catch (error) {
-      console.error('恢复模板配置失败:', error);
-      return { success: false, error: error.message };
-    }
+    }, '恢复模板配置');
   });
 
   // 获取模板路径
-  ipcMain.handle('template:getPath', async () => {
-    return {
-      success: true,
-      path: configDir,
-      filePath: templatesConfigPath
-    };
+  ipcMain.handle('template:getPath', () => {
+    return withErrorHandler(async () => {
+      return {
+        success: true,
+        path: configDir,
+        filePath: templatesConfigPath
+      };
+    }, '获取模板路径');
   });
 }
 

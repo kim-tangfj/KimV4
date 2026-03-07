@@ -5,6 +5,7 @@
 const { ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { withErrorHandler, validateParams } = require('../utils/ipcErrorHandler');
 
 // 用户数据目录
 const userDataPath = require('electron').app.getPath('userData');
@@ -53,10 +54,10 @@ function loadCustomOptions() {
       const data = fs.readFileSync(customOptionsPath, 'utf8');
       const config = JSON.parse(data);
       // 标记为自定义选项，确保有 usageCount 字段
-      return (config.customOptions || []).map(opt => ({ 
-        ...opt, 
+      return (config.customOptions || []).map(opt => ({
+        ...opt,
         builtin: false,
-        usageCount: opt.usageCount || 0 
+        usageCount: opt.usageCount || 0
       }));
     }
   } catch (error) {
@@ -103,82 +104,76 @@ function getAllGroups() {
 // 初始化 IPC
 function initOptionsIPC() {
   // 获取所有选项
-  ipcMain.handle('options:getAll', async () => {
-    try {
+  ipcMain.handle('options:getAll', () => {
+    return withErrorHandler(async () => {
       const options = getAllOptions();
       return { success: true, options };
-    } catch (error) {
-      return { success: false, error: error.message, options: [] };
-    }
+    }, '获取所有选项');
   });
 
   // 按组别获取选项
-  ipcMain.handle('options:getByGroup', async (event, group) => {
-    try {
+  ipcMain.handle('options:getByGroup', (event, group) => {
+    return withErrorHandler(async () => {
+      validateParams({ group }, ['group']);
       const options = getOptionsByGroup(group);
       return { success: true, options };
-    } catch (error) {
-      return { success: false, error: error.message, options: [] };
-    }
+    }, '按组别获取选项');
   });
 
   // 获取所有组别
-  ipcMain.handle('options:getGroups', async () => {
-    try {
+  ipcMain.handle('options:getGroups', () => {
+    return withErrorHandler(async () => {
       const groups = getAllGroups();
       return { success: true, groups };
-    } catch (error) {
-      return { success: false, error: error.message, groups: [] };
-    }
+    }, '获取所有组别');
   });
 
   // 添加自定义选项
-  ipcMain.handle('options:addCustom', async (event, option) => {
-    try {
+  ipcMain.handle('options:addCustom', (event, option) => {
+    return withErrorHandler(async () => {
+      validateParams(option, ['name', 'group']);
       const customOptions = loadCustomOptions();
-      
+
       // 生成 ID
       option.id = 'custom_' + Date.now();
       option.builtin = false;
-      
+
       customOptions.push(option);
-      
+
       const result = saveCustomOptions(customOptions);
       if (result.success) {
         return { success: true, option };
       } else {
         return result;
       }
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    }, '添加自定义选项');
   });
 
   // 删除自定义选项
-  ipcMain.handle('options:deleteCustom', async (event, optionId) => {
-    try {
+  ipcMain.handle('options:deleteCustom', (event, optionId) => {
+    return withErrorHandler(async () => {
+      validateParams({ optionId }, ['optionId']);
       const customOptions = loadCustomOptions();
       const filtered = customOptions.filter(opt => opt.id !== optionId);
-      
+
       const result = saveCustomOptions(filtered);
       if (result.success) {
         return { success: true };
       } else {
         return result;
       }
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    }, '删除自定义选项');
   });
 
   // 更新自定义选项
-  ipcMain.handle('options:updateCustom', async (event, optionId, updates) => {
-    try {
+  ipcMain.handle('options:updateCustom', (event, optionId, updates) => {
+    return withErrorHandler(async () => {
+      validateParams({ optionId }, ['optionId']);
       const customOptions = loadCustomOptions();
       const index = customOptions.findIndex(opt => opt.id === optionId);
 
       if (index === -1) {
-        return { success: false, error: '选项不存在' };
+        throw new Error('选项不存在');
       }
 
       // 不允许修改 builtin 字段
@@ -193,19 +188,18 @@ function initOptionsIPC() {
       } else {
         return result;
       }
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    }, '更新自定义选项');
   });
 
   // 增加选项使用次数
-  ipcMain.handle('options:incrementUsage', async (event, optionId) => {
-    try {
+  ipcMain.handle('options:incrementUsage', (event, optionId) => {
+    return withErrorHandler(async () => {
+      validateParams({ optionId }, ['optionId']);
       const customOptions = loadCustomOptions();
       const index = customOptions.findIndex(opt => opt.id === optionId);
 
       if (index === -1) {
-        return { success: false, error: '选项不存在' };
+        throw new Error('选项不存在');
       }
 
       customOptions[index].usageCount = (customOptions[index].usageCount || 0) + 1;
@@ -216,45 +210,40 @@ function initOptionsIPC() {
       } else {
         return result;
       }
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    }, '增加选项使用次数');
   });
 
   // 检查选项是否被使用
-  ipcMain.handle('options:checkUsage', async (event, optionId) => {
-    try {
+  ipcMain.handle('options:checkUsage', (event, optionId) => {
+    return withErrorHandler(async () => {
+      validateParams({ optionId }, ['optionId']);
       const customOptions = loadCustomOptions();
       const option = customOptions.find(opt => opt.id === optionId);
-      
+
       if (!option) {
-        return { success: false, error: '选项不存在' };
+        throw new Error('选项不存在');
       }
 
-      return { 
-        success: true, 
+      return {
+        success: true,
         usageCount: option.usageCount || 0,
         style: option.style,
         type: option.type
       };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    }, '检查选项使用情况');
   });
 
   // 获取自定义选项列表
-  ipcMain.handle('options:getCustomList', async () => {
-    try {
+  ipcMain.handle('options:getCustomList', () => {
+    return withErrorHandler(async () => {
       const customOptions = loadCustomOptions();
       return { success: true, options: customOptions };
-    } catch (error) {
-      return { success: false, error: error.message, options: [] };
-    }
+    }, '获取自定义选项列表');
   });
 
   // 备份自定义选项
-  ipcMain.handle('options:backup', async () => {
-    try {
+  ipcMain.handle('options:backup', () => {
+    return withErrorHandler(async () => {
       const result = await dialog.showSaveDialog({
         title: '备份自定义选项',
         defaultPath: 'options-backup.json',
@@ -277,14 +266,12 @@ function initOptionsIPC() {
       }
 
       return { success: false, canceled: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    }, '备份自定义选项');
   });
 
   // 恢复自定义选项
-  ipcMain.handle('options:restore', async () => {
-    try {
+  ipcMain.handle('options:restore', () => {
+    return withErrorHandler(async () => {
       const result = await dialog.showOpenDialog({
         title: '恢复自定义选项',
         properties: ['openFile'],
@@ -298,20 +285,16 @@ function initOptionsIPC() {
       }
 
       return { success: false, canceled: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    }, '恢复自定义选项');
   });
 
   // 打开自定义选项文件夹
-  ipcMain.handle('options:openFolder', async () => {
-    try {
+  ipcMain.handle('options:openFolder', () => {
+    return withErrorHandler(async () => {
       const { shell } = require('electron');
       await shell.openPath(configDir);
       return { success: true };
-    } catch (error) {
-      return { success: false, error: error.message };
-    }
+    }, '打开自定义选项文件夹');
   });
 }
 

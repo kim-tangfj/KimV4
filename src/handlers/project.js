@@ -5,6 +5,7 @@
 const { ipcMain, dialog, shell } = require('electron');
 const path = require('path');
 const fs = require('fs');
+const { withErrorHandler, validateParams, withFileSafety } = require('../utils/ipcErrorHandler');
 
 // 项目数据缓存
 let projectDataCache = new Map();
@@ -28,26 +29,20 @@ function initProjectIPC(mainWindow) {
 
   // 文件系统 API
   ipcMain.handle('fs:readFile', async (event, filePath) => {
-    try {
+    return withFileSafety(async () => {
       return fs.readFileSync(filePath, 'utf8');
-    } catch (error) {
-      console.error(`读取文件失败：${filePath}`, error);
-      throw error;
-    }
+    }, filePath, '读取');
   });
 
   ipcMain.handle('fs:writeFile', async (event, filePath, data) => {
-    try {
+    return withFileSafety(async () => {
       const dir = path.dirname(filePath);
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
       }
       fs.writeFileSync(filePath, data, 'utf8');
       return true;
-    } catch (error) {
-      console.error(`写入文件失败：${filePath}`, error);
-      throw error;
-    }
+    }, filePath, '写入');
   });
 
   ipcMain.handle('fs:exists', async (event, filePath) => {
@@ -67,7 +62,8 @@ function initProjectIPC(mainWindow) {
 
   // 项目 API
   ipcMain.handle('project:create', async (event, projectData) => {
-    try {
+    return withErrorHandler(async () => {
+      validateParams(projectData, ['name']);
       const baseDir = projectData.baseDir || path.join(require('electron').app.getPath('documents'), 'KimStoryboard');
 
       let projectInfo, shots, promptTemplates, selected, theme;
@@ -159,35 +155,33 @@ function initProjectIPC(mainWindow) {
   });
 
   ipcMain.handle('project:load', async (event, projectDir) => {
-    try {
+    return withErrorHandler(async () => {
+      validateParams({ projectDir }, ['projectDir']);
+      
       const projectJsonPath = path.join(projectDir, 'project.json');
       if (!fs.existsSync(projectJsonPath)) {
         return { success: false, error: '项目文件不存在' };
       }
       const projectJson = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
       return { success: true, projectJson: projectJson };
-    } catch (error) {
-      console.error('加载项目失败:', error);
-      return { success: false, error: error.message };
-    }
+    }, '加载项目');
   });
 
   ipcMain.handle('project:save', async (event, projectDir, projectJson) => {
-    try {
+    return withErrorHandler(async () => {
+      validateParams({ projectDir, projectJson }, ['projectDir', 'projectJson']);
+      
       const projectJsonPath = path.join(projectDir, 'project.json');
       if (projectJson.project) {
         projectJson.project.updatedAt = new Date().toISOString();
       }
       fs.writeFileSync(projectJsonPath, JSON.stringify(projectJson, null, 2), 'utf8');
       return { success: true };
-    } catch (error) {
-      console.error('保存项目失败:', error);
-      return { success: false, error: error.message };
-    }
+    }, '保存项目');
   });
 
   ipcMain.handle('project:list', async (event, baseDir) => {
-    try {
+    return withErrorHandler(async () => {
       const dir = baseDir || path.join(require('electron').app.getPath('documents'), 'KimStoryboard');
       if (!fs.existsSync(dir)) {
         fs.mkdirSync(dir, { recursive: true });
@@ -224,14 +218,12 @@ function initProjectIPC(mainWindow) {
       }
 
       return { success: true, projects: projects };
-    } catch (error) {
-      console.error('获取项目列表失败:', error);
-      return { success: false, error: error.message, projects: [] };
-    }
+    }, '获取项目列表');
   });
 
   ipcMain.handle('project:delete', async (event, projectDir) => {
-    try {
+    return withErrorHandler(async () => {
+      validateParams({ projectDir }, ['projectDir']);
       if (!fs.existsSync(projectDir)) {
         return { success: false, error: '项目文件夹不存在' };
       }
