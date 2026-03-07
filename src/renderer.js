@@ -850,7 +850,12 @@ async function createProjectManual() {
         return;
       }
 
-      const prompt = buildPromptFromTemplate(script);
+      // 使用激活的模板而不是硬编码的提示词
+      const activeTemplate = settings.templates.find(t => t.id === settings.activeTemplateId);
+      const template = activeTemplate || getDefaultTemplate();
+      
+      // 替换 {剧本内容} 占位符
+      const prompt = template.content.replace('{剧本内容}', script);
 
       const result = await window.electronAPI.callLlmApi(provider, apiKey, model, prompt);
 
@@ -895,6 +900,10 @@ async function createProjectManual() {
   }
 }
 
+// ========== 已废弃的函数 ==========
+// buildPromptFromTemplate - 已废弃，改用模板系统中的激活模板
+
+/* === 已废弃 - 改用模板系统中的激活模板 ===
 // 构建提示词模板
 function buildPromptFromTemplate(script) {
   return `你是一位专业的视频分镜脚本助手。请将以下剧本内容转换为结构化的 JSON 格式片段数据。
@@ -990,6 +999,7 @@ ${script}
 - 返回标准 JSON 格式，可直接解析
 - 所有字段都要填写，没有内容的字段填空字符串""`;
 }
+=== 已废弃结束 === */
 
 // 复制模板（使用激活的模板）
 function copyTemplate() {
