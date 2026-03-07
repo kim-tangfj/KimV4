@@ -155,56 +155,112 @@ function openLogWindow(type) {
 // 简单的 Markdown 渲染
 function renderMarkdown(md) {
   let html = md;
-  
-  // 转义 HTML 特殊字符
-  html = html.replace(/</g, '&lt;').replace(/>/g, '&gt;');
-  
+
   // 标题（按顺序处理，避免冲突）
   html = html.replace(/^### (.+)$/gim, '<h3>$1</h3>');
   html = html.replace(/^## (.+)$/gim, '<h2>$1</h2>');
   html = html.replace(/^# (.+)$/gim, '<h1>$1</h1>');
-  
+
   // 分隔线
   html = html.replace(/^---+$/gim, '<hr>');
-  
-  // 列表项
-  html = html.replace(/^- \[x\] (.+)$/gim, '<li class="checked">✓ $1</li>');
-  html = html.replace(/^- \[ \] (.+)$/gim, '<li class="unchecked">○ $1</li>');
-  
-  // 换行（保留段落结构）
+
+  // 表格（GitHub 风格）- 先处理表格行
   const lines = html.split('\n');
   const processedLines = [];
-  let inParagraph = false;
-  
+  let inTable = false;
+
   for (let i = 0; i < lines.length; i++) {
-    const line = lines[i].trim();
-    
-    if (line === '') {
-      if (inParagraph) {
-        processedLines.push('</p>');
-        inParagraph = false;
+    const line = lines[i];
+    const trimmedLine = line.trim();
+
+    // 检查是否是表格行（以 | 开头和结尾）
+    if (trimmedLine.startsWith('|') && trimmedLine.endsWith('|')) {
+      // 跳过表格分隔行（如 |---|---|）
+      if (/^\|[\s\-:|]+\|$/.test(trimmedLine)) {
+        continue;
       }
-      processedLines.push('<br>');
-    } else if (line.startsWith('<h') || line.startsWith('<hr') || line.startsWith('<li')) {
-      if (inParagraph) {
-        processedLines.push('</p>');
-        inParagraph = false;
+
+      if (!inTable) {
+        processedLines.push('<table>');
+        inTable = true;
       }
-      processedLines.push(line);
+
+      // 转换表格单元格
+      const cells = trimmedLine.slice(1, -1).split('|');
+      const rowHtml = cells.map(cell => `<td>${cell.trim()}</td>`).join('');
+      processedLines.push(`<tr>${rowHtml}</tr>`);
     } else {
-      if (!inParagraph) {
-        processedLines.push('<p>');
-        inParagraph = true;
+      if (inTable) {
+        processedLines.push('</table>');
+        inTable = false;
       }
       processedLines.push(line);
     }
   }
-  
-  if (inParagraph) {
-    processedLines.push('</p>');
+
+  if (inTable) {
+    processedLines.push('</table>');
   }
-  
-  return processedLines.join('\n');
+
+  html = processedLines.join('\n');
+
+  // 列表项
+  html = html.replace(/^- \[x\] (.+)$/gim, '<li class="checked">✓ $1</li>');
+  html = html.replace(/^- \[ \] (.+)$/gim, '<li class="unchecked">○ $1</li>');
+  html = html.replace(/^- (.+)$/gim, '<li>$1</li>');
+
+  // 代码块（``` 包裹）
+  html = html.replace(/```([\s\S]*?)```/g, '<pre><code>$1</code></pre>');
+
+  // 行内代码（` 包裹）
+  html = html.replace(/`([^`]+)`/g, '<code>$1</code>');
+
+  // 粗体
+  html = html.replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>');
+
+  // 斜体
+  html = html.replace(/\*(.+?)\*/g, '<em>$1</em>');
+
+  // 链接
+  html = html.replace(/\[([^\]]+)\]\(([^)]+)\)/g, '<a href="$2">$1</a>');
+
+  // 换行（保留段落结构）
+  const finalLines = html.split('\n');
+  const outputLines = [];
+  let inParagraph = false;
+  let inTableOrPre = false;
+
+  for (let i = 0; i < finalLines.length; i++) {
+    const line = finalLines[i].trim();
+
+    if (line === '') {
+      if (inParagraph && !inTableOrPre) {
+        outputLines.push('</p>');
+        inParagraph = false;
+      }
+      outputLines.push('<br>');
+    } else if (line.startsWith('<h') || line.startsWith('<hr') || line.startsWith('<li') || line.startsWith('<pre') || line.startsWith('<table') || line.startsWith('</table')) {
+      if (inParagraph && !inTableOrPre) {
+        outputLines.push('</p>');
+        inParagraph = false;
+      }
+      if (line.startsWith('<table') || line.startsWith('<pre')) inTableOrPre = true;
+      if (line.startsWith('</table>') || line.startsWith('</pre>')) inTableOrPre = false;
+      outputLines.push(line);
+    } else {
+      if (!inParagraph && !inTableOrPre) {
+        outputLines.push('<p>');
+        inParagraph = true;
+      }
+      outputLines.push(line);
+    }
+  }
+
+  if (inParagraph) {
+    outputLines.push('</p>');
+  }
+
+  return outputLines.join('\n');
 }
 
 // 创建日志窗口 HTML
