@@ -228,7 +228,7 @@ async function initializeApp() {
 
   await loadSettings();
   setupEventListeners();
-  loadProjects();
+  window.loadProjects();
   applyTheme(currentTheme);
 }
 
@@ -1018,7 +1018,7 @@ async function createProjectManual() {
           baseDir: settings.storagePath || ''
         });
         if (result.success) {
-          await loadProjects();
+          await window.loadProjects();
           showUpdateNotification();
         } else {
           alert('创建项目失败：' + result.error);
@@ -1072,7 +1072,7 @@ async function createProjectManual() {
 
           const createResult = await window.electronAPI.createProject(projectData);
           if (createResult.success) {
-            await loadProjects();
+            await window.loadProjects();
             showUpdateNotification();
           } else {
             alert('创建项目失败：' + createResult.error);
@@ -2206,7 +2206,7 @@ async function createProjectAI() {
         baseDir: settings.storagePath || ''
       });
       if (result.success) {
-        await loadProjects();
+        await window.loadProjects();
         showUpdateNotification();
       } else {
         alert('创建项目失败：' + result.error);
