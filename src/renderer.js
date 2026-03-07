@@ -628,7 +628,7 @@ function setupEventListeners() {
     window.electronAPI.onSettingsOpen(() => window.showSettingsModal());
     window.electronAPI.onThemeToggle(() => window.toggleTheme());
     window.electronAPI.onTemplateLibraryOpen(() => showTemplateLibraryModal());
-    window.electronAPI.onCustomOptionsOpen(() => showCustomOptionsModal());
+    window.electronAPI.onCustomOptionsOpen(() => window.showCustomOptionsModal());
   }
 
   // 模态框背景点击关闭
@@ -683,60 +683,60 @@ function setupEventListeners() {
 
   // 自定义选项管理事件
   if (elements.manageCustomOptionsBtn) {
-    elements.manageCustomOptionsBtn.addEventListener('click', showCustomOptionsModal);
+    elements.manageCustomOptionsBtn.addEventListener('click', () => window.showCustomOptionsModal());
   }
   if (elements.backupOptionsBtn) {
-    elements.backupOptionsBtn.addEventListener('click', backupOptions);
+    elements.backupOptionsBtn.addEventListener('click', () => window.backupOptions());
   }
   if (elements.restoreOptionsBtn) {
-    elements.restoreOptionsBtn.addEventListener('click', restoreOptions);
+    elements.restoreOptionsBtn.addEventListener('click', () => window.restoreOptions());
   }
   if (elements.openOptionsFolderBtn) {
-    elements.openOptionsFolderBtn.addEventListener('click', openOptionsFolder);
+    elements.openOptionsFolderBtn.addEventListener('click', () => window.openOptionsFolder());
   }
   if (elements.closeCustomOptionsBtn) {
-    elements.closeCustomOptionsBtn.addEventListener('click', hideCustomOptionsModal);
+    elements.closeCustomOptionsBtn.addEventListener('click', () => window.hideCustomOptionsModal());
   }
   if (elements.closeCustomOptionsModalBtn) {
-    elements.closeCustomOptionsModalBtn.addEventListener('click', hideCustomOptionsModal);
+    elements.closeCustomOptionsModalBtn.addEventListener('click', () => window.hideCustomOptionsModal());
   }
   if (elements.addCustomOptionBtn) {
-    elements.addCustomOptionBtn.addEventListener('click', showAddCustomOptionForm);
+    elements.addCustomOptionBtn.addEventListener('click', () => window.showAddCustomOptionForm());
   }
   if (elements.refreshCustomOptionsBtn) {
-    elements.refreshCustomOptionsBtn.addEventListener('click', () => loadCustomOptionsList('all'));
+    elements.refreshCustomOptionsBtn.addEventListener('click', () => window.loadCustomOptionsList('all'));
   }
   // 分栏按钮事件
   if (elements.refreshBuiltinBtn) {
-    elements.refreshBuiltinBtn.addEventListener('click', () => loadCustomOptionsList('all'));
+    elements.refreshBuiltinBtn.addEventListener('click', () => window.loadCustomOptionsList('all'));
   }
   if (elements.addCustomOptionColumnBtn) {
-    elements.addCustomOptionColumnBtn.addEventListener('click', showAddCustomOptionForm);
+    elements.addCustomOptionColumnBtn.addEventListener('click', () => window.showAddCustomOptionForm());
   }
   if (elements.refreshCustomColumnBtn) {
-    elements.refreshCustomColumnBtn.addEventListener('click', () => loadCustomOptionsList('all'));
+    elements.refreshCustomColumnBtn.addEventListener('click', () => window.loadCustomOptionsList('all'));
   }
   if (elements.saveCustomOptionBtn) {
-    elements.saveCustomOptionBtn.addEventListener('click', saveCustomOption);
+    elements.saveCustomOptionBtn.addEventListener('click', () => window.saveCustomOption());
   }
   if (elements.cancelCustomOptionBtn) {
-    elements.cancelCustomOptionBtn.addEventListener('click', hideCustomOptionForm);
+    elements.cancelCustomOptionBtn.addEventListener('click', () => window.hideCustomOptionForm());
   }
   if (elements.customOptionsGroupFilter) {
     elements.customOptionsGroupFilter.addEventListener('change', () => {
-      loadCustomOptionsList(elements.customOptionsGroupFilter.value);
+      window.loadCustomOptionsList(elements.customOptionsGroupFilter.value);
     });
   }
 
   // 编辑弹窗事件绑定
   if (elements.closeCustomOptionEditBtn) {
-    elements.closeCustomOptionEditBtn.addEventListener('click', hideCustomOptionEditModal);
+    elements.closeCustomOptionEditBtn.addEventListener('click', () => window.hideCustomOptionEditModal());
   }
   if (elements.saveCustomOptionEditBtn) {
-    elements.saveCustomOptionEditBtn.addEventListener('click', saveCustomOptionEdit);
+    elements.saveCustomOptionEditBtn.addEventListener('click', () => window.saveCustomOptionEdit());
   }
   if (elements.cancelCustomOptionEditBtn) {
-    elements.cancelCustomOptionEditBtn.addEventListener('click', hideCustomOptionEditModal);
+    elements.cancelCustomOptionEditBtn.addEventListener('click', () => window.hideCustomOptionEditModal());
   }
 }
 
