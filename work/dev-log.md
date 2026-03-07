@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-03-07 - 修复修改属性后列表不实时更新
+
+### 问题描述
+修改片段或镜头属性后，片段列表或镜头列表没有实时更新显示。
+
+### 原因分析
+- `saveSceneProperties` 函数只调用了 `renderShotList()`，没有调用 `renderSceneList()`
+- `saveShotProperties` 函数只调用了 `renderShotList()`，当选中镜头时没有调用 `renderSceneList()`
+
+### 修复内容
+**1. 修改 `saveSceneProperties` 函数**（`src/utils/propertyPanel.js` 第 627-637 行）
+
+添加 `window.renderSceneList(shot.scenes || [])` 调用。
+
+**2. 修改 `saveShotProperties` 函数**（`src/utils/propertyPanel.js` 第 343-358 行）
+
+添加当选中镜头时的镜头列表更新逻辑：
+```javascript
+// 如果当前选中了镜头，更新镜头列表
+if (window.appState.currentScene) {
+  window.renderSceneList(loadResult.projectJson.shots[shotIndex].scenes || []);
+  const sceneItem = document.querySelector(`#scene-list .list-item[data-id="${window.appState.currentScene.id}"]`);
+  if (sceneItem) {
+    sceneItem.classList.add('selected');
+  }
+}
+```
+
+### 提交
+- `fix: 修复修改属性后列表不实时更新的问题`
+
+---
+
 ## 2026-03-07 - 修复镜头属性变更后片段提示词不更新
 
 ### 问题描述
