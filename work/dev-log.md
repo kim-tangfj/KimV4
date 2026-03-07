@@ -4,6 +4,45 @@
 
 ---
 
+## 2026-03-07 - 修复 window.settings 在 loadProjects 调用前未初始化的问题
+
+### 问题描述
+项目列表加载时，`window.settings` 为 `undefined`，导致存储路径取值不正确。
+
+### 原因分析
+`initializeApp` 函数的调用顺序问题：
+1. `loadSettings()` - 加载设置到本地 `settings` 变量
+2. `setupEventListeners()` - 设置事件监听器
+3. `window.loadProjects()` - 加载项目列表（这时 `window.settings` 还未导出）
+4. `exposeGlobals()` - 导出全局变量（太晚了）
+
+### 修复内容
+**修改 `initializeApp` 函数**（`src/renderer.js` 第 226-240 行）
+
+在调用 `loadProjects` 之前先导出全局变量：
+```javascript
+async function initializeApp() {
+  useElectronAPI = !!(window.electronAPI);
+
+  await loadSettings();
+  
+  // 先导出全局变量，确保 loadProjects 能访问到 settings
+  window.useElectronAPI = useElectronAPI;
+  window.elements = elements;
+  window.appState = appState;
+  window.settings = settings;
+  
+  setupEventListeners();
+  window.loadProjects();
+  applyTheme(currentTheme);
+}
+```
+
+### 提交
+- `fix: 修复 window.settings 在 loadProjects 调用前未初始化的问题`
+
+---
+
 ## 2026-03-07 - 修复 renderer.js 中 loadProjects 函数调用
 
 ### 问题描述
