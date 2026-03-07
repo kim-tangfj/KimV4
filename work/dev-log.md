@@ -4,6 +4,33 @@
 
 ---
 
+## 2026-03-07 - 修复镜头属性更新后片段列表选中状态丢失
+
+### 问题描述
+镜头属性更新完成后，片段列表的选中状态丢失。
+
+### 原因分析
+`saveSceneProperties` 函数中调用了 `window.renderShotList()` 会重新渲染片段列表，导致选中状态丢失，没有恢复选中状态。
+
+### 修复内容
+**修改 `saveSceneProperties` 函数**（`src/utils/propertyPanel.js` 第 626-648 行）
+
+在 `renderShotList` 后添加恢复片段列表选中状态的代码：
+```javascript
+window.renderShotList(loadResult.projectJson.shots || []);
+// 恢复片段列表选中状态
+const shotItem = document.querySelector(`#shot-list .list-item[data-id="${window.appState.currentShot.id}"]`);
+if (shotItem) {
+  shotItem.classList.add('selected');
+}
+window.renderSceneList(shot.scenes || []);
+```
+
+### 提交
+- `fix: 修复镜头属性更新后片段列表选中状态丢失的问题`
+
+---
+
 ## 2026-03-07 - 修复修改属性后列表不实时更新
 
 ### 问题描述
@@ -2077,7 +2104,7 @@ function showQuickAddOptionModal(group, field, shot, defaultValue = '') {
 | | 场景设定 | 单行文本 | shotSceneSetting |
 | **视频参数** | 画幅比例 | 选项 | shotAspectRatio |
 | | 视频时长 | 数字 | shotDuration |
-| **声音设计** | 配乐风格 | 选项（+ 搜索 + 添加） | shotMusicStyle |
+| **声音设计** | 配乐风格 | 选项（+ 搜索 + 添加��� | shotMusicStyle |
 | | 音效需求 | 选项（+ 搜索 + 添加） | shotSoundEffect |
 | **参考素材** | 图片参考（≤9 张） | 多行文本 | shotImageRef |
 | | 视频参考（≤3 个） | 多行文本 | shotVideoRef |
