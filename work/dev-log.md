@@ -4,6 +4,74 @@
 
 ---
 
+## 2026-03-07 - 镜头管理模块拆分
+
+### 修改内容
+
+**1. 创建镜头管理模块** (`src/utils/sceneList.js` - 230 行)
+- `renderSceneList(scenes)` - 渲染镜头列表
+- `selectScene(scene)` - 选择镜头
+- `createNewScene()` - 新建镜头
+- `deleteSelectedScene()` - 删除镜头
+
+**2. 清理 shotList.js**
+- 删除所有 `console.log` 调试日志
+- 移除 `showCustomPrompt` 函数（移至 renderer.js）
+
+**3. 更新 renderer.js**
+- 删除镜头管理相关函数（约 170 行代码）
+- 添加 `showCustomPrompt` 函数（供所有模块使用）
+- 更新 exposeGlobals 导出 `showCustomPrompt`
+- `renderer.js` 从 3695 行减少到 3636 行（-59 行）
+
+**4. 更新 index.html**
+- 添加镜头管理模块脚本引用：`<script src="./src/utils/sceneList.js" defer></script>`
+
+**5. 模块依赖关系**
+```
+sceneList.js 依赖:
+- window.appState: 应用状态
+- window.elements: DOM 元素引用
+- window.useElectronAPI: Electron API 标志
+- window.electronAPI: Electron API 接口
+- window.renderSceneList: 渲染镜头列表（自引用）
+- window.updatePromptPreview: 更新提示词
+- window.showSceneProperties: 显示镜头属性
+- window.selectProject: 选择项目
+- window.showConfirm: 确认对话框
+- window.showUpdateNotification: 提示通知
+- window.showCustomPrompt: 自定义输入框
+
+renderer.js 导出:
+- selectProject, renderSceneList, selectScene
+- updatePromptPreview, showShotProperties, showSceneProperties
+- showToast, showConfirm, loadOptionsByGroup
+- showUpdateNotification, showCustomPrompt
+```
+
+**6. 代码优化**
+- 统一使用 `window.` 前缀访问全局变量
+- 移除调试日志，保持控制台清洁
+- `showCustomPrompt` 统一在 renderer.js 中实现，避免重复
+- 保持原有功能不变，仅做代码拆分
+
+### 模块拆分进度
+
+| 模块 | 文件 | 状态 |
+|------|------|------|
+| 项目管理 | `src/utils/projectList.js` | ✅ 已完成 |
+| 片段管理 | `src/utils/shotList.js` | ✅ 已完成 |
+| 镜头管理 | `src/utils/sceneList.js` | ✅ 已完成 |
+| 属性面板 | `src/utils/propertyPanel.js` | ⏳ 待拆分 |
+| 设置管理 | `src/utils/settings.js` | ⏳ 待拆分 |
+| 提示词生成 | `src/utils/promptGenerator.js` | ✅ 已完成 |
+
+### 下一步计划
+- [ ] 属性面板模块拆分 (`src/utils/propertyPanel.js`)
+- [ ] 设置管理模块拆分 (`src/utils/settings.js`)
+
+---
+
 ## 2026-03-07 - 片段管理模块拆分
 
 ### 修改内容

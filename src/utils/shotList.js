@@ -16,6 +16,7 @@
 // - window.selectProject: 选择项目函数
 // - window.showConfirm: 显示确认对话框函数
 // - window.showToast: 显示提示函数
+// - window.showCustomPrompt: 显示自定义输入框函数
 
 /**
  * 渲染片段列表
@@ -23,7 +24,6 @@
  */
 function renderShotList(shots) {
   if (!window.elements.shotList) {
-    console.log('[renderShotList] shotList 元素不存在');
     return;
   }
 
@@ -34,7 +34,6 @@ function renderShotList(shots) {
     if (window.elements.deleteShotBtn) {
       window.elements.deleteShotBtn.disabled = true;
     }
-    console.log('[renderShotList] 片段列表为空');
     return;
   }
 
@@ -42,7 +41,6 @@ function renderShotList(shots) {
     // 确保片段对象有 id 属性（如果没有则生成并保存）
     if (!shot.id) {
       shot.id = Date.now() + index;
-      console.log('[renderShotList] 生成片段 ID:', shot.id, '名称:', shot.name);
     }
 
     const shotElement = document.createElement('div');
@@ -63,10 +61,8 @@ function renderShotList(shots) {
     // 片段卡片点击 - 传递原始 shot 对象
     shotElement.addEventListener('click', (e) => {
       if (e.target.classList.contains('status-tag')) {
-        console.log('[renderShotList] 点击状态标签，不触发选择');
         return;
       }
-      console.log('[renderShotList] 点击片段:', shot.name);
       selectShot(shot);
     });
 
@@ -75,7 +71,6 @@ function renderShotList(shots) {
     if (statusTag) {
       statusTag.addEventListener('click', (e) => {
         e.stopPropagation();
-        console.log('[renderShotList] 点击状态标签:', shot.name);
         showShotStatusMenu(shot, e);
       });
     }
@@ -86,7 +81,6 @@ function renderShotList(shots) {
   if (window.elements.deleteShotBtn) {
     window.elements.deleteShotBtn.disabled = false;
   }
-  console.log('[renderShotList] 渲染完成，共', shots.length, '个片段');
 }
 
 /**
@@ -94,40 +88,31 @@ function renderShotList(shots) {
  * @param {Object} shot - 片段对象
  */
 async function selectShot(shot) {
-  console.log('[selectShot] 开始选择片段:', shot.name, 'ID:', shot.id);
-
   // 关键修复：切换片段时清除待处理的自动保存
   if (window.shotSaveTimeout) {
     clearTimeout(window.shotSaveTimeout);
     window.shotSaveTimeout = null;
     window.savingShotId = null;
-    console.log('[selectShot] 清除待处理的自动保存');
   }
 
   if (window.useElectronAPI && window.appState.currentProject?.projectDir) {
     // 从 project.json 中读取最新的片段数据
     try {
-      console.log('[selectShot] 从文件加载最新片段数据...');
       const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
       if (loadResult.success) {
         const latestShot = loadResult.projectJson.shots?.find(s => s.id === shot.id);
         if (latestShot) {
           window.appState.currentShot = latestShot;
-          console.log('[selectShot] 已加载最新片段数据:', latestShot.name);
         } else {
-          console.log('[selectShot] 未找到最新片段，使用当前数据');
           window.appState.currentShot = shot;
         }
       } else {
-        console.error('[selectShot] 加载项目失败:', loadResult.error);
         window.appState.currentShot = shot;
       }
     } catch (error) {
-      console.error('[selectShot] 加载最新片段数据失败:', error);
       window.appState.currentShot = shot;
     }
   } else {
-    console.log('[selectShot] 非 Electron 环境，直接使用当前数据');
     window.appState.currentShot = shot;
   }
 
@@ -141,9 +126,6 @@ async function selectShot(shot) {
     .find(item => item.dataset.id === String(shot.id));
   if (shotItem) {
     shotItem.classList.add('selected');
-    console.log('[selectShot] 已设置选中状态');
-  } else {
-    console.log('[selectShot] 未找到对应的 DOM 元素');
   }
 
   // 启用镜头操作按钮
@@ -155,28 +137,20 @@ async function selectShot(shot) {
   }
 
   // 渲染镜头列表
-  console.log('[selectShot] 渲染镜头列表...');
   window.renderSceneList(window.appState.currentShot.scenes || []);
 
   // 更新提示词预览
-  console.log('[selectShot] 更新提示词预览...');
   window.updatePromptPreview();
 
   // 显示片段属性表单
-  console.log('[selectShot] 显示片段属性表单...');
   window.showShotProperties(window.appState.currentShot);
-
-  console.log('[selectShot] 完成');
 }
 
 /**
  * 新建片段
  */
 async function createNewShot() {
-  console.log('[createNewShot] 开始创建新片段');
-
   if (!window.appState.currentProject) {
-    console.error('[createNewShot] 未选择项目');
     alert('请先选择一个项目');
     return;
   }
@@ -184,7 +158,6 @@ async function createNewShot() {
   // 使用自定义 prompt 替代系统 prompt
   const shotName = await showCustomPrompt('请输入片段名称:', '新建片段');
   if (!shotName) {
-    console.log('[createNewShot] 用户取消输入');
     return;
   }
 
@@ -203,15 +176,11 @@ async function createNewShot() {
     scenes: []
   };
 
-  console.log('[createNewShot] 新片段数据:', newShot);
-
   if (window.useElectronAPI && window.appState.currentProject.projectDir) {
     try {
       // 加载项目
-      console.log('[createNewShot] 加载项目...');
       const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
       if (!loadResult.success) {
-        console.error('[createNewShot] 加载项目失败:', loadResult.error);
         alert('加载项目失败：' + loadResult.error);
         return;
       }
@@ -219,22 +188,17 @@ async function createNewShot() {
       // 添加新片段
       loadResult.projectJson.shots = loadResult.projectJson.shots || [];
       loadResult.projectJson.shots.push(newShot);
-      console.log('[createNewShot] 已添加新片段到项目数据');
 
       // 保存项目
-      console.log('[createNewShot] 保存项目...');
       const saveResult = await window.electronAPI.saveProject(
         window.appState.currentProject.projectDir,
         loadResult.projectJson
       );
 
       if (saveResult.success) {
-        console.log('[createNewShot] 保存成功，重新选择项目...');
         await window.selectProject(window.appState.currentProject);
         window.showUpdateNotification();
-        console.log('[createNewShot] 完成');
       } else {
-        console.error('[createNewShot] 保存失败:', saveResult.error);
         alert('保存失败：' + saveResult.error);
       }
     } catch (error) {
@@ -242,7 +206,6 @@ async function createNewShot() {
       alert('创建片段失败：' + error.message);
     }
   } else {
-    console.error('[createNewShot] 非 Electron 环境');
     alert('请在 Electron 环境中使用此功能');
   }
 }
@@ -251,55 +214,41 @@ async function createNewShot() {
  * 删除选中的片段
  */
 async function deleteSelectedShot() {
-  console.log('[deleteSelectedShot] 开始删除片段');
-
   if (!window.appState.currentShot) {
-    console.error('[deleteSelectedShot] 未选择片段');
     alert('请先选择一个片段');
     return;
   }
 
   const confirmed = await window.showConfirm(`确定要删除片段 "${window.appState.currentShot.name}" 吗？`);
   if (!confirmed) {
-    console.log('[deleteSelectedShot] 用户取消删除');
     return;
   }
-
-  console.log('[deleteSelectedShot] 确认删除:', window.appState.currentShot.name);
 
   if (window.useElectronAPI && window.appState.currentProject.projectDir) {
     try {
       // 加载项目
-      console.log('[deleteSelectedShot] 加载项目...');
       const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
       if (!loadResult.success) {
-        console.error('[deleteSelectedShot] 加载项目失败:', loadResult.error);
         return;
       }
 
       // 过滤掉要删除的片段
-      const beforeCount = loadResult.projectJson.shots?.length || 0;
       loadResult.projectJson.shots = (loadResult.projectJson.shots || []).filter(
         s => s.id !== window.appState.currentShot.id
       );
-      console.log('[deleteSelectedShot] 已过滤片段:', beforeCount, '->', loadResult.projectJson.shots.length);
 
       // 保存项目
-      console.log('[deleteSelectedShot] 保存项目...');
       const saveResult = await window.electronAPI.saveProject(
         window.appState.currentProject.projectDir,
         loadResult.projectJson
       );
 
       if (saveResult.success) {
-        console.log('[deleteSelectedShot] 保存成功，清理状态...');
         window.appState.currentShot = null;
         window.appState.currentScene = null;
         await window.selectProject(window.appState.currentProject);
         window.renderSceneList([]);
-        console.log('[deleteSelectedShot] 完成');
       } else {
-        console.error('[deleteSelectedShot] 保存失败:', saveResult.error);
         alert('保存失败：' + saveResult.error);
       }
     } catch (error) {
@@ -307,7 +256,6 @@ async function deleteSelectedShot() {
       alert('删除片段失败：' + error.message);
     }
   } else {
-    console.error('[deleteSelectedShot] 非 Electron 环境');
     alert('请在 Electron 环境中使用此功能');
   }
 }
@@ -318,13 +266,10 @@ async function deleteSelectedShot() {
  * @param {MouseEvent} event - 鼠标事件
  */
 function showShotStatusMenu(shot, event) {
-  console.log('[showShotStatusMenu] 显示状态菜单，当前状态:', shot.status);
-
   // 如果菜单已存在，先移除
   const existingMenu = document.getElementById('shot-status-menu');
   if (existingMenu) {
     existingMenu.remove();
-    console.log('[showShotStatusMenu] 移除已存在的菜单');
     return;
   }
 
@@ -355,7 +300,6 @@ function showShotStatusMenu(shot, event) {
   contextMenu.addEventListener('click', (e) => {
     const status = e.target.dataset.status;
     if (status) {
-      console.log('[showShotStatusMenu] 选择状态:', status);
       updateShotStatus(shot, status);
     }
     contextMenu.remove();
@@ -367,13 +311,11 @@ function showShotStatusMenu(shot, event) {
       if (!contextMenu.contains(ev.target)) {
         contextMenu.remove();
         document.removeEventListener('click', closeMenu);
-        console.log('[showShotStatusMenu] 菜单已关闭');
       }
     });
   }, 100);
 
   document.body.appendChild(contextMenu);
-  console.log('[showShotStatusMenu] 菜单已显示');
 }
 
 /**
@@ -382,16 +324,12 @@ function showShotStatusMenu(shot, event) {
  * @param {string} newStatus - 新状态值
  */
 async function updateShotStatus(shot, newStatus) {
-  console.log('[updateShotStatus] 更新状态:', shot.name, '->', newStatus);
-
   if (!window.useElectronAPI) {
-    console.error('[updateShotStatus] 非 Electron 环境');
     alert('请在 Electron 环境中使用此功能');
     return;
   }
 
   if (!window.appState.currentProject || !window.appState.currentProject.projectDir) {
-    console.error('[updateShotStatus] 项目目录不存在');
     alert('项目目录不存在，请先选择项目');
     return;
   }
@@ -399,15 +337,12 @@ async function updateShotStatus(shot, newStatus) {
   // 检查 shot 对象是否有 id，没有则生成
   if (!shot.id) {
     shot.id = Date.now();
-    console.log('[updateShotStatus] 生成片段 ID:', shot.id);
   }
 
   try {
     // 加载项目
-    console.log('[updateShotStatus] 加载项目...');
     const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
     if (!loadResult.success) {
-      console.error('[updateShotStatus] 加载项目失败:', loadResult.error);
       alert('加载项目失败：' + loadResult.error);
       return;
     }
@@ -418,15 +353,9 @@ async function updateShotStatus(shot, newStatus) {
     // 如果没找到，尝试通过名称匹配（兼容旧数据）
     if (shotIndex === -1 && shot.name) {
       shotIndex = loadResult.projectJson.shots?.findIndex(s => s.name === shot.name);
-      console.log('[updateShotStatus] 通过名称匹配片段:', shot.name, '索引:', shotIndex);
     }
 
     if (shotIndex === -1) {
-      console.error('[updateShotStatus] 片段未找到:', {
-        shotId: shot.id,
-        shotName: shot.name,
-        availableShots: loadResult.projectJson.shots?.map(s => ({ id: s.id, name: s.name }))
-      });
       alert('片段未找到，请检查数据一致性');
       return;
     }
@@ -435,25 +364,20 @@ async function updateShotStatus(shot, newStatus) {
     loadResult.projectJson.shots[shotIndex].id = shot.id;
     loadResult.projectJson.shots[shotIndex].status = newStatus;
     loadResult.projectJson.project.updatedAt = new Date().toISOString();
-    console.log('[updateShotStatus] 已更新项目数据');
 
     // 保存项目
-    console.log('[updateShotStatus] 保存项目...');
     const saveResult = await window.electronAPI.saveProject(
       window.appState.currentProject.projectDir,
       loadResult.projectJson
     );
 
     if (saveResult.success) {
-      console.log('[updateShotStatus] 保存成功，更新本地状态...');
       // 更新本地状态
       shot.status = newStatus;
       // 重新渲染片段列表
       window.renderShotList(loadResult.projectJson.shots || []);
       window.showUpdateNotification();
-      console.log('[updateShotStatus] 完成');
     } else {
-      console.error('[updateShotStatus] 保存失败:', saveResult.error);
       alert('保存失败：' + saveResult.error);
     }
   } catch (error) {
@@ -477,117 +401,6 @@ function getStatusText(status) {
   return statusMap[status] || status;
 }
 
-/**
- * 显示自定义输入框（替代系统 prompt）
- * @param {string} message - 提示信息
- * @param {string} title - 标题
- * @returns {Promise<string>} 用户输入的内容
- */
-async function showCustomPrompt(message, title = '输入') {
-  return new Promise((resolve) => {
-    const overlay = document.createElement('div');
-    overlay.className = 'modal-overlay';
-    overlay.style.cssText = `
-      position: fixed;
-      top: 0;
-      left: 0;
-      right: 0;
-      bottom: 0;
-      background: rgba(0, 0, 0, 0.5);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      z-index: 3000;
-    `;
-
-    const modal = document.createElement('div');
-    modal.className = 'modal-content';
-    modal.style.cssText = `
-      background: var(--bg-color, #fff);
-      border-radius: 8px;
-      padding: 24px;
-      min-width: 400px;
-      max-width: 500px;
-      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
-    `;
-
-    modal.innerHTML = `
-      <h3 style="margin: 0 0 16px 0; font-size: 18px; color: var(--text-color, #333);">${title}</h3>
-      <div style="margin-bottom: 16px;">
-        <label style="display: block; margin-bottom: 8px; color: var(--text-color, #333);">${message}</label>
-        <input type="text" id="custom-prompt-input" style="
-          width: 100%;
-          padding: 8px 12px;
-          border: 1px solid var(--border-color, #e0e0e0);
-          border-radius: 4px;
-          font-size: 14px;
-          box-sizing: border-box;
-        " placeholder="请输入...">
-      </div>
-      <div style="display: flex; justify-content: flex-end; gap: 8px;">
-        <button id="custom-prompt-cancel" style="
-          padding: 8px 16px;
-          border: 1px solid var(--border-color, #e0e0e0);
-          background: var(--bg-color, #fff);
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
-          color: var(--text-color, #333);
-        ">取消</button>
-        <button id="custom-prompt-confirm" style="
-          padding: 8px 16px;
-          border: none;
-          background: #007bff;
-          color: white;
-          border-radius: 4px;
-          cursor: pointer;
-          font-size: 14px;
-        ">确定</button>
-      </div>
-    `;
-
-    overlay.appendChild(modal);
-    document.body.appendChild(overlay);
-
-    const input = document.getElementById('custom-prompt-input');
-    const confirmBtn = document.getElementById('custom-prompt-confirm');
-    const cancelBtn = document.getElementById('custom-prompt-cancel');
-
-    // 聚焦输入框
-    setTimeout(() => input.focus(), 10);
-
-    // 确定按钮
-    confirmBtn.addEventListener('click', () => {
-      const value = input.value.trim();
-      overlay.remove();
-      resolve(value);
-    });
-
-    // 取消按钮
-    cancelBtn.addEventListener('click', () => {
-      overlay.remove();
-      resolve('');
-    });
-
-    // Enter 键确认
-    input.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter') {
-        const value = input.value.trim();
-        overlay.remove();
-        resolve(value);
-      }
-    });
-
-    // 点击遮罩关闭
-    overlay.addEventListener('click', (e) => {
-      if (e.target === overlay) {
-        overlay.remove();
-        resolve('');
-      }
-    });
-  });
-}
-
 // 导出函数到全局
 window.renderShotList = renderShotList;
 window.selectShot = selectShot;
@@ -597,4 +410,3 @@ window.showShotStatusMenu = showShotStatusMenu;
 window.updateShotStatus = updateShotStatus;
 window.getStatusText = getStatusText;
 
-console.log('[shotList.js] 模块已加载');

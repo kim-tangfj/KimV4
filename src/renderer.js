@@ -2434,179 +2434,8 @@ async function selectProject(project) {
 }
 
 // ========== 镜头管理 ==========
-
-function renderSceneList(scenes) {
-  if (!elements.sceneList) return;
-
-  elements.sceneList.innerHTML = '';
-
-  if (!scenes || scenes.length === 0) {
-    elements.sceneList.innerHTML = '<div class="placeholder-text">暂无镜头，点击 + 新建</div>';
-    return;
-  }
-
-  scenes.forEach((scene, index) => {
-    const sceneElement = document.createElement('div');
-    sceneElement.className = 'list-item';
-    
-    // 确保 ID 存在，没有则生成
-    if (!scene.id) {
-      scene.id = Date.now() + index;
-    }
-    sceneElement.dataset.id = scene.id;
-
-    // 生成镜头编号（如果没有 serialNumber，使用序号）
-    const sceneNumber = scene.serialNumber || `镜头${index + 1}`;
-
-    sceneElement.innerHTML = `
-      <div class="list-item-content">
-        <div class="list-item-title">${sceneNumber} | ${scene.name}</div>
-        <div class="list-item-subtitle">
-          ${scene.shotType} • ${scene.angle} • ${scene.duration}s
-        </div>
-      </div>
-    `;
-    sceneElement.addEventListener('click', async () => { await selectScene(scene); });
-    elements.sceneList.appendChild(sceneElement);
-  });
-}
-
-async function selectScene(scene) {
-  // 关键修复：切换镜头时清除待处理的自动保存
-  if (sceneSaveTimeout) {
-    clearTimeout(sceneSaveTimeout);
-    sceneSaveTimeout = null;
-    savingSceneId = null;
-    console.log('[selectScene] 清除待处理的自动保存');
-  }
-
-  if (useElectronAPI && appState.currentProject.projectDir && appState.currentShot) {
-    // 从 project.json 中读取最新的镜头数据
-    try {
-      const loadResult = await window.electronAPI.loadProject(appState.currentProject.projectDir);
-      if (loadResult.success) {
-        const latestShot = loadResult.projectJson.shots?.find(s => s.id === appState.currentShot.id);
-        if (latestShot && latestShot.scenes) {
-          const latestScene = latestShot.scenes.find(s => s.id === scene.id);
-          if (latestScene) {
-            appState.currentScene = latestScene;
-          }
-        }
-      }
-    } catch (error) {
-      console.error('加载最新镜头数据失败:', error);
-      appState.currentScene = scene;
-    }
-  } else {
-    appState.currentScene = scene;
-  }
-
-  appState.currentScene = appState.currentScene || scene;
-
-  // 移除所有镜头选中状态
-  document.querySelectorAll('#scene-list .list-item').forEach(item => {
-    item.classList.remove('selected');
-  });
-
-  // 设置当前镜头选中状态（转换为字符串比较）
-  const sceneItem = Array.from(document.querySelectorAll('#scene-list .list-item'))
-    .find(item => item.dataset.id === String(scene.id));
-  if (sceneItem) {
-    sceneItem.classList.add('selected');
-  }
-
-  if (elements.copyPromptBtn) elements.copyPromptBtn.disabled = false;
-  if (elements.exportPromptBtn) elements.exportPromptBtn.disabled = false;
-  if (elements.clearPromptBtn) elements.clearPromptBtn.disabled = false;
-
-  updatePromptPreview();
-  showSceneProperties(appState.currentScene);
-}
-
-async function createNewScene() {
-  if (!appState.currentShot) {
-    alert('请先选择一个片段');
-    return;
-  }
-  
-  const sceneName = prompt('请输入镜头名称:');
-  if (!sceneName) return;
-  
-  const newScene = {
-    id: Date.now(),
-    serialNumber: `scene_${Date.now()}`,
-    name: sceneName,
-    shotType: '特写',
-    angle: '平视',
-    content: '',
-    duration: 2,
-    camera: '固定镜头',
-    notes: '',
-    dialogue: '',
-    emotion: '普通',
-    storyboard: '',
-    enabled: true
-  };
-  
-  if (useElectronAPI && appState.currentProject.projectDir) {
-    try {
-      const loadResult = await window.electronAPI.loadProject(appState.currentProject.projectDir);
-      if (!loadResult.success) return;
-      
-      const shot = loadResult.projectJson.shots?.find(s => s.id === appState.currentShot.id);
-      if (shot) {
-        shot.scenes = shot.scenes || [];
-        shot.scenes.push(newScene);
-        
-        const saveResult = await window.electronAPI.saveProject(
-          appState.currentProject.projectDir,
-          loadResult.projectJson
-        );
-        
-        if (saveResult.success) {
-          await selectProject(appState.currentProject);
-          showUpdateNotification();
-        }
-      }
-    } catch (error) {
-      console.error('创建镜头异常:', error);
-    }
-  }
-}
-
-async function deleteSelectedScene() {
-  if (!appState.currentScene) {
-    alert('请先选择一个镜头');
-    return;
-  }
-
-  const confirmed = await showConfirm(`确定要删除镜头 "${appState.currentScene.name}" 吗？`);
-  if (!confirmed) return;
-  
-  if (useElectronAPI && appState.currentProject.projectDir) {
-    try {
-      const loadResult = await window.electronAPI.loadProject(appState.currentProject.projectDir);
-      if (!loadResult.success) return;
-      
-      const shot = loadResult.projectJson.shots?.find(s => s.id === appState.currentShot.id);
-      if (shot && shot.scenes) {
-        shot.scenes = shot.scenes.filter(s => s.id !== appState.currentScene.id);
-        
-        const saveResult = await window.electronAPI.saveProject(
-          appState.currentProject.projectDir,
-          loadResult.projectJson
-        );
-        
-        if (saveResult.success) {
-          appState.currentScene = null;
-          await selectProject(appState.currentProject);
-        }
-      }
-    } catch (error) {
-      console.error('删除镜头异常:', error);
-    }
-  }
-}
+// 镜头管理函数已移至 src/utils/sceneList.js 模块
+// renderSceneList, selectScene, createNewScene, deleteSelectedScene
 
 // ========== 提示词 ==========
 
@@ -3596,6 +3425,117 @@ window.alert = function(message) {
   showToast(message);
 };
 
+/**
+ * 显示自定义输入框（替代系统 prompt）
+ * @param {string} message - 提示信息
+ * @param {string} title - 标题
+ * @returns {Promise<string>} 用户输入的内容
+ */
+async function showCustomPrompt(message, title = '输入') {
+  return new Promise((resolve) => {
+    const overlay = document.createElement('div');
+    overlay.className = 'modal-overlay';
+    overlay.style.cssText = `
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.5);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 3000;
+    `;
+
+    const modal = document.createElement('div');
+    modal.className = 'modal-content';
+    modal.style.cssText = `
+      background: var(--bg-color, #fff);
+      border-radius: 8px;
+      padding: 24px;
+      min-width: 400px;
+      max-width: 500px;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    `;
+
+    modal.innerHTML = `
+      <h3 style="margin: 0 0 16px 0; font-size: 18px; color: var(--text-color, #333);">${title}</h3>
+      <div style="margin-bottom: 16px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--text-color, #333);">${message}</label>
+        <input type="text" id="custom-prompt-input" style="
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid var(--border-color, #e0e0e0);
+          border-radius: 4px;
+          font-size: 14px;
+          box-sizing: border-box;
+        " placeholder="请输入...">
+      </div>
+      <div style="display: flex; justify-content: flex-end; gap: 8px;">
+        <button id="custom-prompt-cancel" style="
+          padding: 8px 16px;
+          border: 1px solid var(--border-color, #e0e0e0);
+          background: var(--bg-color, #fff);
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+          color: var(--text-color, #333);
+        ">取消</button>
+        <button id="custom-prompt-confirm" style="
+          padding: 8px 16px;
+          border: none;
+          background: #007bff;
+          color: white;
+          border-radius: 4px;
+          cursor: pointer;
+          font-size: 14px;
+        ">确定</button>
+      </div>
+    `;
+
+    overlay.appendChild(modal);
+    document.body.appendChild(overlay);
+
+    const input = document.getElementById('custom-prompt-input');
+    const confirmBtn = document.getElementById('custom-prompt-confirm');
+    const cancelBtn = document.getElementById('custom-prompt-cancel');
+
+    // 聚焦输入框
+    setTimeout(() => input.focus(), 10);
+
+    // 确定按钮
+    confirmBtn.addEventListener('click', () => {
+      const value = input.value.trim();
+      overlay.remove();
+      resolve(value);
+    });
+
+    // 取消按钮
+    cancelBtn.addEventListener('click', () => {
+      overlay.remove();
+      resolve('');
+    });
+
+    // Enter 键确认
+    input.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter') {
+        const value = input.value.trim();
+        overlay.remove();
+        resolve(value);
+      }
+    });
+
+    // 点击遮罩关闭
+    overlay.addEventListener('click', (e) => {
+      if (e.target === overlay) {
+        overlay.remove();
+        resolve('');
+      }
+    });
+  });
+}
+
 // 渲染素材库列表
 function renderAssetsList(assets) {
   if (!elements.assetsList) return;
@@ -3683,6 +3623,7 @@ function exposeGlobals() {
   window.showConfirm = showConfirm;
   window.loadOptionsByGroup = loadOptionsByGroup;
   window.showUpdateNotification = showUpdateNotification;
+  window.showCustomPrompt = showCustomPrompt;
 }
 
 // 在 initializeApp 中调用暴露
