@@ -33,23 +33,12 @@
 
 
 /**  ======= 全局变量定义 开始 ======== */
-// 导入状态管理器
-const { appStateManager } = require('./utils/appStateManager');
-
-// 初始化状态管理器
-appStateManager.init();
-
-// 使用状态管理器访问状态（避免局部变量）
-// - appStateManager.getState() / appStateManager.setState()
-// - appStateManager.getSettings() / appStateManager.setSettings()
-// - appStateManager.getTheme() / appStateManager.setTheme()
+// 状态管理器已在 appStateManager.js 中初始化并导出到 window 对象
+// 使用全局状态管理器访问状态（避免局部变量）：
+// - window.appStateManager.getState() / setState()
+// - window.getSettings() / setSettings()
+// - window.getTheme() / setTheme()
 // - window.appState / window.settings（向后兼容）
-
-// 自动保存相关全局变量（使用状态管理器）
-// window.shotSaveTimeout, window.savingShotId, window.sceneSaveTimeout, window.savingSceneId
-
-// 面板拖拽相关全局变量（使用状态管理器）
-// window.isResizing, window.currentResizer, window.currentPanel
 /** ======= 全局变量定义 结束 ======== */
 
 
@@ -373,18 +362,18 @@ document.addEventListener('DOMContentLoaded', () => {
 async function initializeApp() {
   // 从 window 对象读取（loadSettings 已经设置好了）
   // 使用状态管理器，避免局部变量
-  appStateManager.setUseElectronAPI(!!(window.electronAPI));
+  window.setUseElectronAPI(!!(window.electronAPI));
   
   await window.loadSettings();
   
   // 从 window.settings 读取（loadSettings 已经设置好了）
   // 状态管理器已自动同步
   
-  appStateManager.setSettings(window.settings);
+  window.setSettings(window.settings);
   
   setupEventListeners();
   window.loadProjects();
-  window.applyTheme(appStateManager.getTheme());
+  window.applyTheme(window.getTheme());
 }
 // ======= 应用初始化 结束 ========
 

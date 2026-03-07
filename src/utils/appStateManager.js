@@ -265,23 +265,24 @@ class AppStateManager {
   }
 }
 
-// 创建全局状态管理器实例
-const appStateManager = new AppStateManager();
+// 检查是否已存在实例，避免重复声明
+if (!window.appStateManagerInstance) {
+  // 创建全局状态管理器实例
+  window.appStateManagerInstance = new AppStateManager();
+}
 
 // 导出到 window 对象
-window.appStateManager = appStateManager;
+window.appStateManager = window.appStateManagerInstance;
 
 // 提供便捷的访问函数
-window.getState = () => appStateManager.getState();
-window.setState = (newState) => appStateManager.setState(newState);
-window.updateState = (key, value) => appStateManager.updateState(key, value);
-window.getSettings = () => appStateManager.getSettings();
-window.setSettings = (newSettings) => appStateManager.setSettings(newSettings);
-window.updateSetting = (key, value) => appStateManager.updateSetting(key, value);
-window.updateNestedSetting = (path, value) => appStateManager.updateNestedSetting(path, value);
-window.getTheme = () => appStateManager.getTheme();
-window.setTheme = (theme) => appStateManager.setTheme(theme);
-window.getUseElectronAPI = () => appStateManager.getUseElectronAPI();
-window.setUseElectronAPI = (value) => appStateManager.setUseElectronAPI(value);
-
-module.exports = { appStateManager };
+window.getState = () => window.appStateManager.getState();
+window.setState = (newState) => window.appStateManager.setState(newState);
+window.updateState = (key, value) => window.appStateManager.updateState(key, value);
+window.getSettings = () => window.appStateManager.getSettings();
+window.setSettings = (newSettings) => window.appStateManager.setSettings(newSettings);
+window.updateSetting = (key, value) => window.appStateManager.updateSetting(key, value);
+window.updateNestedSetting = (path, value) => window.appStateManager.updateNestedSetting(path, value);
+window.getTheme = () => window.appStateManager.getTheme();
+window.setTheme = (theme) => window.appStateManager.setTheme(theme);
+window.getUseElectronAPI = () => window.appStateManager.getUseElectronAPI();
+window.setUseElectronAPI = (value) => window.appStateManager.setUseElectronAPI(value);
