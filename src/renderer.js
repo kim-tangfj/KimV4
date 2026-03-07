@@ -15,8 +15,7 @@
 // 包含函数：showCustomOptionsModal, hideCustomOptionsModal, loadGroupFilter, loadCustomOptionsList,
 //          renderBuiltinOptionsList, renderCustomOptionsList, showAddCustomOptionForm,
 //          showEditCustomOptionForm, loadGroupFilterForEditForm, hideCustomOptionEditModal,
-//          saveCustomOptionEdit, saveCustomOption, deleteCustomOption, hideCustomOptionForm,
-//          backupOptions, restoreOptions, openOptionsFolder
+//          saveCustomOptionEdit, saveCustomOption, deleteCustomOption, hideCustomOptionForm
 
 // 应用数据状态
 let appState = {
@@ -684,15 +683,6 @@ function setupEventListeners() {
   // 自定义选项管理事件
   if (elements.manageCustomOptionsBtn) {
     elements.manageCustomOptionsBtn.addEventListener('click', () => window.showCustomOptionsModal());
-  }
-  if (elements.backupOptionsBtn) {
-    elements.backupOptionsBtn.addEventListener('click', () => window.backupOptions());
-  }
-  if (elements.restoreOptionsBtn) {
-    elements.restoreOptionsBtn.addEventListener('click', () => window.restoreOptions());
-  }
-  if (elements.openOptionsFolderBtn) {
-    elements.openOptionsFolderBtn.addEventListener('click', () => window.openOptionsFolder());
   }
   if (elements.closeCustomOptionsBtn) {
     elements.closeCustomOptionsBtn.addEventListener('click', () => window.hideCustomOptionsModal());

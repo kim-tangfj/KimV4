@@ -510,71 +510,6 @@ function hideCustomOptionForm() {
   }
 }
 
-/**
- * 备份自定义选项
- */
-async function backupOptions() {
-  const useElectronAPI = window.useElectronAPI;
-  
-  if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
-    return;
-  }
-
-  const result = await window.electronAPI.backupOptions();
-  if (result.success) {
-    alert('选项备份成功！\n文件已保存到：' + result.filePath);
-  } else if (!result.canceled) {
-    alert('备份失败：' + result.error);
-  }
-}
-
-/**
- * 恢复自定义选项
- */
-async function restoreOptions() {
-  const useElectronAPI = window.useElectronAPI;
-  
-  if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
-    return;
-  }
-
-  const confirmed = await window.showConfirm('恢复选项将覆盖当前的自定义选项配置，确定继续吗？');
-  if (!confirmed) {
-    return;
-  }
-
-  const result = await window.electronAPI.restoreOptions();
-  if (result.success) {
-    alert('选项恢复成功！');
-    await loadCustomOptionsList();
-    await loadGroupFilter();
-    window.showUpdateNotification();
-  } else if (!result.canceled) {
-    alert('恢复失败：' + result.error);
-  }
-}
-
-/**
- * 打开自定义选项文件夹
- */
-async function openOptionsFolder() {
-  const useElectronAPI = window.useElectronAPI;
-  
-  if (!useElectronAPI) {
-    alert('请在 Electron 环境中使用此功能');
-    return;
-  }
-
-  const result = await window.electronAPI.getOptionsPath();
-  if (result.success) {
-    await window.electronAPI.openPath(result.path);
-  } else {
-    alert('获取选项文件夹路径失败：' + result.error);
-  }
-}
-
 // 导出所有函数到 window 对象
 window.showCustomOptionsModal = showCustomOptionsModal;
 window.hideCustomOptionsModal = hideCustomOptionsModal;
@@ -590,6 +525,3 @@ window.saveCustomOptionEdit = saveCustomOptionEdit;
 window.saveCustomOption = saveCustomOption;
 window.deleteCustomOption = deleteCustomOption;
 window.hideCustomOptionForm = hideCustomOptionForm;
-window.backupOptions = backupOptions;
-window.restoreOptions = restoreOptions;
-window.openOptionsFolder = openOptionsFolder;
