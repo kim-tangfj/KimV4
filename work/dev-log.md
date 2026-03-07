@@ -4,6 +4,79 @@
 
 ---
 
+## 2026-03-07 - 自定义选项管理模块拆分
+
+### 拆分内容
+将 `renderer.js` 中的自定义选项管理相关函数拆分到独立的 `src/utils/customOptions.js` 模块中。
+
+### 已迁移的函数（customOptions.js）
+| 函数 | 说明 |
+|------|------|
+| `showCustomOptionsModal` | 显示自定义选项管理弹窗 |
+| `hideCustomOptionsModal` | 隐藏自定义选项管理弹窗 |
+| `loadGroupFilter` | 加载组别筛选器 |
+| `loadCustomOptionsList` | 加载自定义选项列表（两栏显示） |
+| `renderBuiltinOptionsList` | 渲染内置选项列表 |
+| `renderCustomOptionsList` | 渲染自定义选项列表 |
+| `showAddCustomOptionForm` | 显示添加自定义选项表单（弹窗） |
+| `showEditCustomOptionForm` | 显示编辑自定义选项表单（弹窗） |
+| `loadGroupFilterForEditForm` | 加载组别下拉框（编辑表单用） |
+| `hideCustomOptionEditModal` | 隐藏自定义选项编辑弹窗 |
+| `saveCustomOptionEdit` | 保存自定义选项编辑（弹窗版） |
+| `saveCustomOption` | 保存自定义选项 |
+| `deleteCustomOption` | 删除自定义选项（检查使用情况） |
+| `hideCustomOptionForm` | 隐藏自定义选项表单 |
+| `backupOptions` | 备份自定义选项 |
+| `restoreOptions` | 恢复自定义选项 |
+| `openOptionsFolder` | 打开自定义选项文件夹 |
+
+### 模块文件
+- **新文件**: `src/utils/customOptions.js`
+- **原文件**: `src/renderer.js` (添加模块注释标记)
+
+### 注释标记（renderer.js 第 1668-1673 行）
+```javascript
+// ========== 自定义选项管理 ==========
+// 【已迁移至 src/utils/customOptions.js】
+// 包含函数：showCustomOptionsModal, hideCustomOptionsModal, loadGroupFilter, loadCustomOptionsList,
+// renderBuiltinOptionsList, renderCustomOptionsList, showAddCustomOptionForm, showEditCustomOptionForm,
+// loadGroupFilterForEditForm, hideCustomOptionEditModal, saveCustomOptionEdit, saveCustomOption,
+// deleteCustomOption, hideCustomOptionForm, backupOptions, restoreOptions, openOptionsFolder
+```
+
+### 累计模块拆分进度
+| 模块 | 文件 | 行数 | 状态 |
+|------|------|------|------|
+| 项目管理 | `src/utils/projectList.js` | 436 行 | ✅ 已完成 |
+| 片段管理 | `src/utils/shotList.js` | 413 行 | ✅ 已完成 |
+| 镜头管理 | `src/utils/sceneList.js` | 230 行 | ✅ 已完成 |
+| 属性面板 | `src/utils/propertyPanel.js` | 766 行 | ✅ 已完成 |
+| 提示词生成 | `src/utils/promptGenerator.js` | 266 行 | ✅ 已完成 |
+| 设置管理 | `src/utils/settings.js` | 494 行 | ✅ 已完成 |
+| **自定义选项管理** | **`src/utils/customOptions.js`** | **~590 行** | **✅ 已完成** |
+| 工具函数 | （在 renderer.js 中） | ~150 行 | ⏳ 待拆分 |
+
+### renderer.js 代码变化
+| 阶段 | 行数 | 减少 |
+|------|------|------|
+| 原始 | 3988 行 | - |
+| 模块拆分前 | 2998 行 | -990 行 (-24.8%) |
+| 提示词模块拆分后 | 2567 行 | -431 行 (-14.4%) |
+| 设置管理模块拆分后 | 2577 行 | -453 行 (-14.9%) |
+| 自定义选项模块拆分后 | ~2600 行* | 添加注释标记 |
+| **累计减少** | | **~-1400 行 (-35.1%)** |
+
+*注：自定义选项模块采用注释标记方式，未完全注释掉代码，便于后续验证功能正常后再完全注释。
+
+### 测试验证
+- [x] 应用启动正常
+- [ ] 自定义选项管理弹窗显示
+- [ ] 自定义选项列表加载
+- [ ] 添加/编辑/删除自定义选项
+- [ ] 备份/恢复自定义选项
+
+---
+
 ## 2026-03-07 - 设置管理模块拆分
 
 ### 拆分内容
