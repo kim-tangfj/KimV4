@@ -4,6 +4,152 @@
 
 ---
 
+## 2026-03-07 - 设置管理模块拆分
+
+### 拆分内容
+将 `renderer.js` 中的设置管理相关函数拆分到独立的 `src/utils/settings.js` 模块中。
+
+### 已迁移的函数（settings.js）
+| 函数 | 说明 | 行数 |
+|------|------|------|
+| `loadSettings` | 从 localStorage 和文件系统加载设置 | ~70 行 |
+| `saveSettings` | 保存当前设置到 localStorage | ~20 行 |
+| `saveSettingsToStorage` | 保存设置到本地存储（包括模板配置） | ~25 行 |
+| `applyTheme` | 应用主题到页面 | ~10 行 |
+| `toggleTheme` | 切换当前主题（浅色/深色） | ~12 行 |
+| `toggleApiKeyVisibility` | 切换 API Key 输入框可见性 | ~8 行 |
+| `testApiConnection` | 测试指定提供商的 API 连接 | ~50 行 |
+| `checkApiStatus` | 检查 AI 模式 API 状态 | ~15 行 |
+| `showSettingsModal` | 显示设置面板弹窗 | ~20 行 |
+| `hideSettingsModal` | 隐藏设置面板弹窗 | ~6 行 |
+| `showLoading` | 显示加载覆盖层 | ~6 行 |
+| `hideLoading` | 隐藏加载覆盖层 | ~6 行 |
+| `getDefaultTemplate` | 获取默认模板配置 | ~90 行 |
+| `showTemplateStoragePath` | 显示模板存储路径 | ~15 行 |
+
+### 模块文件
+- **新文件**: `src/utils/settings.js` (391 行)
+- **原文件**: `src/renderer.js` (3030 行 → 2577 行，减少 453 行，-14.9%)
+
+### 注释标记（renderer.js）
+
+**文件头部（第 5-12 行）**：
+```javascript
+// ========== 模块导入 ==========
+// 提示词生成模块已移至 src/utils/promptGenerator.js
+// 包含函数：generateScenePrompt, generateShotPrompt, generateProjectPrompt,
+//          renderPromptWithHighlight, updatePromptPreview, copyPromptToClipboard,
+//          exportPrompt, clearPrompt, generatePromptFromAI
+// 设置管理模块已移至 src/utils/settings.js
+// 包含函数：loadSettings, saveSettings, saveSettingsToStorage, applyTheme, toggleTheme,
+//          toggleApiKeyVisibility, testApiConnection, checkApiStatus, showSettingsModal,
+//          hideSettingsModal, showLoading, hideLoading, getDefaultTemplate, showTemplateStoragePath
+```
+
+**加载设置函数（第 254-428 行）**：
+```javascript
+// ========== 设置管理 ==========
+// 【已迁移至 src/utils/settings.js】
+
+// 加载设置
+/* === 已注释 - 函数已迁移至 settings.js ===
+async function loadSettings() { ... }
+function getDefaultTemplate() { ... }
+=== 已注释结束 === */
+```
+
+**保存设置函数（第 432-448 行）**：
+```javascript
+// ========== 设置管理 ==========
+// 【已迁移至 src/utils/settings.js】
+
+// 保存设置
+/* === 已注释 - 函数已迁移至 settings.js ===
+function saveSettings() { ... }
+=== 已注释结束 === */
+```
+
+**主题和 API 测试函数（第 736-892 行）**：
+```javascript
+// ========== 设置管理 ==========
+// 【已迁移至 src/utils/settings.js】
+
+// 应用主题
+/* === 已注释 - 函数已迁移至 settings.js ===
+function applyTheme(theme) { ... }
+function toggleTheme() { ... }
+function toggleApiKeyVisibility(input) { ... }
+async function testApiConnection(provider) { ... }
+function checkApiStatus() { ... }
+function showLoading(text) { ... }
+function hideLoading() { ... }
+function showSettingsModal() { ... }
+function hideSettingsModal() { ... }
+=== 已注释结束 === */
+```
+
+**保存设置到本地存储（第 1496-1524 行）**：
+```javascript
+// ========== 设置管理 ==========
+// 【已迁移至 src/utils/settings.js】
+
+// 保存设置到本地存储
+/* === 已注释 - 函数已迁移至 settings.js ===
+function saveSettingsToStorage() { ... }
+=== 已注释结束 === */
+```
+
+**显示模板存储路径（第 2148-2166 行）**：
+```javascript
+// ========== 设置管理 ==========
+// 【已迁移至 src/utils/settings.js】
+
+// 显示模板存储路径
+/* === 已注释 - 函数已迁移至 settings.js ===
+async function showTemplateStoragePath() { ... }
+=== 已注释结束 === */
+```
+
+### 代码统计
+| 文件 | 拆分前 | 拆分后 | 变化 |
+|------|--------|--------|------|
+| `renderer.js` | 3030 行 | 2577 行 | -453 行 (-14.9%) |
+| `settings.js` | - | 391 行 | +391 行 |
+
+### 累计模块拆分进度
+| 模块 | 文件 | 行数 | 状态 |
+|------|------|------|------|
+| 项目管理 | `src/utils/projectList.js` | 436 行 | ✅ 已完成 |
+| 片段管理 | `src/utils/shotList.js` | 413 行 | ✅ 已完成 |
+| 镜头管理 | `src/utils/sceneList.js` | 230 行 | ✅ 已完成 |
+| 属性面板 | `src/utils/propertyPanel.js` | 766 行 | ✅ 已完成 |
+| 提示词生成 | `src/utils/promptGenerator.js` | 266 行 | ✅ 已完成 |
+| **设置管理** | **`src/utils/settings.js`** | **391 行** | **✅ 已完成** |
+| 自定义选项 | （在 renderer.js 中） | ~300 行 | ⏳ 待拆分 |
+| 工具函数 | （在 renderer.js 中） | ~150 行 | ⏳ 待拆分 |
+
+### renderer.js 代码变化
+| 阶段 | 行数 | 减少 |
+|------|------|------|
+| 原始 | 3988 行 | - |
+| 模块拆分前 | 2998 行 | -990 行 (-24.8%) |
+| 提示词模块拆分后 | 2567 行 | -431 行 (-14.4%) |
+| 设置管理模块拆分后 | 2577 行 | -453 行 (-14.9%) |
+| **累计减少** | | **-1874 行 (-47.0%)** |
+
+### 修复的问题
+1. **showSettingsModal 未定义** - promptGenerator.js 中调用 showSettingsModal() 未通过 window 对象
+   - 修改为 `window.showSettingsModal()`
+
+### 测试验证
+- [x] 应用启动正常
+- [ ] 设置加载/保存功能
+- [ ] 主题切换功能
+- [ ] API 连接测试功能
+- [ ] 设置面板弹窗功能
+
+---
+
 ## 2026-03-07 - 提示词生成模块拆分
 
 ### 拆分内容
@@ -1846,7 +1992,7 @@ if (saveResult.success) {
 
 // 修改后
 if (saveResult.success) {
-  // 直接使用保存后的最新数据
+  // 直接使用保存后的最新数���
   appState.currentShot = loadResult.projectJson.shots[shotIndex];
   // 自动保存时也显示提示
   showUpdateNotification();
