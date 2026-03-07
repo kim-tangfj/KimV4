@@ -7,6 +7,10 @@
 // 包含函数：generateScenePrompt, generateShotPrompt, generateProjectPrompt,
 //          renderPromptWithHighlight, updatePromptPreview, copyPromptToClipboard,
 //          exportPrompt, clearPrompt, generatePromptFromAI
+// 设置管理模块已移至 src/utils/settings.js
+// 包含函数：loadSettings, saveSettings, saveSettingsToStorage, applyTheme, toggleTheme,
+//          toggleApiKeyVisibility, testApiConnection, checkApiStatus, showSettingsModal,
+//          hideSettingsModal, showLoading, hideLoading, getDefaultTemplate, showTemplateStoragePath
 
 // 应用数据状态
 let appState = {
@@ -232,20 +236,24 @@ function cacheDOMElements() {
 async function initializeApp() {
   useElectronAPI = !!(window.electronAPI);
 
-  await loadSettings();
-  
+  await window.loadSettings();
+
   // 先导出全局变量，确保 loadProjects 能访问到 settings
   window.useElectronAPI = useElectronAPI;
   window.elements = elements;
   window.appState = appState;
   window.settings = settings;
-  
+
   setupEventListeners();
   window.loadProjects();
-  applyTheme(currentTheme);
+  window.applyTheme(currentTheme);
 }
 
+// ========== 设置管理 ==========
+// 【已迁移至 src/utils/settings.js】
+
 // 加载设置
+/* === 已注释 - 函数已迁移至 settings.js ===
 async function loadSettings() {
   // 从 localStorage 加载基本设置（主题、API 配置等）
   const savedSettings = localStorage.getItem('kim_settings');
@@ -415,8 +423,13 @@ function getDefaultTemplate() {
 - 返回标准 JSON 格式，可直接解析`
   };
 }
+=== 已注释结束 === */
+
+// ========== 设置管理 ==========
+// 【已迁移至 src/utils/settings.js】
 
 // 保存设置
+/* === 已注释 - 函数已迁移至 settings.js ===
 function saveSettings() {
   settings.storagePath = elements.storagePathInput?.value || '';
   settings.apiProvider = elements.apiProviderSelect?.value || 'deepseek';
@@ -434,6 +447,7 @@ function saveSettings() {
   localStorage.setItem('kim_settings', JSON.stringify(settings));
   showUpdateNotification();
 }
+=== 已注释结束 === */
 
 // 设置事件监听器
 function setupEventListeners() {
@@ -493,12 +507,12 @@ function setupEventListeners() {
   }
   if (elements.saveSettingsBtn) {
     elements.saveSettingsBtn.addEventListener('click', () => {
-      saveSettings();
-      hideSettingsModal();
+      window.saveSettings();
+      window.hideSettingsModal();
     });
   }
   if (elements.cancelSettingsBtn) {
-    elements.cancelSettingsBtn.addEventListener('click', hideSettingsModal);
+    elements.cancelSettingsBtn.addEventListener('click', window.hideSettingsModal);
   }
   if (elements.createProjectBtn) {
     elements.createProjectBtn.addEventListener('click', confirmCreateProject);
@@ -506,13 +520,13 @@ function setupEventListeners() {
   if (elements.cancelNewProjectBtn) {
     elements.cancelNewProjectBtn.addEventListener('click', hideNewProjectModal);
   }
-  
+
   // 主题切换
   elements.themeToggleBtns.forEach(btn => {
     btn.addEventListener('click', () => {
       const theme = btn.dataset.theme;
       currentTheme = theme;
-      applyTheme(theme);
+      window.applyTheme(theme);
       elements.themeToggleBtns.forEach(b => b.classList.remove('active'));
       btn.classList.add('active');
     });
@@ -540,35 +554,34 @@ function setupEventListeners() {
       if (elements.ailianConfig) elements.ailianConfig.style.display = provider === 'ailian' ? 'block' : 'none';
     });
   }
-  
+
   // 测试连接按钮
   if (elements.testDeepseekBtn) {
-    elements.testDeepseekBtn.addEventListener('click', () => testApiConnection('deepseek'));
+    elements.testDeepseekBtn.addEventListener('click', () => window.testApiConnection('deepseek'));
   }
   if (elements.testDoubaoBtn) {
-    elements.testDoubaoBtn.addEventListener('click', () => testApiConnection('doubao'));
+    elements.testDoubaoBtn.addEventListener('click', () => window.testApiConnection('doubao'));
   }
   if (elements.testQianwenBtn) {
-    elements.testQianwenBtn.addEventListener('click', () => testApiConnection('qianwen'));
+    elements.testQianwenBtn.addEventListener('click', () => window.testApiConnection('qianwen'));
   }
   if (elements.testAilianBtn) {
-    elements.testAilianBtn.addEventListener('click', () => testApiConnection('ailian'));
+    elements.testAilianBtn.addEventListener('click', () => window.testApiConnection('ailian'));
   }
 
   // 切换 API Key 可见性
   if (elements.toggleDeepseekKey) {
-    elements.toggleDeepseekKey.addEventListener('click', () => toggleApiKeyVisibility(elements.deepseekApiKey));
+    elements.toggleDeepseekKey.addEventListener('click', () => window.toggleApiKeyVisibility(elements.deepseekApiKey));
   }
   if (elements.toggleDoubaoKey) {
-    elements.toggleDoubaoKey.addEventListener('click', () => toggleApiKeyVisibility(elements.doubaoApiKey));
+    elements.toggleDoubaoKey.addEventListener('click', () => window.toggleApiKeyVisibility(elements.doubaoApiKey));
   }
   if (elements.toggleQianwenKey) {
-    elements.toggleQianwenKey.addEventListener('click', () => toggleApiKeyVisibility(elements.qianwenApiKey));
+    elements.toggleQianwenKey.addEventListener('click', () => window.toggleApiKeyVisibility(elements.qianwenApiKey));
   }
   if (elements.toggleAilianKey) {
-    elements.toggleAilianKey.addEventListener('click', () => toggleApiKeyVisibility(elements.ailianApiKey));
+    elements.toggleAilianKey.addEventListener('click', () => window.toggleApiKeyVisibility(elements.ailianApiKey));
   }
-  
   // 模式切换
   elements.modeTabs.forEach(tab => {
     tab.addEventListener('click', (e) => {
@@ -601,11 +614,11 @@ function setupEventListeners() {
       copyTemplate();
     });
   }
-  
+
   // Electron API 事件监听
   if (window.electronAPI) {
-    window.electronAPI.onSettingsOpen(() => showSettingsModal());
-    window.electronAPI.onThemeToggle(() => toggleTheme());
+    window.electronAPI.onSettingsOpen(() => window.showSettingsModal());
+    window.electronAPI.onThemeToggle(() => window.toggleTheme());
     window.electronAPI.onTemplateLibraryOpen(() => showTemplateLibraryModal());
     window.electronAPI.onCustomOptionsOpen(() => showCustomOptionsModal());
   }
@@ -613,7 +626,7 @@ function setupEventListeners() {
   // 模态框背景点击关闭
   if (elements.settingsModal) {
     elements.settingsModal.addEventListener('click', (e) => {
-      if (e.target === elements.settingsModal) hideSettingsModal();
+      if (e.target === elements.settingsModal) window.hideSettingsModal();
     });
   }
   if (elements.newProjectModal) {
@@ -719,7 +732,11 @@ function setupEventListeners() {
   }
 }
 
+// ========== 设置管理 ==========
+// 【已迁移至 src/utils/settings.js】
+
 // 应用主题
+/* === 已注释 - 函数已迁移至 settings.js ===
 function applyTheme(theme) {
   if (theme === 'dark') {
     document.body.classList.add('dark-theme');
@@ -733,11 +750,11 @@ function applyTheme(theme) {
 function toggleTheme() {
   currentTheme = currentTheme === 'light' ? 'dark' : 'light';
   applyTheme(currentTheme);
-  
+
   elements.themeToggleBtns.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.theme === currentTheme);
   });
-  
+
   localStorage.setItem('kim_settings', JSON.stringify({ ...settings, theme: currentTheme }));
 }
 
@@ -811,7 +828,7 @@ function checkApiStatus() {
   const provider = elements.aiProvider?.value || 'deepseek';
   const apiKey = settings.apiKeys[provider];
   const statusEl = elements.aiApiStatus;
-  
+
   if (!apiKey) {
     if (statusEl) {
       statusEl.textContent = '未配置 API Key';
@@ -819,7 +836,7 @@ function checkApiStatus() {
     }
     return false;
   }
-  
+
   if (statusEl) {
     statusEl.textContent = '已配置';
     statusEl.className = 'status-value success';
@@ -850,7 +867,7 @@ function showSettingsModal() {
   elements.themeToggleBtns.forEach(btn => {
     btn.classList.toggle('active', btn.dataset.theme === currentTheme);
   });
-  
+
   // 显示当前选择的提供商配置
   const provider = elements.apiProviderSelect?.value || 'deepseek';
   if (elements.deepseekConfig) elements.deepseekConfig.style.display = provider === 'deepseek' ? 'block' : 'none';
@@ -870,6 +887,7 @@ function hideSettingsModal() {
     elements.settingsModal.style.display = 'none';
   }
 }
+=== 已注释结束 === */
 
 // 显示新建项目弹窗
 function showNewProjectModal() {
@@ -1057,7 +1075,7 @@ async function createProjectManual() {
       if (!apiKey) {
         hideLoading();
         alert('请先在设置中配置 API Key');
-        showSettingsModal();
+        window.showSettingsModal();
         return;
       }
 
@@ -1474,7 +1492,11 @@ function hideTemplateEditor() {
   }
 }
 
+// ========== 设置管理 ==========
+// 【已迁移至 src/utils/settings.js】
+
 // 保存设置到本地存储
+/* === 已注释 - 函数已迁移至 settings.js ===
 function saveSettingsToStorage() {
   // 保存基本设置到 localStorage
   const basicSettings = {
@@ -1486,7 +1508,7 @@ function saveSettingsToStorage() {
     autoSaveInterval: settings.autoSaveInterval
   };
   localStorage.setItem('kim_settings', JSON.stringify(basicSettings));
-  
+
   // 保存模板配置到本地文件
   if (useElectronAPI) {
     const templateConfig = {
@@ -1500,6 +1522,7 @@ function saveSettingsToStorage() {
     });
   }
 }
+=== 已注释结束 === */
 
 // ========== AI 生成提示词 ==========
 // 【已迁移至 src/utils/promptGenerator.js】
@@ -2121,7 +2144,11 @@ async function openOptionsFolder() {
 // [已移至 src/utils/propertyPanel.js] 显示镜头属性表单 showSceneProperties
 // [已移至 src/utils/propertyPanel.js] 自动保存镜头属性相关变量和函数 autoSaveSceneProperties
 
+// ========== 设置管理 ==========
+// 【已迁移至 src/utils/settings.js】
+
 // 显示模板存储路径
+/* === 已注释 - 函数已迁移至 settings.js ===
 async function showTemplateStoragePath() {
   if (!useElectronAPI) {
     return;
@@ -2137,6 +2164,7 @@ async function showTemplateStoragePath() {
     console.error('获取模板路径失败:', error);
   }
 }
+=== 已注释结束 === */
 
 // AI 创建项目（使用预览的数据）
 async function createProjectAI() {

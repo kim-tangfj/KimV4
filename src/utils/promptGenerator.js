@@ -264,7 +264,7 @@ async function generatePromptFromAI() {
 
   if (!apiKey) {
     alert('请先在设置中配置 API Key');
-    showSettingsModal();
+    window.showSettingsModal();
     return;
   }
 
