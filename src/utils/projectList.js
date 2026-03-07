@@ -330,9 +330,10 @@ async function loadProjects() {
   if (window.useElectronAPI) {
     try {
       // 使用设置中的存储路径
-      const result = await window.electronAPI.listProjects(window.settings.storagePath || '');
+      const storagePath = window.settings?.storagePath || '文档/KimStoryboard';
+      const result = await window.electronAPI.listProjects(storagePath);
       if (result.success) {
-        window.appState.projects = result.projects;
+        window.appState.projects = result.projects || [];
         window.renderProjectList(window.appState.projects, window.elements, window.selectProject, (project, e) => {
           window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(), window.openProjectFolderByProject);
         }, (project, e) => {
