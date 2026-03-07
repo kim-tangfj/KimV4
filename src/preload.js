@@ -46,8 +46,6 @@ contextBridge.exposeInMainWorld('electronAPI', {
   restoreOptions: () => ipcRenderer.invoke('options:restore'),
   openOptionsFolder: () => ipcRenderer.invoke('options:openFolder'),
   // 选项使用统计
-  incrementOptionUsage: (optionId) => ipcRenderer.invoke('options:incrementUsage', optionId),
-  decrementOptionUsage: (optionId) => ipcRenderer.invoke('options:decrementUsage', optionId),
   updateOptionUsage: (optionId, delta) => ipcRenderer.invoke('options:updateUsage', optionId, delta),
   batchUpdateOptionUsage: (updates) => ipcRenderer.invoke('options:batchUpdateUsage', updates),
   checkOptionUsage: (optionId) => ipcRenderer.invoke('options:checkUsage', optionId),
