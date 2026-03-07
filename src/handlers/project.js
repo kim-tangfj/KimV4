@@ -226,10 +226,7 @@ function initProjectIPC(mainWindow) {
       }
       fs.rmSync(projectDir, { recursive: true, force: true });
       return { success: true };
-    } catch (error) {
-      console.error('删除项目失败:', error);
-      return { success: false, error: error.message };
-    }
+    }, '删除项目');
   });
 
   ipcMain.handle('project:openFolder', async (event, projectDir) => {
