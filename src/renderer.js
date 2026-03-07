@@ -2331,6 +2331,17 @@ async function createProjectAI() {
 // 镜头管理函数已移至 src/utils/sceneList.js 模块
 // renderSceneList, selectScene, createNewScene, deleteSelectedScene
 
+// ========== 片段管理 ==========
+// 片段管理函数已移至 src/utils/shotList.js 模块
+// renderShotList, selectShot, createNewShot, deleteSelectedShot
+// showShotStatusMenu, updateShotStatus, getStatusText
+
+// ========== 属性面板 ==========
+// 属性面板函数已移至 src/utils/propertyPanel.js 模块
+// showShotProperties, showSceneProperties, autoSaveShotProperties, autoSaveSceneProperties
+// saveShotProperties, saveSceneProperties, setupOptionHintListeners, setupSceneOptionHintListeners
+// setupAddOptionButtons, showQuickAddOptionModal
+
 // ========== 提示词 ==========
 
 // 提示词生成函数（按 defualt-prompt.md 模板）
@@ -2458,7 +2469,7 @@ function generateProjectPrompt(project, getStatusText) {
     .map(shot => generateShotPrompt(shot))
     .join('\n\n---\n\n');
 
-  const statusText = getStatusText ? getStatusText(project.status || 'draft') : project.status || 'draft';
+  const statusText = window.getStatusText ? window.getStatusText(project.status || 'draft') : project.status || 'draft';
 
   return `【项目名称】${project.name} 【状态】${statusText} 【默认画幅】${project.aspectRatio}\n\n${shotsPrompt}`;
 }
@@ -2950,9 +2961,11 @@ function exposeGlobals() {
   // window.settings = settings;
 
   // 导出 renderer.js 中的函数供模块使用
-  window.renderShotList = renderShotList;
-  window.renderSceneList = renderSceneList;
-  window.selectScene = selectScene;
+  // 片段管理函数已在 shotList.js 中导出：renderShotList
+  // 镜头管理函数已在 sceneList.js 中导出：renderSceneList, selectScene
+  // 属性面板函数已在 propertyPanel.js 中导出：showShotProperties, showSceneProperties
+  // 项目管理函数已在 projectList.js 中导出：selectProject
+  
   window.updatePromptPreview = updatePromptPreview;
   window.showToast = showToast;
   window.showConfirm = showConfirm;
