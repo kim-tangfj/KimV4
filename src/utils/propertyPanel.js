@@ -344,6 +344,14 @@ async function saveShotProperties(isAutoSave = false) {
         }
         window.updatePromptPreview();
         window.renderShotList(loadResult.projectJson.shots || []);
+        // 如果当前选中了镜头，更新镜头列表
+        if (window.appState.currentScene) {
+          window.renderSceneList(loadResult.projectJson.shots[shotIndex].scenes || []);
+          const sceneItem = document.querySelector(`#scene-list .list-item[data-id="${window.appState.currentScene.id}"]`);
+          if (sceneItem) {
+            sceneItem.classList.add('selected');
+          }
+        }
         // 重新设置选中状态
         const shotItem = document.querySelector(`#shot-list .list-item[data-id="${shot.id}"]`);
         if (shotItem) {
@@ -628,6 +636,7 @@ async function saveSceneProperties(isAutoSave = false) {
         }
         window.updatePromptPreview();
         window.renderShotList(loadResult.projectJson.shots || []);
+        window.renderSceneList(shot.scenes || []);
         const sceneItem = document.querySelector(`#scene-list .list-item[data-id="${scene.id}"]`);
         if (sceneItem) {
           sceneItem.classList.add('selected');
