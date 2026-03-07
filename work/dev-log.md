@@ -140,6 +140,10 @@ async function showTemplateStoragePath() { ... }
 ### 修复的问题
 1. **showSettingsModal 未定义** - promptGenerator.js 中调用 showSettingsModal() 未通过 window 对象
    - 修改为 `window.showSettingsModal()`
+2. **window.settings 未定义** - settings.js 中访问 window.settings 时为 undefined
+   - 在 loadSettings 中检查并初始化 window.settings
+   - 初始化 window.currentTheme
+   - 使用默认值处理 window.elements 和 window.useElectronAPI 未定义情况
 
 ### 测试验证
 - [x] 应用启动正常
