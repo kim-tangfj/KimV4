@@ -64,5 +64,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onCustomOptionsOpen: (callback) => {
     ipcRenderer.on('open-custom-options', callback);
-  }
+  },
+
+  // 日志记录 API
+  logError: (logEntry) => ipcRenderer.invoke('log:error', logEntry)
 });

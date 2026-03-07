@@ -136,20 +136,68 @@ try {
 ## 4. 错误日志
 
 ### 4.1 日志位置
-- 主进程：`userData/logs/main-process-error.log`
-- 渲染进程：`userData/logs/renderer-error.log`
-- IPC 错误：`userData/logs/ipc-error.log`
+- 主进程：`userData/logs/main-process-{date}.log`
+- 渲染进程：`userData/logs/renderer-{date}.log`
+- IPC 错误：`userData/logs/ipc-{date}.log`
+- 警告信息：`userData/logs/warn-{date}.log`
+- 一般信息：`userData/logs/info-{date}.log`
+
+日志文件按日期分割，每天一个文件，自动清理 7 天前的旧日志。
 
 ### 4.2 日志格式
 ```
-[ISO 时间戳] 错误类型：错误信息
-堆栈跟踪（仅开发环境）
+[ISO 时间戳] [级别] [来源] 消息
+  错误代码：ERROR_CODE
+  错误详情：错误消息
+  堆栈跟踪:（仅开发环境）
+```
+
+示例：
+```
+[2026-03-08T12:34:56.789Z] [ERROR] [main-process] 未处理的 Promise 拒绝
+  错误代码：ENOENT
+  错误详情：文件或目录不存在
 ```
 
 ### 4.3 日志级别
 - `error` - 错误（需要用户注意的问题）
 - `warn` - 警告（不影响功能的问题）
 - `info` - 信息（正常操作记录）
+
+### 4.4 使用示例
+
+**主进程记录错误：**
+```javascript
+const { logError, logInfo } = require('./utils/errorLogger');
+
+// 记录错误
+logError('main-process', '未处理的 Promise 拒绝', error);
+
+// 记录信息
+logInfo('main-process', '应用启动');
+```
+
+**渲染进程记录错误：**
+```javascript
+// 记录错误（自动发送到主进程写入文件）
+window.logRendererError('unhandledrejection', '未处理的 Promise 拒绝', error);
+```
+
+**IPC 处理器记录错误：**
+```javascript
+const { withErrorHandler } = require('../utils/ipcErrorHandler');
+
+ipcMain.handle('operation:name', async (event, params) => {
+  return withErrorHandler(async () => {
+    // 业务逻辑
+    return { success: true, data: result };
+  }, '操作描述');
+});
+// withErrorHandler 会自动记录错误到日志
+```
+
+### 4.5 日志清理
+应用启动时自动清理 7 天前的旧日志文件。
 
 ---
 

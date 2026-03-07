@@ -285,12 +285,39 @@ window.getUserFriendlyMessage = function(error, defaultMsg = '操作失败，请
   return defaultMsg;
 };
 
+// 渲染进程日志记录
+window.logRendererError = function(source, message, error = null) {
+  const timestamp = new Date().toISOString();
+  const logEntry = {
+    timestamp,
+    level: 'error',
+    source,
+    message,
+    errorCode: error?.code || null,
+    errorDetails: error?.message || null
+  };
+  
+  // 输出到控制台
+  console.error(`[渲染进程] [${source}] ${message}`, error || '');
+  
+  // 通过 IPC 发送到主进程记录到文件
+  if (window.electronAPI && window.electronAPI.logError) {
+    window.electronAPI.logError(logEntry).catch(() => {});
+  }
+};
+
 // 捕获未处理的 Promise 拒绝
 window.addEventListener('unhandledrejection', (event) => {
+  const errorMsg = event.reason?.message || '未知错误';
   console.error('[渲染进程] 未处理的 Promise 拒绝:', event.reason);
+  
+  // 记录日志
+  window.logRendererError?.('unhandledrejection', '未处理的 Promise 拒绝：' + errorMsg, event.reason);
+  
   // 显示错误提示
   if (window.showToast) {
-    window.showToast('操作失败：' + (event.reason?.message || '未知错误'), 'error');
+    const friendlyMessage = window.getUserFriendlyMessage(event.reason, '操作失败：' + errorMsg);
+    window.showToast(friendlyMessage, 'error');
   }
   // 阻止默认行为
   event.preventDefault();
@@ -299,9 +326,14 @@ window.addEventListener('unhandledrejection', (event) => {
 // 捕获全局 JavaScript 错误
 window.addEventListener('error', (event) => {
   console.error('[渲染进程] 全局错误:', event.error);
+  
+  // 记录日志
+  window.logRendererError?.('global-error', '全局错误：' + event.message, event.error);
+  
   // 显示错误提示
   if (window.showToast) {
-    window.showToast('发生错误：' + event.message, 'error');
+    const friendlyMessage = window.getUserFriendlyMessage(event.error, '发生错误：' + event.message);
+    window.showToast(friendlyMessage, 'error');
   }
   // 不阻止默认行为，让错误在控制台显示
 });

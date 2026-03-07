@@ -4,6 +4,7 @@
 
 const { app, BrowserWindow } = require('electron');
 const path = require('path');
+const { logError, logInfo, cleanupOldLogs } = require('./utils/errorLogger');
 
 // 导入处理器模块
 const { initProjectIPC } = require('./handlers/project');
@@ -22,43 +23,28 @@ let mainWindow;
 
 // 捕获未处理的 Promise 拒绝
 process.on('unhandledRejection', (reason, promise) => {
-  console.error('[主进程] 未处理的 Promise 拒绝:', reason);
+  const errorMsg = reason?.message || String(reason);
+  console.error('[主进程] 未处理的 Promise 拒绝:', errorMsg);
   // 记录到日志文件
-  try {
-    const fs = require('fs');
-    const logPath = path.join(app.getPath('userData'), 'logs', 'main-process-error.log');
-    const logDir = path.dirname(logPath);
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir, { recursive: true });
-    }
-    fs.appendFileSync(logPath, `[${new Date().toISOString()}] unhandledRejection: ${reason}\n\n`);
-  } catch (e) {
-    console.error('记录日志失败:', e);
-  }
+  logError('main-process', '未处理的 Promise 拒绝', reason instanceof Error ? reason : new Error(errorMsg));
 });
 
 // 捕获未捕获的异常
 process.on('uncaughtException', (error) => {
-  console.error('[主进程] 未捕获的异常:', error);
-  // 记录到日志文件
-  try {
-    const fs = require('fs');
-    const logPath = path.join(app.getPath('userData'), 'logs', 'main-process-error.log');
-    const logDir = path.dirname(logPath);
-    if (!fs.existsSync(logDir)) {
-      fs.mkdirSync(logDir, { recursive: true });
-    }
-    fs.appendFileSync(logPath, `[${new Date().toISOString()}] uncaughtException: ${error.stack}\n\n`);
-  } catch (e) {
-    console.error('记录日志失败:', e);
-  }
+  console.error('[主进程] 未捕获的异常:', error.message);
+  // 记录日志
+  logError('main-process', '未捕获的异常', error);
   
   // 如果是致命错误，通知用户并退出
   if (error.code === 'EACCES' || error.code === 'EPERM') {
-    console.error('[主进程] 权限错误，应用将无法正常运行');
+    logError('main-process', '权限错误，应用将无法正常运行', error);
     app.quit();
   }
 });
+
+// 启动时清理旧日志
+cleanupOldLogs(7);
+logInfo('main-process', '应用启动');
 
 // ========== 全局错误处理 结束 ==========
 
@@ -117,4 +103,13 @@ app.whenReady().then(() => {
 // 所有窗口关闭时退出应用（macOS 除外）
 app.on('window-all-closed', function () {
   if (process.platform !== 'darwin') app.quit();
+});
+
+// ========== 日志记录 IPC 处理器 ==========
+const { ipcMain } = require('electron');
+
+// 渲染进程错误日志记录
+ipcMain.handle('log:error', async (event, logEntry) => {
+  logError('renderer', logEntry.message, logEntry.errorDetails ? new Error(logEntry.errorDetails) : null, 'renderer');
+  return { success: true };
 });
