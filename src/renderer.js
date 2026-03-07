@@ -2,7 +2,7 @@
 // Kim 多级分镜提示词助手 - 渲染进程
 //
 
-// ========== 模块导入 ==========
+// ======= 文件头注释和模块导入说明 开始 ========
 // 提示词生成模块已移至 src/utils/promptGenerator.js
 // 包含函数：generateScenePrompt, generateShotPrompt, generateProjectPrompt,
 //          renderPromptWithHighlight, updatePromptPreview, copyPromptToClipboard,
@@ -19,7 +19,10 @@
 // UI 工具函数模块已移至 src/utils/uiHelpers.js
 // 包含函数：showInputError, initPanelResizers, handleResizerMouseMove, handleResizerMouseUp,
 //          getPanelConstraints, showToast, showConfirm, showCustomPrompt, showUpdateNotification
+// ======= 文件头注释和模块导入说明 结束 ========
 
+
+// ======= 全局变量定义 开始 ========
 // 应用数据状态
 let appState = {
   projects: [],
@@ -49,26 +52,24 @@ let settings = {
   activeTemplateId: null
 };
 
-// DOM 元素引用
-const elements = {};
-
-// 导出全局变量供模块使用
-window.appState = appState;
-window.elements = elements;
-window.useElectronAPI = useElectronAPI;
-window.electronAPI = window.electronAPI || null;
-
 // 自动保存相关全局变量
 window.shotSaveTimeout = null;
 window.savingShotId = null;
 window.sceneSaveTimeout = null;
 window.savingSceneId = null;
 
-// 初始化应用
-document.addEventListener('DOMContentLoaded', () => {
-  cacheDOMElements();
-  initializeApp();
-});
+// 面板拖拽相关全局变量
+let isResizing = false;
+let currentResizer = null;
+let startX = 0;
+let startWidth = 0;
+let currentPanel = null;
+// ======= 全局变量定义 结束 ========
+
+
+// ======= DOM 元素缓存 开始 ========
+// DOM 元素引用
+const elements = {};
 
 // 缓存 DOM 元素
 function cacheDOMElements() {
@@ -93,13 +94,13 @@ function cacheDOMElements() {
   elements.panelToggleBtn = document.getElementById('panel-toggle-btn');
   elements.panelToggleHeader = document.getElementById('panel-toggle-header');
   elements.viewToggleBtn = document.getElementById('view-toggle-btn');
-  
+
   // 模态框
   elements.settingsModal = document.getElementById('settings-modal');
   elements.newProjectModal = document.getElementById('new-project-modal');
   elements.loadingOverlay = document.getElementById('loading-overlay');
   elements.loadingText = document.getElementById('loading-text');
-  
+
   // 设置面板元素
   elements.closeSettingsBtn = document.getElementById('close-settings-btn');
   elements.saveSettingsBtn = document.getElementById('save-settings-btn');
@@ -108,23 +109,23 @@ function cacheDOMElements() {
   elements.changePathBtn = document.getElementById('change-path-btn');
   elements.apiProviderSelect = document.getElementById('api-provider-select');
   elements.autoSaveInterval = document.getElementById('auto-save-interval');
-  
+
   // 主题切换
   elements.themeToggleBtns = document.querySelectorAll('.theme-toggle-btn');
-  
+
   // API 配置元素
   elements.deepseekConfig = document.getElementById('deepseek-config');
   elements.doubaoConfig = document.getElementById('doubao-config');
   elements.qianwenConfig = document.getElementById('qianwen-config');
   elements.ailianConfig = document.getElementById('ailian-config');
-  
+
   // DeepSeek
   elements.deepseekApiKey = document.getElementById('deepseek-api-key');
   elements.deepseekModel = document.getElementById('deepseek-model');
   elements.testDeepseekBtn = document.getElementById('test-deepseek-btn');
   elements.deepseekStatus = document.getElementById('deepseek-status');
   elements.toggleDeepseekKey = document.getElementById('toggle-deepseek-key');
-  
+
   // 豆包
   elements.doubaoApiKey = document.getElementById('doubao-api-key');
   elements.doubaoModel = document.getElementById('doubao-model');
@@ -153,7 +154,7 @@ function cacheDOMElements() {
   elements.modeTabs = document.querySelectorAll('.mode-tab');
   elements.manualMode = document.getElementById('manual-mode');
   elements.aiMode = document.getElementById('ai-mode');
-  
+
   // 手动模式
   elements.manualProjectName = document.getElementById('manual-project-name');
   elements.manualProjectDesc = document.getElementById('manual-project-desc');
@@ -171,7 +172,7 @@ function cacheDOMElements() {
   elements.aiApiStatus = document.getElementById('ai-api-status');
   elements.generatePromptBtn = document.getElementById('generate-prompt-btn');
   elements.aiResponsePreview = document.getElementById('ai-response-preview');
-  
+
   // 模板库管理
   elements.templateLibraryModal = document.getElementById('template-library-modal');
   elements.closeTemplateBtn = document.getElementById('close-template-btn');
@@ -239,6 +240,21 @@ function cacheDOMElements() {
   elements.bottomPanelTitle = document.getElementById('bottom-panel-title');
   elements.panelToggleHeader = document.getElementById('panel-toggle-header');
 }
+// ======= DOM 元素缓存 结束 ========
+
+
+// ======= 应用初始化 开始 ========
+// 导出全局变量供模块使用
+window.appState = appState;
+window.elements = elements;
+window.useElectronAPI = useElectronAPI;
+window.electronAPI = window.electronAPI || null;
+
+// 初始化应用
+document.addEventListener('DOMContentLoaded', () => {
+  cacheDOMElements();
+  initializeApp();
+});
 
 // 初始化应用
 async function initializeApp() {
@@ -249,7 +265,7 @@ async function initializeApp() {
   // 从 window.settings 读取（loadSettings 已经设置好了）
   // 同步到局部 settings 变量，保持代码兼容
   settings = window.settings;
-  
+
   window.useElectronAPI = useElectronAPI;
   window.elements = elements;
   window.appState = appState;
@@ -258,34 +274,10 @@ async function initializeApp() {
   window.loadProjects();
   window.applyTheme(window.currentTheme);
 }
+// ======= 应用初始化 结束 ========
 
-// ========== 设置管理 ==========
-// 【已迁移至 src/utils/settings.js】
 
-// ========== 设置管理 ==========
-// 【已迁移至 src/utils/settings.js】
-
-// 保存设置
-/* === 已注释 - 函数已迁移至 settings.js ===
-function saveSettings() {
-  settings.storagePath = elements.storagePathInput?.value || '';
-  settings.apiProvider = elements.apiProviderSelect?.value || 'deepseek';
-  settings.apiKeys.deepseek = elements.deepseekApiKey?.value || '';
-  settings.apiKeys.doubao = elements.doubaoApiKey?.value || '';
-  settings.apiKeys.qianwen = elements.qianwenApiKey?.value || '';
-  settings.apiKeys.ailian = elements.ailianApiKey?.value || '';
-  settings.models.deepseek = elements.deepseekModel?.value || 'deepseek-chat';
-  settings.models.doubao = elements.doubaoModel?.value || 'doubao-pro-4k';
-  settings.models.qianwen = elements.qianwenModel?.value || 'qwen3.5-plus';
-  settings.models.ailian = elements.ailianModel?.value || 'qwen3.5-plus';
-  settings.theme = currentTheme;
-  settings.autoSaveInterval = parseInt(elements.autoSaveInterval?.value) || 5;
-
-  localStorage.setItem('kim_settings', JSON.stringify(settings));
-  showUpdateNotification();
-}
-=== 已注释结束 === */
-
+// ======= 事件监听器设置 开始 ========
 // 设置事件监听器
 function setupEventListeners() {
   // 初始化面板拖拽
@@ -334,7 +326,7 @@ function setupEventListeners() {
   if (elements.viewToggleBtn) {
     elements.viewToggleBtn.addEventListener('click', () => window.showToast('视图切换功能待实现'));
   }
-  
+
   // 模态框按钮
   if (elements.closeSettingsBtn) {
     elements.closeSettingsBtn.addEventListener('click', hideSettingsModal);
@@ -368,7 +360,7 @@ function setupEventListeners() {
       btn.classList.add('active');
     });
   });
-  
+
   // 更改存储路径
   if (elements.changePathBtn) {
     elements.changePathBtn.addEventListener('click', async () => {
@@ -380,7 +372,7 @@ function setupEventListeners() {
       }
     });
   }
-  
+
   // API 提供商切换
   if (elements.apiProviderSelect) {
     elements.apiProviderSelect.addEventListener('change', (e) => {
@@ -424,16 +416,16 @@ function setupEventListeners() {
     tab.addEventListener('click', (e) => {
       e.stopPropagation();
       const mode = tab.dataset.mode;
-      
+
       // 移除所有 tab 的 active 状态
       elements.modeTabs.forEach(t => t.classList.remove('active'));
       // 添加当前 tab 的 active 状态
       tab.classList.add('active');
-      
+
       // 切换内容区域
       if (elements.manualMode) elements.manualMode.classList.remove('active');
       if (elements.aiMode) elements.aiMode.classList.remove('active');
-      
+
       if (mode === 'manual') {
         if (elements.manualMode) elements.manualMode.classList.add('active');
       } else {
@@ -442,7 +434,7 @@ function setupEventListeners() {
       }
     });
   });
-  
+
   // 复制模板按钮
   if (elements.copyTemplateBtn) {
     elements.copyTemplateBtn.addEventListener('click', (e) => {
@@ -476,7 +468,7 @@ function setupEventListeners() {
       if (e.target === elements.templateLibraryModal) hideTemplateLibraryModal();
     });
   }
-  
+
   // 模板库事件监听
   if (elements.closeTemplateBtn) {
     elements.closeTemplateBtn.addEventListener('click', hideTemplateLibraryModal);
@@ -494,7 +486,7 @@ function setupEventListeners() {
     elements.cancelTemplateBtn.addEventListener('click', cancelTemplateEdit);
   }
 
-  // AI 生成模式事件
+  // AI 生成提示词事件
   if (elements.generatePromptBtn) {
     elements.generatePromptBtn.addEventListener('click', () => window.generatePromptFromAI());
   }
@@ -559,10 +551,110 @@ function setupEventListeners() {
     elements.cancelCustomOptionEditBtn.addEventListener('click', () => window.hideCustomOptionEditModal());
   }
 }
+// ======= 事件监听器设置 结束 ========
 
-// ========== 设置管理 ==========
-// 【已迁移至 src/utils/settings.js】
 
+// ======= 项目管理功能 开始 ========
+// 项目管理函数已移至 src/utils/projectList.js
+// [已移至 projectList.js] 加载项目列表
+// [已移至 projectList.js] 选择项目
+// showProjectContextMenu, openProjectFolderByProject, showProjectStatusMenu
+
+// AI 创建项目（使用预览的数据）
+async function createProjectAI() {
+  const name = elements.aiProjectName?.value.trim();
+  const description = elements.aiProjectDesc?.value.trim();
+  const ratio = elements.aiProjectRatio?.value || '16:9';
+
+  // 检查是否有预览数据
+  const previewData = elements.aiResponsePreview?.value.trim();
+
+  if (!name) {
+    showInputError(elements.aiProjectName, '请输入项目名称');
+    return;
+  }
+
+  if (!previewData) {
+    alert('请先生成提示词并获取 AI 返回数据');
+    return;
+  }
+
+  // 解析预览数据
+  let jsonData;
+  try {
+    jsonData = JSON.parse(previewData);
+  } catch (e) {
+    alert('预览数据格式错误：' + e.message);
+    return;
+  }
+
+  hideNewProjectModal();
+
+  if (useElectronAPI) {
+    try {
+      // 组合项目数据
+      const projectData = {
+        project: {
+          id: `proj_${Date.now()}`,
+          name: name,
+          description: description || jsonData.project?.description || '',
+          status: 'draft',
+          aspectRatio: ratio,
+          createdAt: new Date().toISOString(),
+          updatedAt: new Date().toISOString()
+        },
+        shots: jsonData.shots || [],
+        promptTemplates: [
+          {
+            id: 'default_shot',
+            name: '默认片段提示词模板',
+            content: '【片段名称】{name} 【总时长】{duration}秒 【画幅】{aspectRatio} 【风格】{style} 【情绪】{mood}\n{scenesPrompt}'
+          }
+        ],
+        selected: {
+          projectId: `proj_${Date.now()}`,
+          shotId: null,
+          sceneId: null
+        },
+        theme: {
+          currentTheme: 'light',
+          light: {
+            background: '#ffffff',
+            text: '#333333',
+            border: '#e0e0e0',
+            icon: '#000000',
+            hover: '#f0f0f0',
+            selected: '#e8e8e8',
+            promptHighlight: '#666666'
+          },
+          dark: {
+            background: '#333333',
+            text: '#e0e0e0',
+            border: '#555555',
+            icon: '#e0e0e0',
+            hover: '#444444',
+            selected: '#555555',
+            promptHighlight: '#bbbbbb'
+          }
+        }
+      };
+
+      const result = await window.electronAPI.createProject({
+        ...projectData,
+        baseDir: settings.storagePath || ''
+      });
+      if (result.success) {
+        await window.loadProjects();
+        showUpdateNotification();
+      } else {
+        alert('创建项目失败：' + result.error);
+      }
+    } catch (error) {
+      console.error('创建项目异常:', error);
+      alert('创建项目失败：' + error.message);
+    }
+  }
+}
 
 // 显示新建项目弹窗
 function showNewProjectModal() {
@@ -581,6 +673,10 @@ function showNewProjectModal() {
   if (elements.aiProjectName) elements.aiProjectName.value = '';
   if (elements.aiProjectDesc) elements.aiProjectDesc.value = '';
   if (elements.aiProjectRatio) elements.aiProjectRatio.value = '16:9';
+  if (elements.aiProjectScript) elements.aiProjectScript.value = '';
+  if (elements.aiProvider) elements.aiProvider.value = settings.apiProvider || 'deepseek';
+  if (elements.aiApiStatus) elements.aiApiStatus.textContent = '';
+  if (elements.aiResponsePreview) elements.aiResponsePreview.value = '';
 
   // 切换到手动模式 - 直接操作样式，避免触发事件
   elements.manualMode?.classList.add('active');
@@ -632,7 +728,7 @@ function hideNewProjectModal() {
 // 确认创建项目
 async function confirmCreateProject() {
   const activeMode = document.querySelector('.mode-tab.active')?.dataset.mode;
-  
+
   if (activeMode === 'manual') {
     await createProjectManual();
   } else {
@@ -799,10 +895,6 @@ async function createProjectManual() {
   }
 }
 
-// ========== UI 工具函数 ==========
-// 【已迁移至 src/utils/uiHelpers.js】
-
-
 // 构建提示词模板
 function buildPromptFromTemplate(script) {
   return `你是一位专业的视频分镜脚本助手。请将以下剧本内容转换为结构化的 JSON 格式片段数据。
@@ -902,20 +994,20 @@ ${script}
 // 复制模板（使用激活的模板）
 function copyTemplate() {
   const scriptContent = elements.manualProjectScript?.value.trim() || elements.aiProjectScript?.value.trim() || '';
-  
+
   if (!scriptContent) {
     alert('请先输入项目剧本内容');
     if (elements.manualProjectScript) elements.manualProjectScript.focus();
     return;
   }
-  
+
   // 获取激活的模板
   const activeTemplate = settings.templates.find(t => t.id === settings.activeTemplateId);
   const template = activeTemplate || getDefaultTemplate();
-  
+
   // 替换 {剧本内容} 占位符
   const finalTemplate = template.content.replace('{剧本内容}', scriptContent);
-  
+
   navigator.clipboard.writeText(finalTemplate).then(() => {
     const btn = elements.copyTemplateBtn;
     const originalText = btn.textContent;
@@ -929,6 +1021,50 @@ function copyTemplate() {
   });
 }
 
+// 更新项目状态 - 使用模块中的 updateProjectStatus 函数
+async function updateProjectStatus(project, newStatus) {
+  await window.updateProjectStatus(
+    project,
+    newStatus,
+    appState,
+    useElectronAPI,
+    loadProjects,
+    showUpdateNotification
+  );
+}
+
+// 删除当前项目 - 使用模块中的 deleteCurrentProject 函数
+async function deleteCurrentProject() {
+  await window.deleteCurrentProject(
+    appState,
+    elements,
+    useElectronAPI,
+    loadProjects,
+    renderShotList,
+    renderSceneList,
+    window.showToast,
+    window.showConfirm
+  );
+}
+
+async function openProjectFolder() {
+  if (!appState.currentProject) {
+    alert('请先选择一个项目');
+    return;
+  }
+
+  if (useElectronAPI && appState.currentProject.projectDir) {
+    try {
+      await window.electronAPI.openPath(appState.currentProject.projectDir);
+    } catch (error) {
+      console.error('打开文件夹异常:', error);
+    }
+  }
+}
+// ======= 项目管理功能 结束 ========
+
+
+// ======= 模板库管理功能 开始 ========
 // ========== 模板库管理 ==========
 
 // 显示模板库面板
@@ -949,21 +1085,21 @@ function hideTemplateLibraryModal() {
 // 渲染模板列表
 function renderTemplateList() {
   if (!elements.templateList) return;
-  
+
   elements.templateList.innerHTML = '';
-  
+
   if (settings.templates.length === 0) {
     elements.templateList.innerHTML = '<div class="placeholder-text">暂无模板，点击"+ 添加模板"创建</div>';
     return;
   }
-  
+
   settings.templates.forEach(template => {
     const item = document.createElement('div');
     item.className = 'template-item';
     if (template.id === settings.activeTemplateId) {
       item.classList.add('active');
     }
-    
+
     item.innerHTML = `
       <div class="template-item-info">
         <div class="template-item-name">${template.name}</div>
@@ -977,10 +1113,10 @@ function renderTemplateList() {
         <button class="form-btn small-btn template-delete-btn" data-id="${template.id}">删除</button>
       </div>
     `;
-    
+
     elements.templateList.appendChild(item);
   });
-  
+
   // 绑定事件
   document.querySelectorAll('.template-activate-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
@@ -988,7 +1124,7 @@ function renderTemplateList() {
       activateTemplate(btn.dataset.id);
     });
   });
-  
+
   document.querySelectorAll('.template-edit-btn').forEach(btn => {
     btn.addEventListener('click', (e) => {
       e.stopPropagation();
@@ -1026,7 +1162,7 @@ function addNewTemplate() {
 function editTemplate(templateId) {
   const template = settings.templates.find(t => t.id === templateId);
   if (!template) return;
-  
+
   showTemplateEditor();
   if (elements.templateName) elements.templateName.value = template.name;
   if (elements.templateDescription) elements.templateDescription.value = template.description || '';
@@ -1044,12 +1180,12 @@ async function deleteTemplate(templateId) {
   if (!confirmed) return;
 
   settings.templates = settings.templates.filter(t => t.id !== templateId);
-  
+
   // 如果删除的是激活的模板，激活第一个模板
   if (settings.activeTemplateId === templateId) {
     settings.activeTemplateId = settings.templates.length > 0 ? settings.templates[0].id : null;
   }
-  
+
   saveSettingsToStorage();
   renderTemplateList();
 }
@@ -1060,19 +1196,19 @@ function saveTemplate() {
   const description = elements.templateDescription?.value.trim();
   const content = elements.templateContent?.value.trim();
   const mode = elements.saveTemplateBtn.dataset.mode;
-  
+
   if (!name) {
     alert('请输入模板名称');
     elements.templateName?.focus();
     return;
   }
-  
+
   if (!content) {
     alert('请输入模板内容');
     elements.templateContent?.focus();
     return;
   }
-  
+
   if (mode === 'add') {
     // 添加新模板
     const newTemplate = {
@@ -1093,7 +1229,7 @@ function saveTemplate() {
       template.content = content;
     }
   }
-  
+
   saveSettingsToStorage();
   hideTemplateEditor();
   renderTemplateList();
@@ -1131,21 +1267,13 @@ function hideTemplateEditor() {
   }
 }
 
-// ========== 设置管理 ==========
-// 【已迁移至 src/utils/settings.js】
-
-
-// ========== AI 生成提示词 ==========
-// 【已迁移至 src/utils/promptGenerator.js】
-
-
 // 备份模板
 async function backupTemplates() {
   if (!useElectronAPI) {
     alert('请在 Electron 环境中使用此功能');
     return;
   }
-  
+
   const result = await window.electronAPI.backupTemplates();
   if (result.success) {
     alert('模板备份成功！\n文件已保存到：' + result.filePath);
@@ -1190,7 +1318,10 @@ async function openTemplateFolder() {
     alert('打开文件夹失败：' + error.message);
   }
 }
+// ======= 模板库管理功能 结束 ========
 
+
+// ======= 自定义选项管理功能（已迁移，保留注释）开始 ========
 // ========== 自定义选项管理 ==========
 // 【已迁移至 src/utils/customOptions.js】
 // 包含函数：showCustomOptionsModal, hideCustomOptionsModal, loadGroupFilter, loadCustomOptionsList,
@@ -1201,13 +1332,13 @@ async function openTemplateFolder() {
 // 显示自定义选项管理弹窗
 async function showCustomOptionsModal() {
   if (!elements.customOptionsModal) return;
-  
+
   // 加载组别筛选器
   await loadGroupFilter();
-  
+
   // 加载自定义选项列表
   await loadCustomOptionsList();
-  
+
   elements.customOptionsModal.style.display = 'flex';
 }
 
@@ -1221,13 +1352,13 @@ function hideCustomOptionsModal() {
 // 加载组别筛选器
 async function loadGroupFilter() {
   if (!useElectronAPI || !elements.customOptionsGroupFilter) return;
-  
+
   try {
     const result = await window.electronAPI.getGroups();
     if (result.success && result.groups) {
       // 保留"全部组别"选项
       elements.customOptionsGroupFilter.innerHTML = '<option value="all">全部组别</option>';
-      
+
       // 添加所有组别
       result.groups.forEach(group => {
         const option = document.createElement('option');
@@ -1340,8 +1471,8 @@ function renderCustomOptionsList(options) {
     const itemElement = document.createElement('div');
     itemElement.className = 'custom-option-item';
 
-    const usageBadge = option.usageCount > 0 
-      ? `<span class="usage-count-badge" title="使用次数">${option.usageCount}次</span>` 
+    const usageBadge = option.usageCount > 0
+      ? `<span class="usage-count-badge" title="使用次数">${option.usageCount}次</span>`
       : '';
 
     itemElement.innerHTML = `
@@ -1537,21 +1668,21 @@ async function saveCustomOption() {
     alert('请在 Electron 环境中使用此功能');
     return;
   }
-  
+
   const optionId = elements.customOptionId?.value;
   const group = elements.customOptionGroup?.value;
   const type = elements.customOptionType?.value;
   const style = elements.customOptionStyle?.value;
   const description = elements.customOptionDescription?.value;
-  
+
   if (!group || !type || !style || !description) {
     alert('请填写所有必填字段');
     return;
   }
-  
+
   try {
     const optionData = { group, type, style, description };
-    
+
     let result;
     if (optionId) {
       // 更新
@@ -1560,7 +1691,7 @@ async function saveCustomOption() {
       // 新增
       result = await window.electronAPI.addCustomOption(optionData);
     }
-    
+
     if (result.success) {
       hideCustomOptionForm();
       await loadCustomOptionsList();
@@ -1624,120 +1755,42 @@ async function deleteCustomOption(optionId) {
   }
 }
 
-
-
-
-// ========== 项目加载和渲染 ==========
-// [已移至 projectList.js] 加载项目列表
-
-// AI 创建项目（使用预览的数据）
-async function createProjectAI() {
-  const name = elements.aiProjectName?.value.trim();
-  const description = elements.aiProjectDesc?.value.trim();
-  const ratio = elements.aiProjectRatio?.value || '16:9';
-  
-  // 检查是否有预览数据
-  const previewData = elements.aiResponsePreview?.value.trim();
-  
-  if (!name) {
-    showInputError(elements.aiProjectName, '请输入项目名称');
-    return;
-  }
-  
-  if (!previewData) {
-    alert('请先生成提示词并获取 AI 返回数据');
-    return;
-  }
-  
-  // 解析预览数据
-  let jsonData;
+// 加载指定组别的选项
+async function loadOptionsByGroup(group) {
+  if (!useElectronAPI) return [];
   try {
-    jsonData = JSON.parse(previewData);
-  } catch (e) {
-    alert('预览数据格式错误：' + e.message);
-    return;
-  }
-  
-  hideNewProjectModal();
-  
-  if (useElectronAPI) {
-    try {
-      // 组合项目数据
-      const projectData = {
-        project: {
-          id: `proj_${Date.now()}`,
-          name: name,
-          description: description || jsonData.project?.description || '',
-          status: 'draft',
-          aspectRatio: ratio,
-          createdAt: new Date().toISOString(),
-          updatedAt: new Date().toISOString()
-        },
-        shots: jsonData.shots || [],
-        promptTemplates: [
-          {
-            id: 'default_shot',
-            name: '默认片段提示词模板',
-            content: '【片段名称】{name} 【总时长】{duration}秒 【画幅】{aspectRatio} 【风格】{style} 【情绪】{mood}\n{scenesPrompt}'
-          }
-        ],
-        selected: {
-          projectId: `proj_${Date.now()}`,
-          shotId: null,
-          sceneId: null
-        },
-        theme: {
-          currentTheme: 'light',
-          light: {
-            background: '#ffffff',
-            text: '#333333',
-            border: '#e0e0e0',
-            icon: '#000000',
-            hover: '#f0f0f0',
-            selected: '#e8e8e8',
-            promptHighlight: '#666666'
-          },
-          dark: {
-            background: '#333333',
-            text: '#e0e0e0',
-            border: '#555555',
-            icon: '#e0e0e0',
-            hover: '#444444',
-            selected: '#555555',
-            promptHighlight: '#bbbbbb'
-          }
-        }
-      };
-      
-      const result = await window.electronAPI.createProject({
-        ...projectData,
-        baseDir: settings.storagePath || ''
-      });
-      if (result.success) {
-        await window.loadProjects();
-        showUpdateNotification();
-      } else {
-        alert('创建项目失败：' + result.error);
-      }
-    } catch (error) {
-      console.error('创建项目异常:', error);
-      alert('创建项目失败：' + error.message);
-    }
+    const result = await window.electronAPI.getOptionsByGroup(group);
+    return result.success ? (result.options || []) : [];
+  } catch (error) {
+    console.error(`加载${group}选项失败:`, error);
+    return [];
   }
 }
+// ======= 自定义选项管理功能（已迁移，保留注释）结束 ========
 
-// 项目管理函数已移至 src/utils/projectList.js
+
+// ======= 项目加载和渲染 开始 ========
+// [已移至 projectList.js] 加载项目列表
 // [已移至 projectList.js] 选择项目
+// ======= 项目加载和渲染 结束 ========
 
+
+// ======= 镜头管理功能（已迁移，保留注释）开始 ========
 // ========== 镜头管理 ==========
 // 镜头管理函数已移至 src/utils/sceneList.js 模块
 // renderSceneList, selectScene, createNewScene, deleteSelectedScene
+// ======= 镜头管理功能（已迁移，保留注释）结束 ========
 
+
+// ======= 片段管理功能（已迁移，保留注释）开始 ========
 // ========== 片段管理 ==========
 // 片段管理函数已移至 src/utils/shotList.js 模块
 // renderShotList, selectShot, createNewShot, deleteSelectedShot
 // showShotStatusMenu, updateShotStatus, getStatusText
+// ======= 片段管理功能（已迁移，保留注释）结束 ========
 
+
+// ======= 属性面板功能（已迁移，保留注释）开始 ========
 // ========== 属性面板 ==========
 // 属性面板函数已移至 src/utils/propertyPanel.js 模块
 // showShotProperties, showSceneProperties, autoSaveShotProperties, autoSaveSceneProperties
@@ -1751,44 +1804,53 @@ async function createProjectAI() {
 // [已移至 src/utils/propertyPanel.js] 自动保存片段属性相关变量和函数 autoSaveShotProperties
 // [已移至 src/utils/propertyPanel.js] 显示镜头属性表单 showSceneProperties
 // [已移至 src/utils/propertyPanel.js] 自动保存镜头属性相关变量和函数 autoSaveSceneProperties
+// ======= 属性面板功能（已迁移，保留注释）结束 ========
 
+
+// ======= 提示词功能（已迁移，保留注释）开始 ========
 // ========== 提示词 ==========
 // 【已迁移至 src/utils/promptGenerator.js】
 // 【已迁移至 src/utils/promptGenerator.js】
+// ======= 提示词功能（已迁移，保留注释）结束 ========
 
+
+// ======= 设置管理功能（已迁移，保留注释）开始 ========
 // ========== 设置管理 ==========
 // 【已迁移至 src/utils/settings.js】
 
-// 加载指定组别的选项
-async function loadOptionsByGroup(group) {
-  if (!useElectronAPI) return [];
-  try {
-    const result = await window.electronAPI.getOptionsByGroup(group);
-    return result.success ? (result.options || []) : [];
-  } catch (error) {
-    console.error(`加载${group}选项失败:`, error);
-    return [];
-  }
+// 保存设置
+/* === 已注释 - 函数已迁移至 settings.js ===
+function saveSettings() {
+  settings.storagePath = elements.storagePathInput?.value || '';
+  settings.apiProvider = elements.apiProviderSelect?.value || 'deepseek';
+  settings.apiKeys.deepseek = elements.deepseekApiKey?.value || '';
+  settings.apiKeys.doubao = elements.doubaoApiKey?.value || '';
+  settings.apiKeys.qianwen = elements.qianwenApiKey?.value || '';
+  settings.apiKeys.ailian = elements.ailianApiKey?.value || '';
+  settings.models.deepseek = elements.deepseekModel?.value || 'deepseek-chat';
+  settings.models.doubao = elements.doubaoModel?.value || 'doubao-pro-4k';
+  settings.models.qianwen = elements.qianwenModel?.value || 'qwen3.5-plus';
+  settings.models.ailian = elements.ailianModel?.value || 'qwen3.5-plus';
+  settings.theme = currentTheme;
+  settings.autoSaveInterval = parseInt(elements.autoSaveInterval?.value) || 5;
+
+  localStorage.setItem('kim_settings', JSON.stringify(settings));
+  showUpdateNotification();
 }
+=== 已注释结束 === */
+// ======= 设置管理功能（已迁移，保留注释）结束 ========
 
 
+// ======= UI 工具函数（已迁移，保留注释）开始 ========
+// ========== UI 工具函数 ==========
+// 【已迁移至 src/utils/uiHelpers.js】
 
-async function openProjectFolder() {
-  if (!appState.currentProject) {
-    alert('请先选择一个项目');
-    return;
-  }
-
-  if (useElectronAPI && appState.currentProject.projectDir) {
-    try {
-      await window.electronAPI.openPath(appState.currentProject.projectDir);
-    } catch (error) {
-      console.error('打开文件夹异常:', error);
-    }
-  }
-}
+// ========== 工具函数 ==========
+// 【已迁移至 src/utils/uiHelpers.js】
+// ======= UI 工具函数（已迁移，保留注释）结束 ========
 
 
+// ======= 面板控制功能 开始 ========
 function toggleBottomPanel() {
   if (elements.bottomPanel) {
     elements.bottomPanel.classList.toggle('collapsed');
@@ -1811,52 +1873,123 @@ function toggleAssetsPanelByHeader(e) {
   if (e.target.classList.contains('icon-btn')) return;
   toggleBottomPanel();
 }
+// ======= 面板控制功能 结束 ========
 
+
+// ======= 包装函数（已删除，保留注释）开始 ========
 // 项目管理函数已移至 src/utils/projectList.js 模块
 // showProjectContextMenu, openProjectFolderByProject, showProjectStatusMenu
 
 // 片段管理函数已移至 src/utils/shotList.js 模块
 // renderShotList, selectShot, createNewShot, deleteSelectedShot, showShotStatusMenu, updateShotStatus, getStatusText
+// ======= 包装函数（已删除，保留注释）结束 ========
 
-// 更新项目状态 - 使用模块中的 updateProjectStatus 函数
-async function updateProjectStatus(project, newStatus) {
-  await window.updateProjectStatus(
-    project,
-    newStatus,
-    appState,
-    useElectronAPI,
-    loadProjects,
-    showUpdateNotification
-  );
+
+// ======= 全局变量导出 开始 ========
+// ========== 全局变量暴露（供模块使用）==========
+// 注意：必须在 initializeApp 之后调用，确保 useElectronAPI 已更新
+function exposeGlobals() {
+  // 这些变量已在 initializeApp 中设置
+  // window.useElectronAPI = useElectronAPI;
+  // window.elements = elements;
+  // window.appState = appState;
+  // window.settings = settings;
+
+  // 导出 renderer.js 中的函数供模块使用
+  // 片段管理函数已在 shotList.js 中导出：renderShotList
+  // 镜头管理函数已在 sceneList.js 中导出：renderSceneList, selectScene
+  // 属性面板函数已在 propertyPanel.js 中导出：showShotProperties, showSceneProperties
+  // 项目管理函数已在 projectList.js 中导出：selectProject
+  // 提示词生成函数已在 promptGenerator.js 中导出：generateScenePrompt, generateShotPrompt,
+  //   generateProjectPrompt, renderPromptWithHighlight, updatePromptPreview, copyPromptToClipboard,
+  //   exportPrompt, clearPrompt, generatePromptFromAI
+
+  // 注意：updatePromptPreview 已在 promptGenerator.js 中导出，此处无需重复导出
+  window.showToast = showToast;
+  window.showConfirm = showConfirm;
+  window.loadOptionsByGroup = loadOptionsByGroup;
+  window.showUpdateNotification = showUpdateNotification;
+  window.showCustomPrompt = showCustomPrompt;
 }
 
-// 删除当前项目 - 使用模块中的 deleteCurrentProject 函数
-async function deleteCurrentProject() {
-  await window.deleteCurrentProject(
-    appState,
-    elements,
-    useElectronAPI,
-    loadProjects,
-    renderShotList,
-    renderSceneList,
-    window.showToast,
-    window.showConfirm
-  );
+// 在 initializeApp 中调用暴露
+const originalInitializeApp = initializeApp;
+initializeApp = async function() {
+  await originalInitializeApp();
+  exposeGlobals();
+};
+// ======= 全局变量导出 结束 ========
+
+
+// ======= 重复和未使用的代码区域 开始 ========
+// 渲染素材库列表
+function renderAssetsList(assets) {
+  if (!elements.assetsList) return;
+
+  elements.assetsList.innerHTML = '';
+
+  if (!assets || assets.length === 0) {
+    // 显示当前项目/片段的素材统计
+    if (appState.currentProject) {
+      const project = appState.currentProject;
+      const shots = project.shots || [];
+      const totalScenes = shots.reduce((sum, shot) => sum + (shot.scenes ? shot.scenes.length : 0), 0);
+
+      elements.assetsList.innerHTML = `
+        <div class="asset-item">
+          <div class="asset-item-title">📁 项目信息</div>
+          <div class="asset-item-subtitle">片段数：${shots.length}</div>
+          <div class="asset-item-subtitle">镜头数：${totalScenes}</div>
+        </div>
+        <div class="asset-item">
+          <div class="asset-item-title">📂 素材统计</div>
+          <div class="asset-item-subtitle">图片：0</div>
+          <div class="asset-item-subtitle">视频：0</div>
+          <div class="asset-item-subtitle">音频：0</div>
+        </div>
+        <div class="placeholder-text" style="margin-top: 20px; font-size: 12px;">
+          素材管理功能待实现
+        </div>
+      `;
+    } else {
+      elements.assetsList.innerHTML = '<div class="placeholder-text">请选择项目</div>';
+    }
+    return;
+  }
+
+  assets.forEach(asset => {
+    const assetElement = document.createElement('div');
+    assetElement.className = 'asset-item';
+    assetElement.innerHTML = `
+      <div class="asset-item-title">${asset.name || '未命名'}</div>
+      <div class="asset-item-subtitle">${asset.type || 'unknown'} • ${asset.size || ''}</div>
+    `;
+    elements.assetsList.appendChild(assetElement);
+  });
 }
 
-// ========== 面板拖拽 ==========
+function showUpdateNotification() {
+  const notification = document.createElement('div');
+  notification.textContent = '已更新';
+  notification.style.position = 'fixed';
+  notification.style.top = '10px';
+  notification.style.right = '10px';
+  notification.style.backgroundColor = '#333';
+  notification.style.color = '#fff';
+  notification.style.padding = '8px 16px';
+  notification.style.borderRadius = '4px';
+  notification.style.zIndex = '3000';
+  notification.style.opacity = '0';
+  notification.style.transition = 'opacity 0.3s';
 
-let isResizing = false;
-let currentResizer = null;
-let startX = 0;
-let startWidth = 0;
-let currentPanel = null;
+  document.body.appendChild(notification);
 
-// ========== UI 工具函数 ==========
-// 【已迁移至 src/utils/uiHelpers.js】
-
-// ========== 工具函数 ==========
-// 【已迁移至 src/utils/uiHelpers.js】
+  setTimeout(() => { notification.style.opacity = '1'; }, 10);
+  setTimeout(() => {
+    notification.style.opacity = '0';
+    setTimeout(() => { document.body.removeChild(notification); }, 300);
+  }, 2000);
+}
 
 /**
  * 显示自定义输入框（替代系统 prompt）
@@ -1968,105 +2101,4 @@ async function showCustomPrompt(message, title = '输入') {
     });
   });
 }
-
-// 渲染素材库列表
-function renderAssetsList(assets) {
-  if (!elements.assetsList) return;
-
-  elements.assetsList.innerHTML = '';
-
-  if (!assets || assets.length === 0) {
-    // 显示当前项目/片段的素材统计
-    if (appState.currentProject) {
-      const project = appState.currentProject;
-      const shots = project.shots || [];
-      const totalScenes = shots.reduce((sum, shot) => sum + (shot.scenes ? shot.scenes.length : 0), 0);
-      
-      elements.assetsList.innerHTML = `
-        <div class="asset-item">
-          <div class="asset-item-title">📁 项目信息</div>
-          <div class="asset-item-subtitle">片段数：${shots.length}</div>
-          <div class="asset-item-subtitle">镜头数：${totalScenes}</div>
-        </div>
-        <div class="asset-item">
-          <div class="asset-item-title">📂 素材统计</div>
-          <div class="asset-item-subtitle">图片：0</div>
-          <div class="asset-item-subtitle">视频：0</div>
-          <div class="asset-item-subtitle">音频：0</div>
-        </div>
-        <div class="placeholder-text" style="margin-top: 20px; font-size: 12px;">
-          素材管理功能待实现
-        </div>
-      `;
-    } else {
-      elements.assetsList.innerHTML = '<div class="placeholder-text">请选择项目</div>';
-    }
-    return;
-  }
-
-  assets.forEach(asset => {
-    const assetElement = document.createElement('div');
-    assetElement.className = 'asset-item';
-    assetElement.innerHTML = `
-      <div class="asset-item-title">${asset.name || '未命名'}</div>
-      <div class="asset-item-subtitle">${asset.type || 'unknown'} • ${asset.size || ''}</div>
-    `;
-    elements.assetsList.appendChild(assetElement);
-  });
-}
-
-function showUpdateNotification() {
-  const notification = document.createElement('div');
-  notification.textContent = '已更新';
-  notification.style.position = 'fixed';
-  notification.style.top = '10px';
-  notification.style.right = '10px';
-  notification.style.backgroundColor = '#333';
-  notification.style.color = '#fff';
-  notification.style.padding = '8px 16px';
-  notification.style.borderRadius = '4px';
-  notification.style.zIndex = '3000';
-  notification.style.opacity = '0';
-  notification.style.transition = 'opacity 0.3s';
-
-  document.body.appendChild(notification);
-
-  setTimeout(() => { notification.style.opacity = '1'; }, 10);
-  setTimeout(() => {
-    notification.style.opacity = '0';
-    setTimeout(() => { document.body.removeChild(notification); }, 300);
-  }, 2000);
-}
-
-// ========== 全局变量暴露（供模块使用）==========
-// 注意：必须在 initializeApp 之后调用，确保 useElectronAPI 已更新
-function exposeGlobals() {
-  // 这些变量已在 initializeApp 中设置
-  // window.useElectronAPI = useElectronAPI;
-  // window.elements = elements;
-  // window.appState = appState;
-  // window.settings = settings;
-
-  // 导出 renderer.js 中的函数供模块使用
-  // 片段管理函数已在 shotList.js 中导出：renderShotList
-  // 镜头管理函数已在 sceneList.js 中导出：renderSceneList, selectScene
-  // 属性面板函数已在 propertyPanel.js 中导出：showShotProperties, showSceneProperties
-  // 项目管理函数已在 projectList.js 中导出：selectProject
-  // 提示词生成函数已在 promptGenerator.js 中导出：generateScenePrompt, generateShotPrompt,
-  //   generateProjectPrompt, renderPromptWithHighlight, updatePromptPreview, copyPromptToClipboard,
-  //   exportPrompt, clearPrompt, generatePromptFromAI
-
-  // 注意：updatePromptPreview 已在 promptGenerator.js 中导出，此处无需重复导出
-  window.showToast = showToast;
-  window.showConfirm = showConfirm;
-  window.loadOptionsByGroup = loadOptionsByGroup;
-  window.showUpdateNotification = showUpdateNotification;
-  window.showCustomPrompt = showCustomPrompt;
-}
-
-// 在 initializeApp 中调用暴露
-const originalInitializeApp = initializeApp;
-initializeApp = async function() {
-  await originalInitializeApp();
-  exposeGlobals();
-};
+// ======= 重复和未使用的代码区域 结束 ========
