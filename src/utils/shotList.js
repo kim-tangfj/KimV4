@@ -4,7 +4,8 @@
 //
 
 // 全局变量引用（由 renderer.js 注入）
-// - window.appState: 应用状态
+// - window.getState(): 获取应用状态
+// - window.updateState(): 更新应用状态
 // - window.elements: DOM 元素引用
 // - window.useElectronAPI: 是否使用 Electron API
 // - window.electronAPI: Electron API 接口
@@ -95,25 +96,26 @@ async function selectShot(shot) {
     window.savingShotId = null;
   }
 
-  if (window.useElectronAPI && window.appState.currentProject?.projectDir) {
+  const state = window.getState();
+  if (window.useElectronAPI && state.currentProject?.projectDir) {
     // 从 project.json 中读取最新的片段数据
     try {
-      const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
+      const loadResult = await window.electronAPI.loadProject(state.currentProject.projectDir);
       if (loadResult.success) {
         const latestShot = loadResult.projectJson.shots?.find(s => s.id === shot.id);
         if (latestShot) {
-          window.appState.currentShot = latestShot;
+          window.updateState('currentShot', latestShot);
         } else {
-          window.appState.currentShot = shot;
+          window.updateState('currentShot', shot);
         }
       } else {
-        window.appState.currentShot = shot;
+        window.updateState('currentShot', shot);
       }
     } catch (error) {
-      window.appState.currentShot = shot;
+      window.updateState('currentShot', shot);
     }
   } else {
-    window.appState.currentShot = shot;
+    window.updateState('currentShot', shot);
   }
 
   // 移除所有片段选中状态（保留项目选中状态）
@@ -137,20 +139,21 @@ async function selectShot(shot) {
   }
 
   // 渲染镜头列表
-  window.renderSceneList(window.appState.currentShot.scenes || []);
+  window.renderSceneList(window.getState().currentShot.scenes || []);
 
   // 更新提示词预览
   window.updatePromptPreview();
 
   // 显示片段属性表单
-  window.showShotProperties(window.appState.currentShot);
+  window.showShotProperties(window.getState().currentShot);
 }
 
 /**
  * 新建片段
  */
 async function createNewShot() {
-  if (!window.appState.currentProject) {
+  const state = window.getState();
+  if (!state.currentProject) {
     alert('请先选择一个项目');
     return;
   }
@@ -168,7 +171,7 @@ async function createNewShot() {
     duration: 10,
     notes: '',
     status: 'draft',
-    aspectRatio: window.appState.currentProject.aspectRatio || '16:9',
+    aspectRatio: state.currentProject.aspectRatio || '16:9',
     style: '默认风格',
     mood: '默认情绪',
     musicStyle: '',
@@ -176,10 +179,10 @@ async function createNewShot() {
     scenes: []
   };
 
-  if (window.useElectronAPI && window.appState.currentProject.projectDir) {
+  if (window.useElectronAPI && state.currentProject.projectDir) {
     try {
       // 加载项目
-      const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
+      const loadResult = await window.electronAPI.loadProject(state.currentProject.projectDir);
       if (!loadResult.success) {
         window.showErrorModal('加载项目失败：' + loadResult.error);
         return;
@@ -191,12 +194,12 @@ async function createNewShot() {
 
       // 保存项目
       const saveResult = await window.electronAPI.saveProject(
-        window.appState.currentProject.projectDir,
+        state.currentProject.projectDir,
         loadResult.projectJson
       );
 
       if (saveResult.success) {
-        await window.selectProject(window.appState.currentProject);
+        await window.selectProject(state.currentProject);
         window.showUpdateNotification();
       } else {
         window.showErrorModal('保存失败：' + saveResult.error);
@@ -214,39 +217,40 @@ async function createNewShot() {
  * 删除选中的片段
  */
 async function deleteSelectedShot() {
-  if (!window.appState.currentShot) {
+  const state = window.getState();
+  if (!state.currentShot) {
     window.showToast('请先选择一个片段');
     return;
   }
 
-  const confirmed = await window.showConfirm(`确定要删除片段 "${window.appState.currentShot.name}" 吗？`);
+  const confirmed = await window.showConfirm(`确定要删除片段 "${state.currentShot.name}" 吗？`);
   if (!confirmed) {
     return;
   }
 
-  if (window.useElectronAPI && window.appState.currentProject.projectDir) {
+  if (window.useElectronAPI && state.currentProject.projectDir) {
     try {
       // 加载项目
-      const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
+      const loadResult = await window.electronAPI.loadProject(state.currentProject.projectDir);
       if (!loadResult.success) {
         return;
       }
 
       // 过滤掉要删除的片段
       loadResult.projectJson.shots = (loadResult.projectJson.shots || []).filter(
-        s => s.id !== window.appState.currentShot.id
+        s => s.id !== state.currentShot.id
       );
 
       // 保存项目
       const saveResult = await window.electronAPI.saveProject(
-        window.appState.currentProject.projectDir,
+        state.currentProject.projectDir,
         loadResult.projectJson
       );
 
       if (saveResult.success) {
-        window.appState.currentShot = null;
-        window.appState.currentScene = null;
-        await window.selectProject(window.appState.currentProject);
+        window.updateState('currentShot', null);
+        window.updateState('currentScene', null);
+        await window.selectProject(state.currentProject);
         window.renderSceneList([]);
       } else {
         window.showErrorModal('保存失败：' + saveResult.error);
@@ -329,7 +333,8 @@ async function updateShotStatus(shot, newStatus) {
     return;
   }
 
-  if (!window.appState.currentProject || !window.appState.currentProject.projectDir) {
+  const state = window.getState();
+  if (!state.currentProject || !state.currentProject.projectDir) {
     window.showToast('项目目录不存在，请先选择项目');
     return;
   }
@@ -341,7 +346,7 @@ async function updateShotStatus(shot, newStatus) {
 
   try {
     // 加载项目
-    const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
+    const loadResult = await window.electronAPI.loadProject(state.currentProject.projectDir);
     if (!loadResult.success) {
       window.showErrorModal('加载项目失败：' + loadResult.error);
       return;
@@ -367,7 +372,7 @@ async function updateShotStatus(shot, newStatus) {
 
     // 保存项目
     const saveResult = await window.electronAPI.saveProject(
-      window.appState.currentProject.projectDir,
+      state.currentProject.projectDir,
       loadResult.projectJson
     );
 

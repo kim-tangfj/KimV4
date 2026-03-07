@@ -4,7 +4,8 @@
 //
 
 // 全局变量引用（由 renderer.js 注入）
-// - window.appState: 应用状态
+// - window.getState(): 获取应用状态
+// - window.updateState(): 更新应用状态
 // - window.elements: DOM 元素引用
 // - window.useElectronAPI: 是否使用 Electron API
 // - window.electronAPI: Electron API 接口
@@ -69,27 +70,28 @@ async function selectScene(scene) {
     window.savingSceneId = null;
   }
 
-  if (window.useElectronAPI && window.appState.currentProject?.projectDir && window.appState.currentShot) {
+  const state = window.getState();
+  if (window.useElectronAPI && state.currentProject?.projectDir && state.currentShot) {
     // 从 project.json 中读取最新的镜头数据
     try {
-      const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
+      const loadResult = await window.electronAPI.loadProject(state.currentProject.projectDir);
       if (loadResult.success) {
-        const latestShot = loadResult.projectJson.shots?.find(s => s.id === window.appState.currentShot.id);
+        const latestShot = loadResult.projectJson.shots?.find(s => s.id === state.currentShot.id);
         if (latestShot && latestShot.scenes) {
           const latestScene = latestShot.scenes.find(s => s.id === scene.id);
           if (latestScene) {
-            window.appState.currentScene = latestScene;
+            window.updateState('currentScene', latestScene);
           }
         }
       }
     } catch (error) {
-      window.appState.currentScene = scene;
+      window.updateState('currentScene', scene);
     }
   } else {
-    window.appState.currentScene = scene;
+    window.updateState('currentScene', scene);
   }
 
-  window.appState.currentScene = window.appState.currentScene || scene;
+  window.updateState('currentScene', window.getState().currentScene || scene);
 
   // 移除所有镜头选中状态
   document.querySelectorAll('#scene-list .list-item').forEach(item => {
@@ -118,14 +120,15 @@ async function selectScene(scene) {
   window.updatePromptPreview();
 
   // 显示镜头属性表单
-  window.showSceneProperties(window.appState.currentScene);
+  window.showSceneProperties(window.getState().currentScene);
 }
 
 /**
  * 新建镜头
  */
 async function createNewScene() {
-  if (!window.appState.currentShot) {
+  const state = window.getState();
+  if (!state.currentShot) {
     window.showToast('请先选择一个片段');
     return;
   }
@@ -152,25 +155,25 @@ async function createNewScene() {
     enabled: true
   };
 
-  if (window.useElectronAPI && window.appState.currentProject.projectDir) {
+  if (window.useElectronAPI && state.currentProject.projectDir) {
     try {
-      const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
+      const loadResult = await window.electronAPI.loadProject(state.currentProject.projectDir);
       if (!loadResult.success) {
         return;
       }
 
-      const shot = loadResult.projectJson.shots?.find(s => s.id === window.appState.currentShot.id);
+      const shot = loadResult.projectJson.shots?.find(s => s.id === state.currentShot.id);
       if (shot) {
         shot.scenes = shot.scenes || [];
         shot.scenes.push(newScene);
 
         const saveResult = await window.electronAPI.saveProject(
-          window.appState.currentProject.projectDir,
+          state.currentProject.projectDir,
           loadResult.projectJson
         );
 
         if (saveResult.success) {
-          await window.selectProject(window.appState.currentProject);
+          await window.selectProject(state.currentProject);
           window.showUpdateNotification();
         }
       }
@@ -184,35 +187,36 @@ async function createNewScene() {
  * 删除选中的镜头
  */
 async function deleteSelectedScene() {
-  if (!window.appState.currentScene) {
+  const state = window.getState();
+  if (!state.currentScene) {
     window.showToast('请先选择一个镜头');
     return;
   }
 
-  const confirmed = await window.showConfirm(`确定要删除镜头 "${window.appState.currentScene.name}" 吗？`);
+  const confirmed = await window.showConfirm(`确定要删除镜头 "${state.currentScene.name}" 吗？`);
   if (!confirmed) {
     return;
   }
 
-  if (window.useElectronAPI && window.appState.currentProject.projectDir) {
+  if (window.useElectronAPI && state.currentProject.projectDir) {
     try {
-      const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
+      const loadResult = await window.electronAPI.loadProject(state.currentProject.projectDir);
       if (!loadResult.success) {
         return;
       }
 
-      const shot = loadResult.projectJson.shots?.find(s => s.id === window.appState.currentShot.id);
+      const shot = loadResult.projectJson.shots?.find(s => s.id === state.currentShot.id);
       if (shot && shot.scenes) {
-        shot.scenes = shot.scenes.filter(s => s.id !== window.appState.currentScene.id);
+        shot.scenes = shot.scenes.filter(s => s.id !== state.currentScene.id);
 
         const saveResult = await window.electronAPI.saveProject(
-          window.appState.currentProject.projectDir,
+          state.currentProject.projectDir,
           loadResult.projectJson
         );
 
         if (saveResult.success) {
-          window.appState.currentScene = null;
-          await window.selectProject(window.appState.currentProject);
+          window.updateState('currentScene', null);
+          await window.selectProject(state.currentProject);
         }
       }
     } catch (error) {

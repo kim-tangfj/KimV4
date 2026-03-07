@@ -277,7 +277,6 @@ async function updateProjectStatus(project, newStatus, appState, useElectronAPI,
 
 /**
  * 删除当前项目
- * @param {Object} appState - 应用状态
  * @param {Object} elements - DOM 元素引用
  * @param {boolean} useElectronAPI - 是否使用 Electron API
  * @param {Function} loadProjects - 重新加载项目列表回调
@@ -286,23 +285,24 @@ async function updateProjectStatus(project, newStatus, appState, useElectronAPI,
  * @param {Function} showToast - 显示提示回调
  * @param {Function} showConfirm - 显示确认对话框回调
  */
-async function deleteCurrentProject(appState, elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm) {
-  if (!appState || !appState.currentProject) {
+async function deleteCurrentProject(elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm) {
+  const state = window.getState();
+  if (!state || !state.currentProject) {
     showToast('请先选择一个项目');
     return;
   }
 
-  const confirmed = await showConfirm(`确定要删除项目 "${appState.currentProject.name}" 吗？此操作不可恢复！`);
+  const confirmed = await showConfirm(`确定要删除项目 "${state.currentProject.name}" 吗？此操作不可恢复！`);
   if (!confirmed) return;
 
-  if (useElectronAPI && appState.currentProject.projectDir) {
+  if (useElectronAPI && state.currentProject.projectDir) {
     try {
-      const result = await window.electronAPI.deleteProject(appState.currentProject.projectDir);
+      const result = await window.electronAPI.deleteProject(state.currentProject.projectDir);
       if (result.success) {
-        appState.currentProject = null;
-        appState.currentShot = null;
-        appState.currentScene = null;
-        appState.projectData = null;
+        window.updateState('currentProject', null);
+        window.updateState('currentShot', null);
+        window.updateState('currentScene', null);
+        window.updateState('projectData', null);
         await loadProjects();
         renderShotList([]);
         renderSceneList([]);
@@ -357,15 +357,15 @@ async function loadProjects() {
   } else {
     const savedProjects = localStorage.getItem('kim_projects');
     if (savedProjects) {
-      window.appState.projects = JSON.parse(savedProjects);
+      window.updateState('projects', JSON.parse(savedProjects));
     } else {
-      window.appState.projects = [];
+      window.updateState('projects', []);
     }
-    window.renderProjectList(window.appState.projects, window.elements, window.selectProject, (project, e) => {
-      window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(window.appState, window.elements, window.useElectronAPI, loadProjects, window.renderShotList, window.renderSceneList, window.showToast, window.showConfirm), window.openProjectFolderByProject);
+    window.renderProjectList(window.getState().projects, window.elements, window.selectProject, (project, e) => {
+      window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(window.elements, window.useElectronAPI, loadProjects, window.renderShotList, window.renderSceneList, window.showToast, window.showConfirm), window.openProjectFolderByProject);
     }, (project, e) => {
       window.showProjectStatusMenu(project, e, (p, newStatus) => {
-        window.updateProjectStatus(p, newStatus, window.appState, window.useElectronAPI, loadProjects, window.showUpdateNotification);
+        window.updateProjectStatus(p, newStatus, window.getState(), window.useElectronAPI, loadProjects, window.showUpdateNotification);
       });
     });
   }
@@ -376,9 +376,9 @@ async function loadProjects() {
  * @param {Object} project - 项目对象
  */
 async function selectProject(project) {
-  window.appState.currentProject = project;
-  window.appState.currentShot = null;
-  window.appState.currentScene = null;
+  window.updateState('currentProject', project);
+  window.updateState('currentShot', null);
+  window.updateState('currentScene', null);
 
   // 使用模块中的 updateProjectSelection 函数
   if (window.updateProjectSelection) {
@@ -392,7 +392,7 @@ async function selectProject(project) {
     try {
       const result = await window.electronAPI.loadProject(project.projectDir);
       if (result.success) {
-        window.appState.projectData = result.projectJson;
+        window.updateState('projectData', result.projectJson);
         window.renderShotList(result.projectJson.shots || []);
       } else {
         window.renderShotList(project.shots || []);

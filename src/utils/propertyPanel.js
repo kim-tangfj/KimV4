@@ -4,7 +4,8 @@
 //
 
 // 全局变量引用（由 renderer.js 注入）
-// - window.appState: 应用状态
+// - window.getState(): 获取应用状态
+// - window.updateState(): 更新应用状态
 // - window.elements: DOM 元素引用
 // - window.useElectronAPI: 是否使用 Electron API
 // - window.electronAPI: Electron API 接口
@@ -204,7 +205,8 @@ function autoSaveShotProperties() {
   if (shotSaveTimeout) {
     clearTimeout(shotSaveTimeout);
   }
-  savingShotId = window.appState.currentShot?.id;
+  const state = window.getState();
+  savingShotId = state.currentShot?.id;
   shotSaveTimeout = setTimeout(async () => {
     await saveShotProperties(true);
   }, 500);
@@ -215,7 +217,8 @@ function autoSaveShotProperties() {
  * @param {boolean} isAutoSave - 是否为自动保存
  */
 async function saveShotProperties(isAutoSave = false) {
-  const shot = window.appState.currentShot;
+  const state = window.getState();
+  const shot = state.currentShot;
   if (!shot) {
     return;
   }
@@ -246,9 +249,9 @@ async function saveShotProperties(isAutoSave = false) {
   const audioRef = document.getElementById('shotAudioRef')?.value;
   const customPrompt = document.getElementById('shotCustomPrompt')?.value;
 
-  if (window.useElectronAPI && window.appState.currentProject?.projectDir) {
+  if (window.useElectronAPI && state.currentProject?.projectDir) {
     try {
-      const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
+      const loadResult = await window.electronAPI.loadProject(state.currentProject.projectDir);
       if (!loadResult.success) {
         return;
       }
@@ -311,22 +314,23 @@ async function saveShotProperties(isAutoSave = false) {
       };
 
       const saveResult = await window.electronAPI.saveProject(
-        window.appState.currentProject.projectDir,
+        state.currentProject.projectDir,
         loadResult.projectJson
       );
 
       if (saveResult.success) {
         // 更新 appState 中的 currentShot 引用为最新数据
-        window.appState.currentShot = loadResult.projectJson.shots[shotIndex];
+        window.updateState('currentShot', loadResult.projectJson.shots[shotIndex]);
         if (window.elements.bottomPanelTitle) {
           window.elements.bottomPanelTitle.textContent = `${name || '片段'} 属性`;
         }
         window.updatePromptPreview();
         window.renderShotList(loadResult.projectJson.shots || []);
         // 如果当前选中了镜头，更新镜头列表
-        if (window.appState.currentScene) {
+        const currentState = window.getState();
+        if (currentState.currentScene) {
           window.renderSceneList(loadResult.projectJson.shots[shotIndex].scenes || []);
-          const sceneItem = document.querySelector(`#scene-list .list-item[data-id="${window.appState.currentScene.id}"]`);
+          const sceneItem = document.querySelector(`#scene-list .list-item[data-id="${currentState.currentScene.id}"]`);
           if (sceneItem) {
             sceneItem.classList.add('selected');
           }
@@ -477,7 +481,8 @@ function autoSaveSceneProperties() {
   if (sceneSaveTimeout) {
     clearTimeout(sceneSaveTimeout);
   }
-  savingSceneId = window.appState.currentScene?.id;
+  const state = window.getState();
+  savingSceneId = state.currentScene?.id;
   sceneSaveTimeout = setTimeout(async () => {
     await saveSceneProperties(true);
   }, 500);
@@ -488,8 +493,9 @@ function autoSaveSceneProperties() {
  * @param {boolean} isAutoSave - 是否为自动保存
  */
 async function saveSceneProperties(isAutoSave = false) {
-  const scene = window.appState.currentScene;
-  const currentShot = window.appState.currentShot;
+  const state = window.getState();
+  const scene = state.currentScene;
+  const currentShot = state.currentShot;
   if (!scene || !currentShot) {
     return;
   }
@@ -516,9 +522,9 @@ async function saveSceneProperties(isAutoSave = false) {
   const emotion = document.getElementById('sceneEmotion')?.value;
   const notes = document.getElementById('sceneNotes')?.value;
 
-  if (window.useElectronAPI && window.appState.currentProject?.projectDir) {
+  if (window.useElectronAPI && state.currentProject?.projectDir) {
     try {
-      const loadResult = await window.electronAPI.loadProject(window.appState.currentProject.projectDir);
+      const loadResult = await window.electronAPI.loadProject(state.currentProject.projectDir);
       if (!loadResult.success) {
         return;
       }
@@ -576,16 +582,17 @@ async function saveSceneProperties(isAutoSave = false) {
       };
 
       const saveResult = await window.electronAPI.saveProject(
-        window.appState.currentProject.projectDir,
+        state.currentProject.projectDir,
         loadResult.projectJson
       );
 
       if (saveResult.success) {
         // 更新 currentScene
-        window.appState.currentScene = shot.scenes[sceneIndex];
+        window.updateState('currentScene', shot.scenes[sceneIndex]);
         // 更新 currentShot.scenes（重要！否则提示词不会更新）
-        if (window.appState.currentShot) {
-          window.appState.currentShot.scenes = shot.scenes;
+        const currentState = window.getState();
+        if (currentState.currentShot) {
+          window.updateState('currentShot', { ...currentState.currentShot, scenes: shot.scenes });
         }
         if (window.elements.bottomPanelTitle) {
           window.elements.bottomPanelTitle.textContent = `${name || '镜头'} 属性`;
@@ -593,7 +600,7 @@ async function saveSceneProperties(isAutoSave = false) {
         window.updatePromptPreview();
         window.renderShotList(loadResult.projectJson.shots || []);
         // 恢复片段列表选中状态
-        const shotItem = document.querySelector(`#shot-list .list-item[data-id="${window.appState.currentShot.id}"]`);
+        const shotItem = document.querySelector(`#shot-list .list-item[data-id="${currentState.currentShot.id}"]`);
         if (shotItem) {
           shotItem.classList.add('selected');
         }
@@ -784,10 +791,11 @@ async function showQuickAddOptionModal(group, field, defaultValue = '') {
         closeModal();
         window.showUpdateNotification();
         // 重新渲染当前属性表单
-        if (window.appState.currentShot && field.startsWith('shot')) {
-          await showShotProperties(window.appState.currentShot);
-        } else if (window.appState.currentScene && field.startsWith('scene')) {
-          await showSceneProperties(window.appState.currentScene);
+        const state = window.getState();
+        if (state.currentShot && field.startsWith('shot')) {
+          await showShotProperties(state.currentShot);
+        } else if (state.currentScene && field.startsWith('scene')) {
+          await showSceneProperties(state.currentScene);
         }
       } else {
         window.showToast('添加失败：' + result.error);
