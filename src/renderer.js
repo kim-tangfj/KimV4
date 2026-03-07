@@ -460,13 +460,13 @@ function setupEventListeners() {
     elements.deleteSceneBtn.addEventListener('click', deleteSelectedScene);
   }
   if (elements.copyPromptBtn) {
-    elements.copyPromptBtn.addEventListener('click', copyPromptToClipboard);
+    elements.copyPromptBtn.addEventListener('click', () => window.copyPromptToClipboard());
   }
   if (elements.exportPromptBtn) {
-    elements.exportPromptBtn.addEventListener('click', exportPrompt);
+    elements.exportPromptBtn.addEventListener('click', () => window.exportPrompt());
   }
   if (elements.clearPromptBtn) {
-    elements.clearPromptBtn.addEventListener('click', clearPrompt);
+    elements.clearPromptBtn.addEventListener('click', () => window.clearPrompt());
   }
   if (elements.panelToggleBtn) {
     elements.panelToggleBtn.addEventListener('click', toggleBottomPanel);
@@ -643,12 +643,12 @@ function setupEventListeners() {
   if (elements.cancelTemplateBtn) {
     elements.cancelTemplateBtn.addEventListener('click', cancelTemplateEdit);
   }
-  
+
   // AI 生成模式事件
   if (elements.generatePromptBtn) {
-    elements.generatePromptBtn.addEventListener('click', generatePromptFromAI);
+    elements.generatePromptBtn.addEventListener('click', () => window.generatePromptFromAI());
   }
-  
+
   // 模板数据管理事件
   if (elements.backupTemplatesBtn) {
     elements.backupTemplatesBtn.addEventListener('click', backupTemplates);
