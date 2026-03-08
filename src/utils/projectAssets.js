@@ -184,8 +184,9 @@ async function loadAssetsList(projectId) {
  * 渲染素材列表
  * @param {Object} assets - 素材对象 { images, videos, audios }
  * @param {boolean} cacheData - 是否缓存数据（默认 true）
+ * @param {boolean} updateCount - 是否更新计数（默认 true）
  */
-function renderAssetsList(assets, cacheData = true) {
+function renderAssetsList(assets, cacheData = true, updateCount = true) {
   if (!assetsSidebar.list) return;
 
   assetsSidebar.list.innerHTML = '';
@@ -223,8 +224,10 @@ function renderAssetsList(assets, cacheData = true) {
     assetsSidebar.list.innerHTML = '<div class="placeholder-text">暂无素材，点击"上传素材"添加</div>';
   }
 
-  // 更新计数
-  updateAssetsCount(assets);
+  // 更新计数（仅当 updateCount 为 true 时）
+  if (updateCount) {
+    updateAssetsCount(assets);
+  }
 
   // 更新存储使用情况
   updateAssetsUsage(assets);
@@ -298,13 +301,13 @@ function renderAssetsListByType(type) {
   const assets = currentAssetsData;
 
   if (type === 'all') {
-    renderAssetsList(assets, true); // 缓存完整数据
+    renderAssetsList(assets, true, true);  // 缓存并更新计数
   } else if (type === 'images') {
-    renderAssetsList({ images: assets.images || [], videos: [], audios: [] }, false); // 不缓存
+    renderAssetsList({ images: assets.images || [], videos: [], audios: [] }, false, false);  // 不缓存不更新计数
   } else if (type === 'videos') {
-    renderAssetsList({ images: [], videos: assets.videos || [], audios: [] }, false); // 不缓存
+    renderAssetsList({ images: [], videos: assets.videos || [], audios: [] }, false, false);  // 不缓存不更新计数
   } else if (type === 'audios') {
-    renderAssetsList({ images: [], videos: [], audios: assets.audios || [] }, false); // 不缓存
+    renderAssetsList({ images: [], videos: [], audios: assets.audios || [] }, false, false);  // 不缓存不更新计数
   }
 }
 
