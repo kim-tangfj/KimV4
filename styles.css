@@ -1717,6 +1717,53 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   margin-top: 0;
 }
 
+/* 可折叠的分类标题 */
+.assets-section-title-clickable {
+  cursor: pointer;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 6px 8px;
+  border-radius: 4px;
+  background-color: var(--panel-bg);
+  margin: 8px 0;
+  user-select: none;
+}
+
+.assets-section-title-clickable:hover {
+  background-color: var(--hover-bg);
+}
+
+.section-toggle {
+  font-size: 10px;
+  width: 12px;
+  text-align: center;
+  transition: transform 0.2s;
+}
+
+.section-count {
+  color: #888;
+  font-size: 11px;
+  margin-left: auto;
+}
+
+/* 折叠内容区域 */
+.assets-section-content {
+  transition: all 0.3s ease;
+  overflow: hidden;
+}
+
+.assets-section-content.collapsed {
+  max-height: 0 !important;
+  opacity: 0;
+  visibility: hidden;
+}
+
+/* 素材分类容器 */
+.assets-section {
+  margin-bottom: 8px;
+}
+
 .assets-grid {
   display: grid;
   grid-template-columns: repeat(2, 1fr);
@@ -2189,4 +2236,13 @@ body.dark-theme .asset-preview-container {
 
 body.dark-theme .asset-preview-info {
   background: #252525;
+}
+
+/* 深色主题适配 - 素材分类 */
+body.dark-theme .assets-section-title-clickable {
+  background-color: #2a2a2a;
+}
+
+body.dark-theme .assets-section-title-clickable:hover {
+  background-color: #333;
 }
