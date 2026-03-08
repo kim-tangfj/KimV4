@@ -87,30 +87,38 @@ function toggleSceneAssetsPanel() {
  */
 async function loadShotAssetsList(shotId) {
   if (!sceneAssetsPanel.list) return;
-  
+
+  console.log('[loadShotAssetsList] shotId:', shotId);
+
   sceneAssetsPanel.currentShotId = shotId;
-  
+
   sceneAssetsPanel.list.innerHTML = '<div class="placeholder-text">加载中...</div>';
-  
+
   try {
     const state = window.getState();
-    const project = state.currentProject;
-    
-    if (!project || !project.projectDir) {
+    // 从 projectData 读取完整项目数据（包含 shots）
+    const projectData = state.projectData;
+
+    console.log('[loadShotAssetsList] projectData:', projectData);
+    console.log('[loadShotAssetsList] shots:', projectData?.shots);
+
+    if (!projectData || !projectData.shots) {
       sceneAssetsPanel.list.innerHTML = '<div class="placeholder-text">请先打开项目</div>';
       return;
     }
-    
+
     // 查找片段
-    const shot = project.shots?.find(s => s.id === shotId);
+    const shot = projectData.shots.find(s => s.id === shotId);
+    console.log('[loadShotAssetsList] found shot:', shot);
+
     if (!shot) {
       sceneAssetsPanel.list.innerHTML = '<div class="placeholder-text">片段不存在</div>';
       return;
     }
-    
+
     // 获取片段素材
     const assets = shot.assets || { images: [], videos: [], audios: [] };
-    
+
     renderSceneAssetsList(assets, 'shot', shotId);
   } catch (error) {
     console.error('[sceneAssets] 加载片段素材失败:', error);
