@@ -292,54 +292,55 @@ function renderAssetsSection(title, items, type) {
  */
 function extractVideoFrame(video) {
   try {
-    const canvas = document.createElement('canvas');
-    const ctx = canvas.getContext('2d');
-    
-    // 等待视频元数据加载完成
-    if (video.readyState < 2) {
-      console.log('[extractVideoFrame] 视频未就绪，readyState:', video.readyState);
-      video.onloadedmetadata = () => extractVideoFrame(video);
+    // 检查是否已经处理过
+    if (video.dataset.frameExtracted === 'true') {
       return;
     }
     
-    console.log('[extractVideoFrame] 开始提取，视频尺寸:', video.videoWidth, 'x', video.videoHeight);
-    
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
+
+    // 等待视频元数据加载完成
+    if (video.readyState < 2) {
+      video.onloadedmetadata = () => extractVideoFrame(video);
+      return;
+    }
+
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
-    
+
     // 检测画面是否为全黑
     function isFrameBlack() {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
       const data = imageData.data;
       let totalBrightness = 0;
-      const threshold = 30; // 亮度阈值
-      
-      // 采样检测（每隔 16 个像素取一个点，提高性能）
+      const threshold = 30;
+
       for (let i = 0; i < data.length; i += 64) {
         const r = data[i];
         const g = data[i + 1];
         const b = data[i + 2];
-        // 计算亮度
         const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
         totalBrightness += brightness;
       }
-      
+
       const avgBrightness = totalBrightness / (data.length / 64);
-      console.log('[extractVideoFrame] 当前帧平均亮度:', avgBrightness.toFixed(2));
       return avgBrightness < threshold;
     }
-    
+
     // 使用当前帧
     function useCurrentFrame() {
-      console.log('[extractVideoFrame] 使用当前帧，时间:', video.currentTime);
-      
-      // 检查视频元素是否还在 DOM 中
-      if (!video || !video.parentNode || !document.contains(video)) {
-        console.warn('[extractVideoFrame] 视频元素已不在 DOM 中，跳过提取');
+      // 再次检查是否已经处理过
+      if (video.dataset.frameExtracted === 'true') {
         return;
       }
       
+      // 检查视频元素是否还在 DOM 中
+      if (!video || !video.parentNode || !document.contains(video)) {
+        return;
+      }
+
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       // 转换为图片
@@ -348,53 +349,43 @@ function extractVideoFrame(video) {
       img.style.width = '100%';
       img.style.height = '100%';
       img.style.objectFit = 'cover';
+      img.dataset.frameExtracted = 'true';
 
       // 替换 video 元素
       try {
         video.parentNode.replaceChild(img, video);
-        console.log('[extractVideoFrame] 提取完成');
       } catch (error) {
-        console.warn('[extractVideoFrame] 替换失败:', error.message);
+        // 替换失败，静默处理
       }
     }
-    
+
     // 从 1 秒开始尝试，避免黑场
     let attemptTime = 1.0;
     const maxAttempts = 10;
     let attempt = 0;
-    
-    video.onseeked = function() {
-      console.log('[extractVideoFrame] 已跳转到:', video.currentTime, '秒，尝试次数:', attempt + 1);
 
-      // 检查视频元素是否还在 DOM 中
-      if (!video || !video.parentNode || !document.contains(video)) {
-        console.warn('[extractVideoFrame] 视频元素已不在 DOM 中，停止提取');
+    video.onseeked = function() {
+      // 检查元素是否还在 DOM 中
+      if (!video || !document.contains(video)) {
         return;
       }
 
       if (isFrameBlack()) {
-        // 当前帧是黑的，尝试下一帧
         attemptTime += 1.0;
         attempt++;
         if (attempt < maxAttempts) {
-          console.log('[extractVideoFrame] 当前帧是黑场，尝试下一帧:', attemptTime, '秒');
           video.currentTime = attemptTime;
         } else {
-          // 超过最大尝试次数，使用当前帧
-          console.log('[extractVideoFrame] 超过最大尝试次数，使用当前帧');
           useCurrentFrame();
         }
       } else {
-        // 找到有画面的帧
-        console.log('[extractVideoFrame] 找到有效帧');
         useCurrentFrame();
       }
     };
-    
+
     // 开始尝试
-    console.log('[extractVideoFrame] 开始尝试，起始时间:', attemptTime);
     video.currentTime = attemptTime;
-    
+
   } catch (error) {
     console.error('提取视频封面失败:', error);
   }
