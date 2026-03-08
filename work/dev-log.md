@@ -28,6 +28,29 @@
 
 ---
 
+## 2026-03-08 - 修复删除按钮和拖放上传问题
+
+### 问题 1: 删除按钮报错 Cannot read properties of null
+**现象**: 点击预览模态框的删除按钮时报错
+
+**原因**: `currentPreviewAsset` 可能为 null
+
+**修复**: 在访问 `currentPreviewAsset` 前检查是否为 null
+
+### 问题 2: 拖放上传报错 缺少必填参数 fileData
+**现象**: 拖放上传时报错"缺少必填参数：fileData"
+
+**原因**: preload.js 中 `saveDroppedSceneAsset` 的参数传递方式错误
+- 渲染进程调用：`saveDroppedSceneAsset(fileName, fileData, projectDir, assetType, shotId)`
+- preload.js 错误：`(params) => ipcRenderer.invoke('project:saveDroppedSceneAsset', params)`
+- 主进程期望：`async (event, fileName, fileData, projectDir, assetType, shotId)`
+
+**修复**:
+- preload.js 改为单独参数传递
+- 添加调试日志便于排查问题
+
+---
+
 ## 2026-03-08 - 修复片段素材库删除功能并添加右键菜单
 
 ### 修复删除失败问题
