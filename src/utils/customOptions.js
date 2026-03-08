@@ -525,3 +525,90 @@ window.saveCustomOptionEdit = saveCustomOptionEdit;
 window.saveCustomOption = saveCustomOption;
 window.deleteCustomOption = deleteCustomOption;
 window.hideCustomOptionForm = hideCustomOptionForm;
+window.initCustomOptionEditModal = initCustomOptionEditModal;
+
+/**
+ * 初始化自定义选项编辑弹窗事件
+ */
+function initCustomOptionEditModal() {
+  const elements = {
+    closeBtn: document.getElementById('close-custom-option-edit-btn'),
+    saveBtn: document.getElementById('save-custom-option-edit-btn'),
+    cancelBtn: document.getElementById('cancel-custom-option-edit-btn'),
+    modal: document.getElementById('custom-option-edit-modal')
+  };
+
+  // 关闭按钮
+  if (elements.closeBtn) {
+    elements.closeBtn.addEventListener('click', () => {
+      if (elements.modal) elements.modal.style.display = 'none';
+    });
+  }
+
+  // 取消按钮
+  if (elements.cancelBtn) {
+    elements.cancelBtn.addEventListener('click', () => {
+      if (elements.modal) elements.modal.style.display = 'none';
+    });
+  }
+
+  // 保存按钮
+  if (elements.saveBtn) {
+    elements.saveBtn.addEventListener('click', async () => {
+      const groupId = document.getElementById('edit-custom-option-group')?.value;
+      const groupInput = document.getElementById('edit-custom-option-group-input');
+      const type = document.getElementById('edit-custom-option-type')?.value;
+      const style = document.getElementById('edit-custom-option-style')?.value;
+      const description = document.getElementById('edit-custom-option-description')?.value;
+      const optionId = document.getElementById('edit-custom-option-id')?.value;
+
+      // 验证必填字段
+      if (!groupId && !groupInput?.value) {
+        window.showToast('请选择或输入组别');
+        return;
+      }
+      if (!type) {
+        window.showToast('请输入类型');
+        return;
+      }
+      if (!style) {
+        window.showToast('请输入风格名称');
+        return;
+      }
+      if (!description) {
+        window.showToast('请输入描述');
+        return;
+      }
+
+      const finalGroup = groupInput?.style.display !== 'none' && groupInput?.value ? groupInput.value : groupId;
+
+      // 保存选项
+      const result = await window.electronAPI.updateCustomOption(optionId, {
+        group: finalGroup,
+        type: type,
+        style: style,
+        description: description
+      });
+
+      if (result.success) {
+        window.showToast('保存成功');
+        if (elements.modal) elements.modal.style.display = 'none';
+        // 重新加载列表
+        if (window.loadCustomOptionsList) {
+          window.loadCustomOptionsList();
+        }
+      } else {
+        window.showToast('保存失败：' + result.error);
+      }
+    });
+  }
+
+  // 点击遮罩关闭
+  if (elements.modal) {
+    elements.modal.addEventListener('click', (e) => {
+      if (e.target === elements.modal) {
+        elements.modal.style.display = 'none';
+      }
+    });
+  }
+}

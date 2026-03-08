@@ -19,6 +19,11 @@ function setupEventListeners() {
     window.initAssetPreviewModal();
   }
 
+  // 初始化自定义选项编辑弹窗
+  if (window.initCustomOptionEditModal) {
+    window.initCustomOptionEditModal();
+  }
+
   // 初始化面板拖拽
   if (window.initPanelResizers) {
     window.initPanelResizers();
