@@ -183,18 +183,21 @@ async function loadAssetsList(projectId) {
 /**
  * 渲染素材列表
  * @param {Object} assets - 素材对象 { images, videos, audios }
+ * @param {boolean} cacheData - 是否缓存数据（默认 true）
  */
-function renderAssetsList(assets) {
+function renderAssetsList(assets, cacheData = true) {
   if (!assetsSidebar.list) return;
 
   assetsSidebar.list.innerHTML = '';
 
-  // 缓存当前素材数据
-  currentAssetsData = {
-    images: assets.images || [],
-    videos: assets.videos || [],
-    audios: assets.audios || []
-  };
+  // 缓存当前素材数据（仅当 cacheData 为 true 时）
+  if (cacheData) {
+    currentAssetsData = {
+      images: assets.images || [],
+      videos: assets.videos || [],
+      audios: assets.audios || []
+    };
+  }
 
   let totalCount = 0;
 
@@ -295,13 +298,13 @@ function renderAssetsListByType(type) {
   const assets = currentAssetsData;
 
   if (type === 'all') {
-    renderAssetsList(assets);
+    renderAssetsList(assets, true); // 缓存完整数据
   } else if (type === 'images') {
-    renderAssetsList({ images: assets.images || [], videos: [], audios: [] });
+    renderAssetsList({ images: assets.images || [], videos: [], audios: [] }, false); // 不缓存
   } else if (type === 'videos') {
-    renderAssetsList({ images: [], videos: assets.videos || [], audios: [] });
+    renderAssetsList({ images: [], videos: assets.videos || [], audios: [] }, false); // 不缓存
   } else if (type === 'audios') {
-    renderAssetsList({ images: [], videos: [], audios: assets.audios || [] });
+    renderAssetsList({ images: [], videos: [], audios: assets.audios || [] }, false); // 不缓存
   }
 }
 
