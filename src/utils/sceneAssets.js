@@ -26,12 +26,20 @@ let currentPreviewAsset = null;
  * 初始化片段素材库面板
  */
 function initSceneAssetsPanel() {
+  // 等待 DOM 加载完成
+  if (document.readyState === 'loading') {
+    document.addEventListener('DOMContentLoaded', initSceneAssetsPanel);
+    return;
+  }
+
   sceneAssetsPanel.panel = document.getElementById('assets-panel');
   sceneAssetsPanel.header = document.getElementById('assets-panel-toggle-header');
   sceneAssetsPanel.toggleBtn = document.getElementById('assets-panel-toggle-btn');
   sceneAssetsPanel.list = document.getElementById('shot-assets-list');
   sceneAssetsPanel.uploadArea = document.getElementById('scene-assets-upload-area');
   sceneAssetsPanel.fileInput = document.getElementById('scene-assets-file-input');
+
+  console.log('[initSceneAssetsPanel] 初始化完成', sceneAssetsPanel);
 
   // 初始化上传功能
   initSceneAssetUpload();
@@ -321,10 +329,16 @@ function hideAssetPreview() {
 function initSceneAssetUpload() {
   const { uploadArea, fileInput } = sceneAssetsPanel;
 
-  if (!uploadArea || !fileInput) return;
+  console.log('[initSceneAssetUpload] uploadArea:', uploadArea, 'fileInput:', fileInput);
+
+  if (!uploadArea || !fileInput) {
+    console.error('[initSceneAssetUpload] 上传区域或文件输入不存在');
+    return;
+  }
 
   // 点击上传区域 - 使用 dialog 选择文件
   uploadArea.addEventListener('click', async () => {
+    console.log('[initSceneAssetUpload] 点击上传区域');
     const result = await window.electronAPI.showOpenDialog({
       properties: ['openFile', 'multiSelections'],
       filters: [
@@ -334,6 +348,8 @@ function initSceneAssetUpload() {
         { name: '所有文件', extensions: ['*'] }
       ]
     });
+
+    console.log('[initSceneAssetUpload] dialog result:', result);
 
     if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
       const files = result.filePaths.map(filePath => ({

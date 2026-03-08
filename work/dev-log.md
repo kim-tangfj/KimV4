@@ -4,6 +4,59 @@
 
 ---
 
+## 2026-03-08 - 实现片段素材库上传和拖放上传功能
+
+### 需求
+为片段素材库添加与项目素材库相同的上传和拖放上传功能。
+
+### 修改文件
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `index.html` | +11/-2 行 | 新增上传区域 HTML，移除原有上传按钮 |
+| `styles.css` | +50 行 | 上传区域样式 + 深色主题适配 |
+| `src/utils/sceneAssets.js` | +334/-52 行 | 重构上传功能实现 |
+
+### 核心实现
+
+#### 1. HTML 结构
+```html
+<div class="scene-assets-upload-area" id="scene-assets-upload-area">
+  <input type="file" id="scene-assets-file-input" ... />
+  <div class="upload-area-content">
+    <span class="upload-icon">📤</span>
+    <span class="upload-text">点击或拖放文件到此处上传</span>
+  </div>
+</div>
+```
+
+#### 2. JavaScript 功能
+- `initSceneAssetUpload()`: 初始化上传功能
+- `handleSceneFilesUpload(files)`: 处理点击上传
+- `handleSceneDroppedFiles(files)`: 处理拖放上传
+- `addSceneAssetToShot(shotId, asset)`: 添加到片段素材库
+- `showSceneUploadProgress()`: 显示上传进度
+
+### 功能特性
+- ✅ 点击上传区域选择文件
+- ✅ 拖放文件到上传区域自动上传
+- ✅ 支持多文件同时上传
+- ✅ 自动识别文件类型（图片/视频/音频）
+- ✅ 自动分类存储到项目 assets 目录
+- ✅ 文件重名自动添加时间戳
+- ✅ 上传进度实时显示
+- ✅ 上传完成自动刷新素材列表
+- ✅ 素材自动添加到当前选中片段
+- ✅ 深色主题适配
+
+### 技术实现
+- 使用 `showOpenDialog` 选择文件（sandbox 模式）
+- 拖放文件使用 `FileReader` 读取为 Base64
+- 通过 `saveDroppedFile` API 保存到项目 assets 目录
+- 调用 `addSceneAssetToShot` 添加到片段素材库并保存项目
+
+---
+
 ## 2026-03-08 - 修复确认对话框 z-index 层级问题
 
 ### 问题
