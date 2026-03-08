@@ -15,7 +15,13 @@ const assetsSidebar = {
   list: null,
   usageFill: null,
   usageText: null,
-  closeBtn: null
+  closeBtn: null,
+  // 预览面板元素
+  previewPanel: null,
+  previewContent: null,
+  previewName: null,
+  previewSize: null,
+  previewCloseBtn: null
 };
 
 /**
@@ -37,10 +43,22 @@ function initAssetsSidebar() {
   assetsSidebar.usageFill = document.getElementById('assets-usage-fill');
   assetsSidebar.usageText = document.getElementById('assets-usage-text');
   assetsSidebar.closeBtn = document.querySelector('.assets-sidebar-close');
+  
+  // 缓存预览面板元素
+  assetsSidebar.previewPanel = document.getElementById('assets-preview-panel');
+  assetsSidebar.previewContent = document.getElementById('assets-preview-content');
+  assetsSidebar.previewName = document.getElementById('assets-preview-name');
+  assetsSidebar.previewSize = document.getElementById('assets-preview-size');
+  assetsSidebar.previewCloseBtn = document.querySelector('.assets-preview-close');
 
   // 绑定关闭按钮事件
   if (assetsSidebar.closeBtn) {
     assetsSidebar.closeBtn.addEventListener('click', closeAssetsSidebar);
+  }
+  
+  // 绑定预览关闭按钮事件
+  if (assetsSidebar.previewCloseBtn) {
+    assetsSidebar.previewCloseBtn.addEventListener('click', hidePreview);
   }
 
   // 绑定分类筛选事件
@@ -118,11 +136,34 @@ async function loadAssetsList(projectId) {
 
   assetsSidebar.list.innerHTML = '<div class="placeholder-text">加载中...</div>';
 
-  // TODO: 从文件系统读取素材索引
-  // 暂时使用示例数据
-  const assets = getMockAssets();
+  try {
+    // 从状态管理器获取当前项目目录
+    const state = window.getState();
+    const project = state.projects?.find(p => p.id === projectId);
+    
+    if (!project || !project.projectDir) {
+      // 如果没有项目目录，使用示例数据
+      console.warn('[projectAssets] 项目目录不存在，使用示例数据');
+      const assets = getMockAssets();
+      renderAssetsList(assets);
+      return;
+    }
 
-  renderAssetsList(assets);
+    // 调用 Electron API 获取真实素材列表
+    const result = await window.electronAPI.getAssets(project.projectDir);
+    
+    if (result.success && result.assets) {
+      renderAssetsList(result.assets);
+    } else {
+      console.error('[projectAssets] 获取素材失败:', result.error);
+      renderAssetsList({ images: [], videos: [], audios: [] });
+    }
+  } catch (error) {
+    console.error('[projectAssets] 加载素材列表异常:', error);
+    // 使用示例数据作为后备
+    const assets = getMockAssets();
+    renderAssetsList(assets);
+  }
 }
 
 /**
@@ -163,6 +204,25 @@ function renderAssetsList(assets) {
 
   // 更新存储使用情况
   updateAssetsUsage(assets);
+  
+  // 绑定缩略图点击事件
+  bindThumbnailClickEvents();
+}
+
+/**
+ * 绑定缩略图点击事件
+ */
+function bindThumbnailClickEvents() {
+  const thumbnails = document.querySelectorAll('.asset-thumbnail');
+  thumbnails.forEach(thumb => {
+    thumb.addEventListener('click', () => {
+      const assetType = thumb.dataset.assetType;
+      const assetName = thumb.dataset.assetName;
+      const assetSize = thumb.dataset.assetSize;
+      const assetPath = thumb.dataset.assetPath;
+      showPreview(assetType, assetName, assetSize, assetPath);
+    });
+  });
 }
 
 /**
@@ -182,8 +242,8 @@ function renderAssetsSection(title, items, type) {
     <div class="assets-section-title">${title}</div>
     <div class="assets-grid assets-grid-${type}s">
       ${items.map(item => `
-        <div class="asset-thumbnail" data-asset-id="${item.id}" data-asset-type="${type}">
-          ${type === 'image' 
+        <div class="asset-thumbnail" data-asset-id="${item.id}" data-asset-type="${type}" data-asset-name="${item.name}" data-asset-size="${item.size}" data-asset-path="${item.path}">
+          ${type === 'image'
             ? `<img src="${item.path}" alt="${item.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🖼️</text></svg>'" />`
             : `<div class="${type}-thumbnail">${icons[type]}</div>`
           }
@@ -271,10 +331,22 @@ function updateAssetsCount(assets) {
  * @param {Object} assets - 素材对象
  */
 function updateAssetsUsage(assets) {
-  // TODO: 计算实际使用量
-  const usedMB = 45; // 示例数据
+  // 计算实际使用量
+  let totalBytes = 0;
+  
+  if (assets.images) {
+    totalBytes += assets.images.reduce((sum, item) => sum + (item.fileSize || 0), 0);
+  }
+  if (assets.videos) {
+    totalBytes += assets.videos.reduce((sum, item) => sum + (item.fileSize || 0), 0);
+  }
+  if (assets.audios) {
+    totalBytes += assets.audios.reduce((sum, item) => sum + (item.fileSize || 0), 0);
+  }
+  
+  const usedMB = (totalBytes / (1024 * 1024)).toFixed(1);
   const limitMB = 500;
-  const percentage = (usedMB / limitMB) * 100;
+  const percentage = Math.min((totalBytes / (1024 * 1024)) / limitMB * 100, 100);
 
   if (assetsSidebar.usageFill) {
     assetsSidebar.usageFill.style.width = `${percentage}%`;
@@ -308,7 +380,70 @@ function getMockAssets() {
   };
 }
 
+/**
+ * 显示素材预览
+ * @param {string} type - 素材类型 (image/video/audio)
+ * @param {string} name - 素材名称
+ * @param {string} size - 素材大小
+ * @param {string} path - 素材路径
+ */
+function showPreview(type, name, size, path) {
+  if (!assetsSidebar.previewPanel || !assetsSidebar.previewContent) return;
+  
+  let previewHTML = '';
+  
+  if (type === 'image') {
+    previewHTML = `<img src="${path}" alt="${name}" />`;
+  } else if (type === 'video') {
+    previewHTML = `
+      <video controls>
+        <source src="${path}" type="video/mp4">
+        您的浏览器不支持视频播放
+      </video>
+    `;
+  } else if (type === 'audio') {
+    previewHTML = `
+      <div class="audio-player">
+        <span class="audio-icon">🎵</span>
+        <audio controls>
+          <source src="${path}" type="audio/mpeg">
+          您的浏览器不支持音频播放
+        </audio>
+      </div>
+    `;
+  }
+  
+  assetsSidebar.previewContent.innerHTML = previewHTML;
+  
+  if (assetsSidebar.previewName) {
+    assetsSidebar.previewName.textContent = name;
+  }
+  if (assetsSidebar.previewSize) {
+    assetsSidebar.previewSize.textContent = size;
+  }
+  
+  // 显示预览面板
+  assetsSidebar.previewPanel.style.display = 'block';
+  
+  // 滚动到预览面板
+  assetsSidebar.previewPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+/**
+ * 隐藏素材预览
+ */
+function hidePreview() {
+  if (!assetsSidebar.previewPanel) return;
+  
+  assetsSidebar.previewPanel.style.display = 'none';
+  if (assetsSidebar.previewContent) {
+    assetsSidebar.previewContent.innerHTML = '';
+  }
+}
+
 // 导出到 window 对象
 window.openAssetsSidebar = openAssetsSidebar;
 window.closeAssetsSidebar = closeAssetsSidebar;
 window.initAssetsSidebar = initAssetsSidebar;
+window.showPreview = showPreview;
+window.hidePreview = hidePreview;

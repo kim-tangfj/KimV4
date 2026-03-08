@@ -22,6 +22,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openFolder: (projectDir) => ipcRenderer.invoke('project:openFolder', projectDir),
   startMonitor: (projectDirs) => ipcRenderer.invoke('project:startMonitor', projectDirs),
   stopMonitor: () => ipcRenderer.invoke('project:stopMonitor'),
+  getAssets: (projectDir) => ipcRenderer.invoke('project:getAssets', projectDir),
   
   // LLM API
   testApiConnection: (provider, apiKey, model) => ipcRenderer.invoke('api:testConnection', provider, apiKey, model),

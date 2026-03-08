@@ -4,6 +4,69 @@
 
 ---
 
+## 2026-03-08 - 项目素材库功能完善
+
+### 新增功能
+
+#### 1. 素材预览面板
+- **位置**: 项目素材库侧边窗体内（素材列表上方）
+- **触发**: 点击素材缩略图
+- **功能**:
+  - 图片预览：直接显示图片（最大 180px 高度）
+  - 视频预览：HTML5 视频播放器
+  - 音频预览：HTML5 音频播放器 + 图标
+  - 显示素材名称和文件大小
+  - 支持关闭预览面板
+
+#### 2. 真实素材数据读取
+- **IPC 处理器**: `project:getAssets` (src/handlers/project.js)
+- **API 暴露**: `window.electronAPI.getAssets` (src/preload.js)
+- **读取逻辑**: 扫描项目目录 `assets/{images,videos,audios}`
+- **支持格式**:
+  - 图片：jpg, jpeg, png, gif, webp, bmp
+  - 视频：mp4, webm, ogg, mov, avi
+  - 音频：mp3, wav, ogg, aac, flac
+
+#### 3. 存储使用量计算
+- **计算方式**: 累加所有素材文件的实际大小
+- **显示格式**: 已用 X.XMB / 限制 500MB
+- **进度条**: 根据实际使用量动态更新
+
+### 修改的文件
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `index.html` | +15 行 | 添加预览面板 HTML 结构 |
+| `styles.css` | +133 行 | 预览面板样式 + 深色主题适配 |
+| `src/handlers/project.js` | +92 行 | 新增 `project:getAssets` IPC 处理器 |
+| `src/preload.js` | +1 行 | 暴露 `getAssets` API |
+| `src/utils/projectAssets.js` | +155 行 | 修改加载逻辑、添加预览功能 |
+| `src/utils/propertyPanel.js` | +10 行 | 属性面板高度调整 |
+
+### 核心函数
+
+```javascript
+// project.js
+function formatFileSize(bytes)  // 格式化文件大小
+ipcMain.handle('project:getAssets', ...)  // 获取素材列表
+
+// projectAssets.js
+function loadAssetsList(projectId)  // 加载真实素材列表
+function updateAssetsUsage(assets)  // 计算存储使用量
+function showPreview(type, name, size, path)  // 显示预览
+function hidePreview()  // 隐藏预览
+function bindThumbnailClickEvents()  // 绑定缩略图点击事件
+```
+
+### 设计原则
+
+1. **项目素材库和片段素材引用无联动** - 独立管理
+2. **预览在素材库窗口内** - 不额外弹窗
+3. **缩略图网格显示** - 2 列布局（70px 高度）
+4. **真实数据统计** - 基于实际文件数量和大小
+
+---
+
 ## 2026-03-08 - 添加 JSDoc 注释
 
 ### 已添加注释的模块

@@ -277,6 +277,98 @@ function initProjectIPC(mainWindow) {
     }
     return { success: true };
   });
+
+  // 获取项目素材列表
+  ipcMain.handle('project:getAssets', async (event, projectDir) => {
+    return withErrorHandler(async () => {
+      validateParams({ projectDir }, ['projectDir']);
+
+      const assetsDir = path.join(projectDir, 'assets');
+      
+      if (!fs.existsSync(assetsDir)) {
+        return { success: true, assets: { images: [], videos: [], audios: [] } };
+      }
+
+      const assets = {
+        images: [],
+        videos: [],
+        audios: []
+      };
+
+      // 读取图片
+      const imagesDir = path.join(assetsDir, 'images');
+      if (fs.existsSync(imagesDir)) {
+        const files = fs.readdirSync(imagesDir);
+        for (const file of files) {
+          if (/\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file)) {
+            const filePath = path.join(imagesDir, file);
+            const stats = fs.statSync(filePath);
+            assets.images.push({
+              id: 'asset_img_' + file.replace(/\.[^/.]+$/, ''),
+              name: file,
+              size: formatFileSize(stats.size),
+              path: path.relative(projectDir, filePath),
+              type: 'image',
+              fileSize: stats.size
+            });
+          }
+        }
+      }
+
+      // 读取视频
+      const videosDir = path.join(assetsDir, 'videos');
+      if (fs.existsSync(videosDir)) {
+        const files = fs.readdirSync(videosDir);
+        for (const file of files) {
+          if (/\.(mp4|webm|ogg|mov|avi)$/i.test(file)) {
+            const filePath = path.join(videosDir, file);
+            const stats = fs.statSync(filePath);
+            assets.videos.push({
+              id: 'asset_vid_' + file.replace(/\.[^/.]+$/, ''),
+              name: file,
+              size: formatFileSize(stats.size),
+              path: path.relative(projectDir, filePath),
+              type: 'video',
+              fileSize: stats.size
+            });
+          }
+        }
+      }
+
+      // 读取音频
+      const audiosDir = path.join(assetsDir, 'audios');
+      if (fs.existsSync(audiosDir)) {
+        const files = fs.readdirSync(audiosDir);
+        for (const file of files) {
+          if (/\.(mp3|wav|ogg|aac|flac)$/i.test(file)) {
+            const filePath = path.join(audiosDir, file);
+            const stats = fs.statSync(filePath);
+            assets.audios.push({
+              id: 'asset_aud_' + file.replace(/\.[^/.]+$/, ''),
+              name: file,
+              size: formatFileSize(stats.size),
+              path: path.relative(projectDir, filePath),
+              type: 'audio',
+              fileSize: stats.size
+            });
+          }
+        }
+      }
+
+      return { success: true, assets: assets };
+    }, '获取项目素材列表');
+  });
+}
+
+/**
+ * 格式化文件大小
+ * @param {number} bytes - 字节数
+ * @returns {string} 格式化后的大小
+ */
+function formatFileSize(bytes) {
+  if (bytes < 1024) return bytes + 'B';
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + 'KB';
+  return (bytes / (1024 * 1024)).toFixed(1) + 'MB';
 }
 
 module.exports = { initProjectIPC };

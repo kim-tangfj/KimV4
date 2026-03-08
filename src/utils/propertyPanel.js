@@ -402,11 +402,6 @@ async function showSceneProperties(scene) {
           <label for="sceneName">镜头名称</label>
           <input type="text" id="sceneName" value="${scene.name || ''}" placeholder="输入镜头名称" data-autosave="true">
         </div>
-        <div class="form-group">
-          <label for="sceneImage">分镜图片</label>
-          <textarea id="sceneImage" rows="2" placeholder="点击上传或拖放图片，支持多张图片" data-autosave="true">${scene.image || ''}</textarea>
-          <small class="setting-hint">支持上传和拖放图片</small>
-        </div>
 
         <h4 class="property-section-title" style="margin-top: 16px;">镜头信息</h4>
         <div class="form-group">
@@ -465,6 +460,11 @@ async function showSceneProperties(scene) {
         <div class="form-group">
           <label for="sceneDuration">时长（秒）</label>
           <input type="number" id="sceneDuration" value="${scene.duration || 2}" min="1" step="0.5" data-autosave="true">
+        </div>
+        <div class="form-group">
+          <label for="sceneImage">分镜图片</label>
+          <textarea id="sceneImage" rows="2" placeholder="点击上传或拖放图片，支持多张图片" data-autosave="true">${scene.image || ''}</textarea>
+          <small class="setting-hint">支持上传和拖放图片</small>
         </div>
         <div class="form-group">
           <label for="sceneContent">内容描述</label>
