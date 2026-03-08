@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-08 - 修复片段素材库保存项目时缺少 projectDir 参数
+
+### 问题
+保存项目时报错 `[IPC 错误] 保存项目：缺少必填参数：projectDir`
+
+### 原因
+`addSceneAssetToShot` 使用 `projectData` 保存项目，但 `projectData` 可能没有 `projectDir` 属性
+
+### 修复
+- 使用 `state.currentProject` 获取 `projectDir`
+- 构建完整的项目 JSON 对象（包含 `project`、`shots`、`promptTemplates` 等）
+- 添加调试日志确认保存参数
+
+---
+
 ## 2026-03-08 - 修复片段素材库拖放上传返回数据格式问题
 
 ### 问题

@@ -457,6 +457,118 @@ function initProjectIPC(mainWindow) {
     }
   });
 
+  // 上传素材到片段专属目录（独立于项目素材库）
+  ipcMain.handle('project:uploadSceneAsset', async (event, params) => {
+    try {
+      validateParams(params, ['projectDir', 'filePath', 'shotId']);
+
+      const { projectDir, filePath, shotId, fileName } = params;
+
+      // 检查源文件是否存在
+      if (!fs.existsSync(filePath)) {
+        return { success: false, error: '源文件不存在' };
+      }
+
+      // 确定素材类型
+      const ext = path.extname(filePath).toLowerCase();
+      let assetType = 'images';
+      if (['.mp4', '.webm', '.ogg', '.mov', '.avi'].includes(ext)) {
+        assetType = 'videos';
+      } else if (['.mp3', '.wav', '.ogg', '.aac', '.flac'].includes(ext)) {
+        assetType = 'audios';
+      }
+
+      // 片段专属素材目录：assets/shots/{shotId}/{type}
+      const shotAssetsDir = path.join(projectDir, 'assets', 'shots', shotId, assetType);
+      if (!fs.existsSync(shotAssetsDir)) {
+        fs.mkdirSync(shotAssetsDir, { recursive: true });
+      }
+
+      // 目标文件路径
+      const originalFileName = fileName || path.basename(filePath);
+      let targetPath = path.join(shotAssetsDir, originalFileName);
+
+      // 如果文件已存在，添加时间戳
+      if (fs.existsSync(targetPath)) {
+        const nameWithoutExt = path.basename(originalFileName, ext);
+        targetPath = path.join(shotAssetsDir, `${nameWithoutExt}_${Date.now()}${ext}`);
+      }
+
+      // 复制文件
+      fs.copyFileSync(filePath, targetPath);
+
+      // 返回成功
+      const stats = fs.statSync(targetPath);
+      return {
+        success: true,
+        asset: {
+          id: 'asset_' + assetType.slice(0, -1) + '_' + Date.now(),
+          name: path.basename(targetPath),
+          path: targetPath,
+          type: assetType.slice(0, -1),
+          size: formatFileSize(stats.size),
+          fileSize: stats.size
+        }
+      };
+    } catch (error) {
+      console.error('上传片段素材失败:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
+  // 保存拖放文件到片段专属目录（sandbox 模式专用）
+  ipcMain.handle('project:saveDroppedSceneAsset', async (event, fileName, fileData, projectDir, assetType, shotId) => {
+    return withErrorHandler(async () => {
+      validateParams({ fileName, fileData, projectDir, assetType, shotId }, ['fileName', 'fileData', 'projectDir', 'assetType', 'shotId']);
+
+      // 确定素材类型目录
+      const typeDirMap = {
+        image: 'images',
+        video: 'videos',
+        audio: 'audios'
+      };
+      const typeDir = typeDirMap[assetType] || 'images';
+
+      // 片段专属素材目录：assets/shots/{shotId}/{type}
+      const shotAssetsDir = path.join(projectDir, 'assets', 'shots', shotId, typeDir);
+      if (!fs.existsSync(shotAssetsDir)) {
+        fs.mkdirSync(shotAssetsDir, { recursive: true });
+      }
+
+      // 目标文件路径
+      let targetPath = path.join(shotAssetsDir, fileName);
+
+      // 如果文件已存在，添加时间戳
+      if (fs.existsSync(targetPath)) {
+        const ext = path.extname(fileName);
+        const nameWithoutExt = path.basename(fileName, ext);
+        targetPath = path.join(shotAssetsDir, `${nameWithoutExt}_${Date.now()}${ext}`);
+      }
+
+      // 解析 Base64 数据
+      const matches = fileData.match(/^data:(.+);base64,(.+)$/);
+      if (!matches || matches.length !== 3) {
+        throw new Error('无效的文件数据格式');
+      }
+
+      const buffer = Buffer.from(matches[2], 'base64');
+
+      // 写入文件
+      fs.writeFileSync(targetPath, buffer);
+
+      // 返回文件信息
+      const stats = fs.statSync(targetPath);
+      return {
+        success: true,
+        path: targetPath,
+        name: path.basename(targetPath),
+        size: formatFileSize(stats.size),
+        fileSize: stats.size,
+        type: assetType
+      };
+    }, '保存拖放片段文件');
+  });
+
   ipcMain.handle('project:startMonitor', async (event, projectDirs) => {
     try {
       if (folderMonitorInterval) {

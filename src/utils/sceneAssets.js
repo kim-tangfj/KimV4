@@ -455,15 +455,16 @@ async function handleSceneDroppedFiles(files) {
         assetType = 'audio';
       }
 
-      // 使用项目素材库上传 API（通过 Base64 保存）
-      const result = await window.electronAPI.saveDroppedFile(
+      // 使用片段素材库上传 API（通过 Base64 保存，独立存储）
+      const result = await window.electronAPI.saveDroppedSceneAsset(
         file.name,
         fileData,
         project.projectDir,
-        assetType
+        assetType,
+        shotId
       );
 
-      console.log('[handleSceneDroppedFiles] saveDroppedFile result:', result);
+      console.log('[handleSceneDroppedFiles] saveDroppedSceneAsset result:', result);
 
       if (result.success) {
         // 将返回数据包装成 asset 对象格式
@@ -477,7 +478,7 @@ async function handleSceneDroppedFiles(files) {
         };
         // 添加到片段素材库
         console.log('[handleSceneDroppedFiles] 添加素材到片段:', asset);
-        await addSceneAssetToShot(shotId, asset);
+        await addSceneAssetToShot(shotId, asset, true); // isSceneAsset = true 表示这是片段专属素材
         successCount++;
       } else {
         failCount++;
@@ -538,16 +539,17 @@ async function handleSceneFilesUpload(files) {
     }
 
     try {
-      // 使用项目素材库上传 API
-      const result = await window.electronAPI.uploadAssetToProject({
+      // 使用片段素材上传 API（独立存储）
+      const result = await window.electronAPI.uploadSceneAsset({
         projectDir: project.projectDir,
         filePath: file.path,
-        fileName: file.name
+        fileName: file.name,
+        shotId: shotId
       });
 
-      if (result.success) {
+      if (result.success && result.asset) {
         // 添加到片段素材库
-        await addSceneAssetToShot(shotId, result.asset);
+        await addSceneAssetToShot(shotId, result.asset, true);
         successCount++;
       } else {
         failCount++;
