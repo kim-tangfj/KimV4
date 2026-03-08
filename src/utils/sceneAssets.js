@@ -463,12 +463,16 @@ async function handleSceneDroppedFiles(files) {
         assetType
       );
 
-      if (result.success) {
+      console.log('[handleSceneDroppedFiles] saveDroppedFile result:', result);
+
+      if (result.success && result.asset) {
         // 添加到片段素材库
+        console.log('[handleSceneDroppedFiles] 添加素材到片段:', result.asset);
         await addSceneAssetToShot(shotId, result.asset);
         successCount++;
       } else {
         failCount++;
+        console.error('[handleSceneDroppedFiles] 上传失败:', result.error || '无返回数据');
       }
     } catch (error) {
       failCount++;
@@ -588,7 +592,7 @@ async function addSceneAssetToShot(shotId, asset) {
   }
 
   // 根据类型添加到对应数组
-  const assetType = asset.type || getAssetType(asset.name);
+  const assetType = (asset && asset.type) || getAssetType(asset.name);
   const assetArray = shot.assets[assetType + 's'];
   if (!Array.isArray(assetArray)) {
     shot.assets[assetType + 's'] = [];

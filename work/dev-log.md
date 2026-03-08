@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-08 - 修复片段素材库添加素材时片段查找错误
+
+### 问题
+上传素材时报错 `片段不存在：shot_xxx`，但 `loadShotAssetsList` 能找到该片段
+
+### 原因
+`addSceneAssetToShot` 使用 `state.currentProject` 查找片段，但该数据可能不是最新的（与 `state.projectData` 不同步）
+
+### 修复
+- 改用 `state.projectData` 查找片段
+- 保存时使用 `projectData` 作为数据源
+- 添加可用片段 ID 日志便于调试
+
+---
+
 ## 2026-03-08 - 修复片段素材库上传后素材不显示的问题
 
 ### 问题
