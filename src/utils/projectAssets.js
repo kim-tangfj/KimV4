@@ -3,6 +3,10 @@
 // 负责素材库侧边窗体的显示、隐藏、素材列表渲染等功能
 //
 
+// 声明局部变量，覆盖 window 上的同名函数
+var renderAssetsList, renderAssetsSection, renderAssetsListByType, filterAssetsByKeyword;
+var updateAssetsCount, updateAssetsUsage, bindThumbnailClickEvents, showPreview, hidePreview, getMockAssets;
+
 /**
  * 素材库侧边窗体元素
  */
