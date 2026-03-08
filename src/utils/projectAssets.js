@@ -477,11 +477,16 @@ function renderAssetsListByType(type) {
 function filterAssetsByKeyword(keyword) {
   if (!currentProjectId) return;
 
+  console.log('[filterAssetsByKeyword] keyword:', keyword);
+  console.log('[filterAssetsByKeyword] currentAssetsData:', JSON.stringify(currentAssetsData, null, 2));
+  
   // 使用缓存的真实数据
   const assets = currentAssetsData;
 
   if (keyword === '') {
-    renderAssetsList(assets);
+    // 清空搜索，显示全部素材并更新计数
+    console.log('[filterAssetsByKeyword] 清空搜索，显示全部素材');
+    renderAssetsList(assets, false, true);
     return;
   }
 
@@ -491,7 +496,10 @@ function filterAssetsByKeyword(keyword) {
     audios: assets.audios.filter(item => item.name.toLowerCase().includes(keyword))
   };
 
-  renderAssetsList(filteredAssets);
+  console.log('[filterAssetsByKeyword] filteredAssets:', JSON.stringify(filteredAssets, null, 2));
+
+  // 渲染过滤后的素材列表，并更新计数为过滤后的数量
+  renderAssetsList(filteredAssets, false, true);
 }
 
 /**
