@@ -268,11 +268,13 @@ function renderAssetsSection(title, items, type) {
   return `
     <div class="assets-section-title">${title}</div>
     <div class="assets-grid assets-grid-${type}s">
-      ${items.map(item => `
+      ${items.map((item, index) => `
         <div class="asset-thumbnail" data-asset-id="${item.id}" data-asset-type="${type}" data-asset-name="${item.name}" data-asset-size="${item.size}" data-asset-path="${item.path}">
           ${type === 'image'
             ? `<img src="${item.path}" alt="${item.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🖼️</text></svg>'" />`
-            : `<div class="${type}-thumbnail">${icons[type]}</div>`
+            : type === 'video'
+              ? `<video data-src="${item.path}" preload="metadata" onloadeddata="extractVideoFrame(this)" onerror="this.parentElement.innerHTML='<div class=\\'video-thumbnail\\'>${icons[type]}</div>'"></video>`
+              : `<div class="${type}-thumbnail">${icons[type]}</div>`
           }
           <div class="asset-info">
             <span class="asset-name">${item.name}</span>
@@ -282,6 +284,36 @@ function renderAssetsSection(title, items, type) {
       `).join('')}
     </div>
   `;
+}
+
+/**
+ * 提取视频第一帧作为缩略图
+ * @param {HTMLVideoElement} video - 视频元素
+ */
+function extractVideoFrame(video) {
+  try {
+    video.currentTime = 0; // 跳转到第一帧
+    
+    video.onseeked = function() {
+      const canvas = document.createElement('canvas');
+      canvas.width = video.videoWidth;
+      canvas.height = video.videoHeight;
+      
+      const ctx = canvas.getContext('2d');
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      
+      // 转换为图片并替换 video 元素
+      const img = document.createElement('img');
+      img.src = canvas.toDataURL('image/jpeg', 0.8);
+      img.style.width = '100%';
+      img.style.height = '100%';
+      img.style.objectFit = 'cover';
+      
+      video.parentElement.replaceChild(img, video);
+    };
+  } catch (error) {
+    console.error('提取视频封面失败:', error);
+  }
 }
 
 // 当前素材数据缓存
@@ -479,3 +511,4 @@ window.closeAssetsSidebar = closeAssetsSidebar;
 window.initAssetsSidebar = initAssetsSidebar;
 window.showPreview = showPreview;
 window.hidePreview = hidePreview;
+window.extractVideoFrame = extractVideoFrame;
