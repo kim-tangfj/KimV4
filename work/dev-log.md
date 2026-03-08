@@ -54,6 +54,20 @@
 
 ---
 
+## 2026-03-08 - 将项目素材库和片段素材库右键菜单分开
+
+### 修改
+- `index.html`: 新增 `project-asset-context-menu` 和 `scene-asset-context-menu`
+- `projectAssets.js`: 使用 `project-asset-context-menu`
+- `sceneAssets.js`: 使用 `scene-asset-context-menu`
+
+### 优势
+- 两个菜单完全独立，互不干扰
+- 代码逻辑更清晰
+- 避免事件冲突问题
+
+---
+
 ## 2026-03-08 - 修复右键菜单事件重复触发问题（最终修复）
 
 ### 问题

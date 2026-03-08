@@ -482,8 +482,10 @@ async function selectProject(project) {
     window.elements.bottomPanelTitle.textContent = '属性';
   }
 
-  // 清空素材库
-  window.renderAssetsList([]);
+  // 如果项目素材库已打开，刷新素材列表
+  if (window.refreshProjectAssetsList) {
+    window.refreshProjectAssetsList();
+  }
 }
 
 // 将函数暴露到全局作用域
