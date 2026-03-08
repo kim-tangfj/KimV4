@@ -54,6 +54,29 @@
 
 ---
 
+## 2026-03-08 - 实现镜头属性分镜图片上传和拖放功能
+
+### 功能实现
+- 添加分镜图片上传区域 HTML 和 CSS 样式
+- 实现点击上传和拖放上传功能
+- 新增 IPC 处理器 `project:uploadStoryboardImage`
+- 分镜图片保存到 `shots/{shotId}/images/storyboard/`
+- 支持从项目素材库拖放图片（无标识允许）
+- 支持从片段素材库拖放图片
+- 禁止从项目素材库拖放📋标识素材
+- 实现分镜图预览和删除功能
+
+### 修改文件
+- `index.html`: 修改镜头属性表单分镜图片 HTML
+- `styles.css`: 添加分镜图片上传区域样式
+- `src/utils/propertyPanel.js`: 添加上传功能实现
+- `src/utils/projectAssets.js`: 添加素材拖放支持
+- `src/utils/sceneAssets.js`: 添加素材拖放支持
+- `src/preload.js`: 暴露 `uploadStoryboardImage` API
+- `src/handlers/project.js`: 新增 IPC 处理器
+
+---
+
 ## 2026-03-08 - 点击项目时刷新项目素材库
 
 ### 问题

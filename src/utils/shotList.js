@@ -49,6 +49,18 @@ function renderShotList(shots) {
     shotElement.dataset.id = shot.id;
 
     const statusText = getStatusText(shot.status || 'draft');
+    
+    // 检查是否有分镜图片（查找任意镜头的分镜图）
+    let storyboardImage = null;
+    if (shot.scenes && shot.scenes.length > 0) {
+      for (const scene of shot.scenes) {
+        if (scene.storyboardImage && scene.storyboardImage.path) {
+          storyboardImage = scene.storyboardImage;
+          break;
+        }
+      }
+    }
+    
     shotElement.innerHTML = `
       <div class="list-item-content">
         <div class="list-item-title">${shot.name}</div>
@@ -57,6 +69,11 @@ function renderShotList(shots) {
         </div>
       </div>
       <span class="status-tag status-${shot.status || 'draft'}">${statusText}</span>
+      ${storyboardImage ? `
+        <div class="storyboard-thumbnail" title="分镜图：${storyboardImage.name}">
+          <img src="${storyboardImage.path}" alt="${storyboardImage.name}" />
+        </div>
+      ` : ''}
     `;
 
     // 片段卡片点击 - 传递原始 shot 对象
