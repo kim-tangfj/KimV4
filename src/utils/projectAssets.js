@@ -215,16 +215,19 @@ function initUploadFunctionality() {
     }, false);
   });
 
-  // 处理文件 drop - 拖放的文件也需要通过 dialog 获取路径
+  // 处理文件 drop - 真正的拖放上传
   uploadArea.addEventListener('drop', async (e) => {
     e.preventDefault();
     e.stopPropagation();
 
     uploadArea.classList.remove('drag-over');
 
-    // 在 sandbox 模式下，拖放的文件无法获取真实路径
-    // 提示用户使用点击上传方式
-    window.showToast('拖放上传暂不支持，请点击上传区域选择文件');
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      // 将 FileList 转换为数组并处理
+      const fileArray = Array.from(files);
+      handleDroppedFiles(fileArray);
+    }
   });
 }
 
@@ -234,6 +237,93 @@ function initUploadFunctionality() {
 function preventDefaults(e) {
   e.preventDefault();
   e.stopPropagation();
+}
+
+/**
+ * 读取文件为 Base64
+ * @param {File} file - 文件对象
+ * @returns {Promise<string>} Base64 数据 URL
+ */
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * 处理拖放的文件
+ * @param {File[]} files - 文件对象数组
+ */
+async function handleDroppedFiles(files) {
+  const state = window.getState();
+  const project = state.currentProject;
+
+  if (!project || !project.projectDir) {
+    window.showToast('请先选择项目');
+    return;
+  }
+
+  // 显示上传进度
+  showUploadProgress(0, files.length);
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+
+    console.log(`[handleDroppedFiles] file ${i}:`, file.name, file.type, file.size);
+
+    try {
+      // 读取文件为 Base64
+      const fileData = await readFileAsBase64(file);
+
+      // 确定素材类型
+      let assetType = 'image';
+      if (file.type.startsWith('video/')) {
+        assetType = 'video';
+      } else if (file.type.startsWith('audio/')) {
+        assetType = 'audio';
+      }
+
+      // 使用项目素材库上传 API（通过 Base64 保存）
+      const result = await window.electronAPI.saveDroppedFile(
+        file.name,
+        fileData,
+        project.projectDir,
+        assetType
+      );
+
+      if (result.success) {
+        successCount++;
+        console.log(`[handleDroppedFiles] 上传成功 ${file.name}:`, result.path);
+      } else {
+        failCount++;
+        console.error(`[handleDroppedFiles] 上传失败 ${file.name}:`, result.error);
+      }
+    } catch (error) {
+      failCount++;
+      console.error(`[handleDroppedFiles] 上传异常 ${file.name}:`, error);
+    }
+
+    // 更新进度
+    showUploadProgress(i + 1, files.length);
+  }
+
+  // 隐藏进度条
+  setTimeout(() => hideUploadProgress(), 1000);
+
+  // 显示结果
+  if (successCount > 0) {
+    window.showToast(`成功上传 ${successCount}/${files.length} 个素材`);
+    // 重新加载素材列表
+    loadAssetsList(currentProjectId);
+  } else {
+    window.showToast('上传失败，请检查文件格式');
+  }
 }
 
 /**

@@ -4,6 +4,94 @@
 
 ---
 
+## 2026-03-08 - 实现拖放上传功能（Sandbox 模式）
+
+### 需求
+实现真正的项目素材库拖放上传功能，解决 Electron Sandbox 模式下无法获取文件真实路径的问题。
+
+### 技术方案
+**Sandbox 模式限制**：渲染进程无法直接访问 File 对象的 `path` 属性
+
+**解决方案**：使用 `FileReader` 读取文件为 Base64，通过 IPC 传递给主进程保存
+
+### 修改文件
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `src/preload.js` | +2 行 | 暴露 `saveDroppedFile` API |
+| `src/handlers/project.js` | +55 行 | 新增 `fs:saveDroppedFile` IPC 处理器 |
+| `src/utils/projectAssets.js` | +80 行 | 新增 `handleDroppedFiles` 和 `readFileAsBase64` 函数 |
+| `styles.css` | +15 行 | 增强拖放视觉效果（动画 + 阴影） |
+
+### 核心实现
+
+#### 1. preload.js - 暴露 API
+```javascript
+saveDroppedFile: (fileName, fileData, projectDir, assetType) => 
+  ipcRenderer.invoke('fs:saveDroppedFile', fileName, fileData, projectDir, assetType)
+```
+
+#### 2. project.js - 主进程保存文件
+```javascript
+ipcMain.handle('fs:saveDroppedFile', async (event, fileName, fileData, projectDir, assetType) => {
+  // 解析 Base64 数据
+  const matches = fileData.match(/^data:(.+);base64,(.+)$/);
+  const buffer = Buffer.from(matches[2], 'base64');
+  
+  // 确定素材类型目录（images/videos/audios）
+  // 复制到项目 assets 目录
+  // 处理重名文件（添加时间戳）
+  
+  return { success: true, path, name, size, fileSize, type };
+})
+```
+
+#### 3. projectAssets.js - 渲染进程处理拖放
+```javascript
+// 拖放 drop 事件
+uploadArea.addEventListener('drop', async (e) => {
+  const files = e.dataTransfer.files;
+  const fileArray = Array.from(files);
+  await handleDroppedFiles(fileArray);
+});
+
+// 读取文件为 Base64
+function readFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.readAsDataURL(file);
+  });
+}
+
+// 处理拖放文件
+async function handleDroppedFiles(files) {
+  // 遍历文件列表
+  // 读取 Base64 → 调用 IPC 保存 → 显示进度 → 刷新列表
+}
+```
+
+### 视觉效果增强
+- 拖放时边框变绿 + 背景高亮
+- 图标 bounce 动画
+- 绿色阴影效果
+- 深色主题适配
+
+### 功能特性
+- ✅ 支持单文件拖放上传
+- ✅ 支持多文件同时拖放
+- ✅ 自动识别文件类型（图片/视频/音频）
+- ✅ 自动分类存储到对应目录
+- ✅ 文件重名自动添加时间戳
+- ✅ 上传进度实时显示
+- ✅ 上传完成自动刷新素材列表
+- ✅ 深色主题完美适配
+
+### 已知限制
+- 大文件（>50MB）上传可能较慢（Base64 编码 + IPC 传输）
+- 视频文件建议先压缩再上传
+
+---
+
 ## 2026-03-08 - 项目素材库上传功能（点击 + 拖放）
 
 ### 新增功能
@@ -19,11 +107,14 @@
 - 拖放时高亮效果（绿色边框 + 背景）
 - 上传进度条样式
 - 深色主题适配
+- 拖放动画效果（bounce 动画 + 阴影）
 
 #### 3. JavaScript 功能
 **核心函数**:
 - `initUploadFunctionality()`: 初始化上传功能
-- `handleFilesUpload(files)`: 处理文件上传
+- `handleFilesUpload(files)`: 处理文件上传（点击方式）
+- `handleDroppedFiles(files)`: 处理拖放文件上传
+- `readFileAsBase64(file)`: 读取文件为 Base64
 - `showUploadProgress(current, total)`: 显示上传进度
 - `hideUploadProgress()`: 隐藏进度条
 

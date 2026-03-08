@@ -1703,8 +1703,18 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
 
 .assets-upload-area.drag-over {
   border-color: #4CAF50;
-  background-color: rgba(76, 175, 80, 0.1);
-  transform: scale(1.01);
+  background-color: rgba(76, 175, 80, 0.15);
+  transform: scale(1.02);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+}
+
+.assets-upload-area.drag-over .upload-icon {
+  animation: bounce 0.6s ease-in-out infinite;
+}
+
+@keyframes bounce {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-5px); }
 }
 
 .upload-area-content {
@@ -2066,7 +2076,8 @@ body.dark-theme .assets-upload-area:hover {
 
 body.dark-theme .assets-upload-area.drag-over {
   border-color: #4CAF50;
-  background-color: rgba(76, 175, 80, 0.15);
+  background-color: rgba(76, 175, 80, 0.2);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
 }
 
 body.dark-theme .asset-thumbnail {

@@ -11,6 +11,8 @@ contextBridge.exposeInMainWorld('electronAPI', {
   writeFile: (filePath, data) => ipcRenderer.invoke('fs:writeFile', filePath, data),
   fileExists: (filePath) => ipcRenderer.invoke('fs:exists', filePath),
   getFilePaths: (files) => ipcRenderer.invoke('fs:getFilePaths', files),
+  // 保存拖放文件（sandbox 模式专用）
+  saveDroppedFile: (fileName, fileData, projectDir, assetType) => ipcRenderer.invoke('fs:saveDroppedFile', fileName, fileData, projectDir, assetType),
 
   // Shell API
   openPath: (filePath) => ipcRenderer.invoke('shell:openPath', filePath),
