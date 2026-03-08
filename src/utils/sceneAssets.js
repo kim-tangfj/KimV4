@@ -567,17 +567,18 @@ async function handleSceneFilesUpload(files) {
  */
 async function addSceneAssetToShot(shotId, asset) {
   const state = window.getState();
-  const project = state.currentProject;
+  // 使用 projectData 获取最新的项目数据
+  const projectData = state.projectData || state.currentProject;
 
-  if (!project) {
+  if (!projectData) {
     console.error('[addSceneAssetToShot] 项目未加载');
     return;
   }
 
-  // 查找片段
-  const shot = project.shots?.find(s => s.id === shotId);
+  // 从 projectData.shots 中查找片段
+  const shot = projectData.shots?.find(s => s.id === shotId);
   if (!shot) {
-    console.error('[addSceneAssetToShot] 片段不存在:', shotId);
+    console.error('[addSceneAssetToShot] 片段不存在:', shotId, '可用片段:', projectData.shots?.map(s => s.id));
     return;
   }
 
@@ -597,7 +598,13 @@ async function addSceneAssetToShot(shotId, asset) {
   console.log('[addSceneAssetToShot] 添加素材:', asset, '到片段:', shotId);
 
   // 保存项目
-  const saveResult = await window.electronAPI.saveProject(project.projectDir, project);
+  const project = state.currentProject;
+  if (!project || !project.projectDir) {
+    console.error('[addSceneAssetToShot] 项目目录不存在');
+    return;
+  }
+
+  const saveResult = await window.electronAPI.saveProject(project.projectDir, projectData);
   console.log('[addSceneAssetToShot] 保存结果:', saveResult);
 
   // 重新加载项目数据以确保同步

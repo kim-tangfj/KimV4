@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-08 - 修复片段素材库上传后素材不显示的问题
+
+### 问题
+上传素材成功后，片段素材库没有显示资源
+
+### 原因
+`addSceneAssetToShot` 修改的是 `state.currentProject`，但 `loadShotAssetsList` 从 `state.projectData` 读取，两个数据源不同步
+
+### 修复
+- 保存项目后重新加载项目数据
+- 同步更新 `state` 中的 `projects`、`currentProject` 和 `projectData`
+- 添加调试日志确认数据同步成功
+
+---
+
 ## 2026-03-08 - 修复片段素材库上传功能初始化时机问题
 
 ### 问题
