@@ -121,6 +121,9 @@ async function selectScene(scene) {
 
   // 显示镜头属性表单
   window.showSceneProperties(window.getState().currentScene);
+  
+  // 镜头选中时，片段素材库保持不变（仍显示当前片段的素材）
+  // 不需要重新加载素材列表
 }
 
 /**

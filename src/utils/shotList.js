@@ -146,6 +146,11 @@ async function selectShot(shot) {
 
   // 显示片段属性表单
   window.showShotProperties(window.getState().currentShot);
+  
+  // 加载片段素材库
+  if (window.loadShotAssetsList) {
+    window.loadShotAssetsList(shot.id);
+  }
 }
 
 /**

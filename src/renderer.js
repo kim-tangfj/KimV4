@@ -212,8 +212,12 @@ function cacheDOMElements() {
   elements.assetsPanel = document.getElementById('assets-panel');
   elements.assetsPanelToggleBtn = document.getElementById('assets-panel-toggle-btn');
   elements.assetsPanelToggleHeader = document.getElementById('assets-panel-toggle-header');
+  elements.assetsPanelUploadBtn = document.getElementById('assets-panel-upload-btn');
   elements.bottomPanelTitle = document.getElementById('bottom-panel-title');
   elements.panelToggleHeader = document.getElementById('panel-toggle-header');
+  
+  // 项目素材库侧边窗体
+  elements.projectAssetsSidebar = document.getElementById('project-assets-sidebar');
 }
 /** ======= DOM 元素缓存 结束 ======== */
 

@@ -278,15 +278,24 @@ function setupEventListeners() {
     });
   }
 
-  // 编辑弹窗事件绑定
-  if (window.elements.closeCustomOptionEditBtn) {
-    window.elements.closeCustomOptionEditBtn.addEventListener('click', () => window.hideCustomOptionEditModal());
+  // 片段素材库面板事件绑定
+  if (window.elements.assetsPanelToggleHeader) {
+    window.elements.assetsPanelToggleHeader.addEventListener('click', () => {
+      window.toggleSceneAssetsPanel();
+    });
   }
-  if (window.elements.saveCustomOptionEditBtn) {
-    window.elements.saveCustomOptionEditBtn.addEventListener('click', () => window.saveCustomOptionEdit());
+  if (window.elements.assetsPanelToggleBtn) {
+    window.elements.assetsPanelToggleBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.toggleSceneAssetsPanel();
+    });
   }
-  if (window.elements.cancelCustomOptionEditBtn) {
-    window.elements.cancelCustomOptionEditBtn.addEventListener('click', () => window.hideCustomOptionEditModal());
+  if (window.elements.assetsPanelUploadBtn) {
+    window.elements.assetsPanelUploadBtn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      window.showToast('上传素材功能待实现');
+      // TODO: 实现素材上传功能
+    });
   }
 }
 
