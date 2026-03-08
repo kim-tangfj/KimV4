@@ -54,6 +54,20 @@
 
 ---
 
+## 2026-03-08 - 修复删除项目功能参数传递错误
+
+### 问题
+`deleteCurrentProject` 函数调用时参数顺序和数量不一致
+- 定义：7 个参数 `(elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm)`
+- 调用：5 个参数 `(elements, useElectronAPI, loadProjects, showToast, showConfirm)`
+
+### 修复
+- 删除函数定义中的 `renderShotList` 和 `renderSceneList` 参数
+- 删除函数体中的 `renderShotList([])` 和 `renderSceneList([])` 调用
+- 更新所有调用处参数
+
+---
+
 ## 2026-03-08 - 修复 loadSceneAssetsList 未定义错误
 
 ### 问题

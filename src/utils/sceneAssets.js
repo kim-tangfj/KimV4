@@ -204,7 +204,7 @@ function renderSceneAssetsSection(title, items, type, ownerType, ownerId) {
       <div class="assets-section-content" id="${sectionId}">
         <div class="assets-grid assets-grid-${type}s">
           ${items.map(item => `
-            <div class="asset-thumbnail" data-asset-id="${item.id}" data-asset-type="${type}" data-asset-name="${item.name}" data-asset-path="${item.path}">
+            <div class="asset-thumbnail" data-asset-id="${item.id}" data-asset-type="${type}" data-asset-name="${item.name}" data-asset-path="${item.path}" data-asset-source="shot">
               ${type === 'image'
                 ? `<img src="${item.path}" alt="${item.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🖼️</text></svg>'" />`
                 : `<div class="${type}-thumbnail">${icons[type]}</div>`
