@@ -370,40 +370,6 @@ function bindThumbnailClickEvents() {
 }
 
 /**
- * 渲染素材分类
- * @param {string} title - 分类标题
- * @param {Array} items - 素材数组
- * @param {string} type - 素材类型 (image/video/audio)
- */
-const renderAssetsSection = function(title, items, type) {
-  const icons = {
-    image: '🖼️',
-    video: '🎬',
-    audio: '🎵'
-  };
-
-  return `
-    <div class="assets-section-title">${title}</div>
-    <div class="assets-grid assets-grid-${type}s">
-      ${items.map((item, index) => `
-        <div class="asset-thumbnail" data-asset-id="${item.id}" data-asset-type="${type}" data-asset-name="${item.name}" data-asset-size="${item.size}" data-asset-path="${item.path}">
-          ${type === 'image'
-            ? `<img src="${item.path}" alt="${item.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🖼️</text></svg>'" />`
-            : type === 'video'
-              ? `<video src="${item.path}" preload="auto" muted oncanplay="window.extractVideoFrame(this)" onerror="this.parentElement.innerHTML='<div class=\\'video-thumbnail\\'>${icons[type]}</div>'"></video>`
-              : `<div class="${type}-thumbnail">${icons[type]}</div>`
-          }
-          <div class="asset-info">
-            <span class="asset-name">${item.name}</span>
-            <span class="asset-size">${item.size}</span>
-          </div>
-        </div>
-      `).join('')}
-    </div>
-  `;
-}
-
-/**
  * 提取视频第一帧作为缩略图
  * @param {HTMLVideoElement} video - 视频元素
  */
