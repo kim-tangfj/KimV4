@@ -22,7 +22,7 @@ function initSceneAssetsPanel() {
   sceneAssetsPanel.panel = document.getElementById('assets-panel');
   sceneAssetsPanel.header = document.getElementById('assets-panel-toggle-header');
   sceneAssetsPanel.toggleBtn = document.getElementById('assets-panel-toggle-btn');
-  sceneAssetsPanel.list = document.getElementById('assets-list');
+  sceneAssetsPanel.list = document.getElementById('shot-assets-list');
 }
 
 /**
