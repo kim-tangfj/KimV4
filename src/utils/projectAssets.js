@@ -298,6 +298,12 @@ function extractVideoFrame(video) {
       return;
     }
     
+    // 检查是否正在处理中
+    if (video.dataset.extracting === 'true') {
+      console.log('[extractVideoFrame] 正在处理中，跳过');
+      return;
+    }
+    
     console.log('[extractVideoFrame] 开始提取，视频尺寸:', video.videoWidth, 'x', video.videoHeight);
     
     const canvas = document.createElement('canvas');
@@ -359,6 +365,10 @@ function extractVideoFrame(video) {
       img.style.objectFit = 'cover';
       img.dataset.frameExtracted = 'true';
 
+      // 标记为已完成，防止重复处理
+      video.dataset.frameExtracted = 'true';
+      video.dataset.extracting = 'false';
+
       // 替换 video 元素
       try {
         video.parentNode.replaceChild(img, video);
@@ -368,11 +378,27 @@ function extractVideoFrame(video) {
       }
     }
 
+    // 标记为正在处理
+    video.dataset.extracting = 'true';
+    
+    let seekCount = 0;
+    const maxSeeks = 2; // 最多跳转 2 次
+
     // 只尝试一次，不循环跳转
     video.onseeked = function() {
+      seekCount++;
+      console.log('[extractVideoFrame] onseeked 调用次数:', seekCount);
+      
       // 检查元素是否还在 DOM 中
       if (!video || !document.contains(video)) {
         console.log('[extractVideoFrame] onseeked: 视频元素已不在 DOM 中，跳过');
+        return;
+      }
+      
+      // 防止超过最大跳转次数
+      if (seekCount > maxSeeks) {
+        console.log('[extractVideoFrame] 超过最大跳转次数，停止处理');
+        video.dataset.extracting = 'false';
         return;
       }
 
@@ -383,7 +409,12 @@ function extractVideoFrame(video) {
         // 是黑场，跳转到 1 秒再试一次
         video.currentTime = 1.0;
         video.onseeked = function() {
+          seekCount++;
           if (!video || !document.contains(video)) {
+            return;
+          }
+          if (seekCount > maxSeeks) {
+            video.dataset.extracting = 'false';
             return;
           }
           console.log('[extractVideoFrame] onseeked(2): currentTime =', video.currentTime);
