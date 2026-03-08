@@ -621,63 +621,76 @@ function initProjectIPC(mainWindow) {
         audios: []
       };
 
-      // 读取图片
-      const imagesDir = path.join(assetsDir, 'images');
-      if (fs.existsSync(imagesDir)) {
-        const files = fs.readdirSync(imagesDir);
-        for (const file of files) {
-          if (/\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file)) {
-            const filePath = path.join(imagesDir, file);
-            const stats = fs.statSync(filePath);
-            assets.images.push({
-              id: 'asset_img_' + file.replace(/\.[^/.]+$/, ''),
-              name: file,
-              size: formatFileSize(stats.size),
-              path: filePath,  // 使用绝对路径
-              type: 'image',
-              fileSize: stats.size
-            });
+      // 读取项目素材（images/videos/audios）
+      const typeDirs = {
+        images: 'images',
+        videos: 'videos',
+        audios: 'audios'
+      };
+
+      Object.keys(typeDirs).forEach(key => {
+        const dir = path.join(assetsDir, typeDirs[key]);
+        if (fs.existsSync(dir)) {
+          const files = fs.readdirSync(dir);
+          for (const file of files) {
+            const ext = path.extname(file).toLowerCase();
+            const isImage = key === 'images' && /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file);
+            const isVideo = key === 'videos' && /\.(mp4|webm|ogg|mov|avi)$/i.test(file);
+            const isAudio = key === 'audios' && /\.(mp3|wav|ogg|aac|flac)$/i.test(file);
+
+            if (isImage || isVideo || isAudio) {
+              const filePath = path.join(dir, file);
+              const stats = fs.statSync(filePath);
+              assets[key].push({
+                id: 'asset_' + key.slice(0, -1) + '_' + file.replace(/\.[^/.]+$/, ''),
+                name: file,
+                size: formatFileSize(stats.size),
+                path: filePath,
+                type: key.slice(0, -1),
+                fileSize: stats.size,
+                source: 'project' // 标记为项目素材
+              });
+            }
           }
         }
-      }
+      });
 
-      // 读取视频
-      const videosDir = path.join(assetsDir, 'videos');
-      if (fs.existsSync(videosDir)) {
-        const files = fs.readdirSync(videosDir);
-        for (const file of files) {
-          if (/\.(mp4|webm|ogg|mov|avi)$/i.test(file)) {
-            const filePath = path.join(videosDir, file);
-            const stats = fs.statSync(filePath);
-            assets.videos.push({
-              id: 'asset_vid_' + file.replace(/\.[^/.]+$/, ''),
-              name: file,
-              size: formatFileSize(stats.size),
-              path: filePath,  // 使用绝对路径
-              type: 'video',
-              fileSize: stats.size
-            });
-          }
-        }
-      }
+      // 读取片段素材（shots/{shotId}/{type}）
+      const shotsDir = path.join(assetsDir, 'shots');
+      if (fs.existsSync(shotsDir)) {
+        const shotIds = fs.readdirSync(shotsDir);
+        for (const shotId of shotIds) {
+          const shotDir = path.join(shotsDir, shotId);
+          if (!fs.statSync(shotDir).isDirectory()) continue;
 
-      // 读取音频
-      const audiosDir = path.join(assetsDir, 'audios');
-      if (fs.existsSync(audiosDir)) {
-        const files = fs.readdirSync(audiosDir);
-        for (const file of files) {
-          if (/\.(mp3|wav|ogg|aac|flac)$/i.test(file)) {
-            const filePath = path.join(audiosDir, file);
-            const stats = fs.statSync(filePath);
-            assets.audios.push({
-              id: 'asset_aud_' + file.replace(/\.[^/.]+$/, ''),
-              name: file,
-              size: formatFileSize(stats.size),
-              path: filePath,  // 使用绝对路径
-              type: 'audio',
-              fileSize: stats.size
-            });
-          }
+          // 读取每个片段的素材
+          Object.keys(typeDirs).forEach(key => {
+            const dir = path.join(shotDir, typeDirs[key]);
+            if (fs.existsSync(dir)) {
+              const files = fs.readdirSync(dir);
+              for (const file of files) {
+                const ext = path.extname(file).toLowerCase();
+                const isImage = key === 'images' && /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file);
+                const isVideo = key === 'videos' && /\.(mp4|webm|ogg|mov|avi)$/i.test(file);
+                const isAudio = key === 'audios' && /\.(mp3|wav|ogg|aac|flac)$/i.test(file);
+
+                if (isImage || isVideo || isAudio) {
+                  const filePath = path.join(dir, file);
+                  const stats = fs.statSync(filePath);
+                  assets[key].push({
+                    id: 'asset_' + key.slice(0, -1) + '_' + shotId + '_' + file.replace(/\.[^/.]+$/, ''),
+                    name: file,
+                    size: formatFileSize(stats.size),
+                    path: filePath,
+                    type: key.slice(0, -1),
+                    fileSize: stats.size,
+                    source: 'shot', // 标记为片段素材
+                    shotId: shotId // 所属片段 ID
+                  });
+                }
+              }
+            }
+          });
         }
       }
 

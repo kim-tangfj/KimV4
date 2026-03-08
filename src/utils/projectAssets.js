@@ -56,8 +56,13 @@ function renderAssetsSection(title, items, type) {
   return `
     <div class="assets-section-title">${title}</div>
     <div class="assets-grid assets-grid-${type}s">
-      ${items.map((item, index) => `
-        <div class="asset-thumbnail" data-asset-id="${item.id}" data-asset-type="${type}" data-asset-name="${item.name}" data-asset-size="${item.size}" data-asset-path="${item.path}">
+      ${items.map((item, index) => {
+        const sourceBadge = item.source === 'shot' 
+          ? `<span class="asset-source" title="片段素材：${item.shotId || ''}">📋</span>` 
+          : '';
+        return `
+        <div class="asset-thumbnail" data-asset-id="${item.id}" data-asset-type="${type}" data-asset-name="${item.name}" data-asset-size="${item.size}" data-asset-path="${item.path}" data-asset-source="${item.source || 'project'}">
+          ${sourceBadge}
           ${type === 'image'
             ? `<img src="${item.path}" alt="${item.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🖼️</text></svg>'" />`
             : type === 'video'
@@ -69,7 +74,8 @@ function renderAssetsSection(title, items, type) {
             <span class="asset-size">${item.size}</span>
           </div>
         </div>
-      `).join('')}
+      `;
+      }).join('')}
     </div>
   `;
 }

@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-03-08 - 实现片段素材库独立存储
+
+### 问题
+- 片段素材库素材直接引用项目素材库路径
+- 项目素材库删除文件后片段素材库素材失效
+
+### 解决方案
+- 新增 `project:uploadSceneAsset` API（点击上传）
+- 新增 `project:saveDroppedSceneAsset` API（拖放上传）
+- 片段素材存储到 `assets/shots/{shotId}/{type}` 目录
+- 完全独立于项目素材库
+
+### 修改文件
+- `src/preload.js`: 新增 2 个 API 暴露
+- `src/handlers/project.js`: 新增 2 个 IPC 处理器
+- `src/utils/sceneAssets.js`: 修改上传逻辑使用新 API
+
+### 目录结构
+```
+项目目录/
+├── assets/
+│   ├── images/        # 项目素材库 - 图片
+│   ├── videos/        # 项目素材库 - 视频
+│   ├── audios/        # 项目素材库 - 音频
+│   └── shots/         # 片段素材库
+│       └── {shotId}/
+│           ├── images/
+│           ├── videos/
+│           └── audios/
+```
+
+---
+
 ## 2026-03-08 - 修复片段素材库保存项目时缺少 projectDir 参数
 
 ### 问题
