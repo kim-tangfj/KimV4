@@ -505,9 +505,6 @@ function extractVideoFrame(video) {
   }
 }
 
-// 当前素材数据缓存
-let currentAssetsData = { images: [], videos: [], audios: [] };
-
 /**
  * 根据类型渲染素材列表
  * @param {string} type - 类型 (all/images/videos/audios)
