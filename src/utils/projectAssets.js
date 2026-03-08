@@ -1048,6 +1048,18 @@ async function confirmDeleteAsset(assetType, assetName, assetPath) {
     return;
   }
 
+  // 检查素材来源
+  const state = window.getState();
+  const assets = currentAssetsData;
+  const allAssets = [...(assets.images || []), ...(assets.videos || []), ...(assets.audios || [])];
+  const currentAsset = allAssets.find(a => a.path === assetPath);
+
+  // 如果是片段素材，不允许删除
+  if (currentAsset && currentAsset.source === 'shot') {
+    window.showToast(`⚠️ 片段素材不允许在项目素材库删除\n\n该素材属于片段：${currentAsset.shotId || '未知'}`);
+    return;
+  }
+
   // 检查素材是否被镜头引用
   const isReferenced = checkAssetReference(assetPath);
 
