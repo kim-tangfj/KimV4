@@ -342,8 +342,13 @@ function extractVideoFrame(video) {
       img.style.height = '100%';
       img.style.objectFit = 'cover';
       
-      video.parentElement.replaceChild(img, video);
-      console.log('[extractVideoFrame] 提取完成');
+      // 安全替换：检查 parentElement 是否存在
+      if (video && video.parentElement) {
+        video.parentElement.replaceChild(img, video);
+        console.log('[extractVideoFrame] 提取完成');
+      } else {
+        console.warn('[extractVideoFrame] video.parentElement 为 null，无法替换');
+      }
     }
     
     // 从 1 秒开始尝试，避免黑场
