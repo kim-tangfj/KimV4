@@ -4,6 +4,133 @@
 
 ---
 
+## 2026-03-08 - 实现素材删除功能（右键菜单 + 预览删除）
+
+### 需求
+实现项目素材库的删除功能，支持：
+1. 右键素材显示上下文菜单（查看/删除）
+2. 预览模态框删除按钮
+3. 删除前检查素材是否被镜头引用
+4. 删除确认对话框
+
+### 修改文件
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `index.html` | +5 行 | 新增右键菜单 HTML |
+| `styles.css` | +35 行 | 右键菜单样式 + 深色主题适配 |
+| `src/preload.js` | +2 行 | 暴露 `deleteAsset` API |
+| `src/handlers/project.js` | +30 行 | 新增 `project:deleteAsset` IPC 处理器 |
+| `src/utils/projectAssets.js` | +100 行 | 右键菜单 + 删除功能实现 |
+
+### 核心实现
+
+#### 1. HTML - 右键菜单
+```html
+<div id="asset-context-menu" class="context-menu">
+  <div class="context-menu-item" data-action="view">👁️ 查看</div>
+  <div class="context-menu-item" data-action="delete">🗑️ 删除</div>
+</div>
+```
+
+#### 2. CSS - 右键菜单样式
+```css
+.context-menu {
+  position: fixed;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  z-index: 10000;
+}
+
+.context-menu-item[data-action="delete"] {
+  color: #d32f2f;
+}
+```
+
+#### 3. projectAssets.js - 右键菜单功能
+```javascript
+// 右键点击素材
+thumb.addEventListener('contextmenu', (e) => {
+  e.preventDefault();
+  showContextMenu(e, { type, name, size, path });
+});
+
+// 菜单项点击
+if (action === 'view') {
+  showPreview(...);
+} else if (action === 'delete') {
+  confirmDeleteAsset(...);
+}
+```
+
+#### 4. 删除确认与引用检查
+```javascript
+function confirmDeleteAsset(assetType, assetName, assetPath) {
+  // 检查是否被镜头引用
+  const isReferenced = checkAssetReference(assetPath);
+  
+  const confirmMsg = isReferenced
+    ? `⚠️ 该素材正被镜头引用，删除后可能导致引用失效。`
+    : `确定要删除吗？此操作无法恢复。`;
+  
+  if (window.confirm(confirmMsg)) {
+    deleteAsset(...);
+  }
+}
+
+function checkAssetReference(assetPath) {
+  // 遍历所有项目的镜头
+  // 检查 materials 字段和 content 字段是否包含该路径
+}
+```
+
+#### 5. 主进程删除处理器
+```javascript
+ipcMain.handle('project:deleteAsset', async (event, params) => {
+  const { projectDir, assetPath, assetType } = params;
+  
+  // 安全验证：防止目录遍历攻击
+  const normalizedPath = path.normalize(assetPath);
+  if (!normalizedPath.startsWith(assetsDir)) {
+    throw new Error('非法的文件路径');
+  }
+  
+  // 删除文件
+  fs.unlinkSync(normalizedPath);
+  
+  return { success: true };
+});
+```
+
+### 功能特性
+- ✅ 右键素材显示上下文菜单（查看/删除）
+- ✅ 预览模态框删除按钮
+- ✅ 删除前检查素材是否被镜头引用
+- ✅ 删除确认对话框（带警告提示）
+- ✅ 物理删除文件
+- ✅ 删除后自动刷新素材列表
+- ✅ 删除后关闭预览模态框
+- ✅ 安全验证：防止目录遍历攻击
+- ✅ 深色主题适配
+
+### 交互流程
+1. **右键删除**：右键素材 → 选择"删除" → 确认对话框 → 删除文件 → 刷新列表
+2. **预览删除**：左键预览 → 点击"删除"按钮 → 确认对话框 → 删除文件 → 刷新列表 + 关闭模态框
+
+### 引用检查逻辑
+- 遍历所有项目的 `shots[].scenes[].materials` 数组
+- 检查镜头的 `content` 字段是否包含路径
+- 如果被引用，显示警告提示
+
+### 安全机制
+- 路径规范化：`path.normalize()`
+- 目录限制：确保文件在 `assets` 目录内
+- 参数校验：验证 `projectDir`, `assetPath`, `assetType`
+
+---
+
 ## 2026-03-08 - 实现拖放上传功能（Sandbox 模式）
 
 ### 需求

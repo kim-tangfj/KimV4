@@ -470,12 +470,20 @@ function initAssetsSidebarEvents() {
     });
   }
 
-  // 绑定删除按钮事件（项目素材库暂不实现删除，仅提示）
+  // 绑定删除按钮事件
   if (previewModal.deleteBtn) {
     previewModal.deleteBtn.addEventListener('click', () => {
-      window.showToast('项目素材库删除功能待实现');
+      const assetType = previewModal.container.dataset.assetType;
+      const assetName = previewModal.container.dataset.assetName;
+      const assetPath = previewModal.container.dataset.assetPath;
+      if (assetPath) {
+        confirmDeleteAsset(assetType, assetName, assetPath);
+      }
     });
   }
+
+  // 初始化右键菜单
+  initContextMenuEvents();
 
   // 绑定分类筛选事件
   assetsSidebar.categories.forEach(category => {
@@ -597,6 +605,7 @@ async function loadAssetsList(projectId) {
 function bindThumbnailClickEvents() {
   const thumbnails = document.querySelectorAll('.asset-thumbnail');
   thumbnails.forEach(thumb => {
+    // 左键点击 - 预览
     thumb.addEventListener('click', () => {
       const assetType = thumb.dataset.assetType;
       const assetName = thumb.dataset.assetName;
@@ -604,7 +613,91 @@ function bindThumbnailClickEvents() {
       const assetPath = thumb.dataset.assetPath;
       showPreview(assetType, assetName, assetSize, assetPath);
     });
+
+    // 右键点击 - 上下文菜单
+    thumb.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+      showContextMenu(e, {
+        type: thumb.dataset.assetType,
+        name: thumb.dataset.assetName,
+        size: thumb.dataset.assetSize,
+        path: thumb.dataset.assetPath
+      });
+    });
   });
+}
+
+/**
+ * 显示右键菜单
+ * @param {MouseEvent} e - 鼠标事件
+ * @param {Object} asset - 素材信息
+ */
+function showContextMenu(e, asset) {
+  const contextMenu = document.getElementById('asset-context-menu');
+  if (!contextMenu) return;
+
+  // 存储当前选中的素材信息
+  contextMenu.dataset.assetType = asset.type;
+  contextMenu.dataset.assetName = asset.name;
+  contextMenu.dataset.assetSize = asset.size;
+  contextMenu.dataset.assetPath = asset.path;
+
+  // 定位菜单
+  contextMenu.style.display = 'block';
+  contextMenu.style.left = `${e.clientX}px`;
+  contextMenu.style.top = `${e.clientY}px`;
+
+  // 确保菜单不超出窗口
+  const rect = contextMenu.getBoundingClientRect();
+  if (rect.right > window.innerWidth) {
+    contextMenu.style.left = `${e.clientX - rect.width}px`;
+  }
+  if (rect.bottom > window.innerHeight) {
+    contextMenu.style.top = `${e.clientY - rect.height}px`;
+  }
+}
+
+/**
+ * 隐藏右键菜单
+ */
+function hideContextMenu() {
+  const contextMenu = document.getElementById('asset-context-menu');
+  if (contextMenu) {
+    contextMenu.style.display = 'none';
+  }
+}
+
+/**
+ * 初始化右键菜单事件
+ */
+function initContextMenuEvents() {
+  const contextMenu = document.getElementById('asset-context-menu');
+  if (!contextMenu) return;
+
+  // 菜单项点击事件
+  contextMenu.addEventListener('click', (e) => {
+    const menuItem = e.target.closest('.context-menu-item');
+    if (!menuItem) return;
+
+    const action = menuItem.dataset.action;
+    const assetType = contextMenu.dataset.assetType;
+    const assetName = contextMenu.dataset.assetName;
+    const assetSize = contextMenu.dataset.assetSize;
+    const assetPath = contextMenu.dataset.assetPath;
+
+    if (action === 'view') {
+      showPreview(assetType, assetName, assetSize, assetPath);
+    } else if (action === 'delete') {
+      confirmDeleteAsset(assetType, assetName, assetPath);
+    }
+
+    hideContextMenu();
+  });
+
+  // 点击其他地方关闭菜单
+  document.addEventListener('click', hideContextMenu);
+  document.addEventListener('scroll', hideContextMenu);
 }
 
 /**
@@ -930,6 +1023,104 @@ function hidePreview() {
   if (previewModal.container) {
     previewModal.container.innerHTML = '';
     previewModal.container.dataset.assetPath = '';
+    previewModal.container.dataset.assetType = '';
+    previewModal.container.dataset.assetName = '';
+  }
+}
+
+/**
+ * 确认删除素材
+ * @param {string} assetType - 素材类型 (image/video/audio)
+ * @param {string} assetName - 素材名称
+ * @param {string} assetPath - 素材路径
+ */
+function confirmDeleteAsset(assetType, assetName, assetPath) {
+  if (!assetPath) {
+    window.showToast('素材路径无效');
+    return;
+  }
+
+  // 检查素材是否被镜头引用
+  const isReferenced = checkAssetReference(assetPath);
+
+  const confirmMsg = isReferenced
+    ? `⚠️ 该素材正被镜头引用，删除后可能导致引用失效。\n\n确定要删除 "${assetName}" 吗？`
+    : `确定要删除 "${assetName}" 吗？\n\n此操作将永久删除文件，无法恢复。`;
+
+  if (window.confirm(confirmMsg)) {
+    deleteAsset(assetType, assetName, assetPath);
+  }
+}
+
+/**
+ * 检查素材是否被镜头引用
+ * @param {string} assetPath - 素材路径
+ * @returns {boolean} 是否被引用
+ */
+function checkAssetReference(assetPath) {
+  const state = window.getState();
+  const projects = state.projects || [];
+
+  // 遍历所有项目
+  for (const project of projects) {
+    const shots = project.shots || [];
+    // 遍历所有片段
+    for (const shot of shots) {
+      const scenes = shot.scenes || [];
+      // 遍历所有镜头
+      for (const scene of scenes) {
+        // 检查镜头的素材字段是否包含该路径
+        if (scene.materials && Array.isArray(scene.materials)) {
+          if (scene.materials.some(m => m.path === assetPath)) {
+            return true;
+          }
+        }
+        // 检查提示词中是否包含路径
+        if (scene.content && scene.content.includes(assetPath)) {
+          return true;
+        }
+      }
+    }
+  }
+
+  return false;
+}
+
+/**
+ * 删除素材
+ * @param {string} assetType - 素材类型 (image/video/audio)
+ * @param {string} assetName - 素材名称
+ * @param {string} assetPath - 素材路径
+ */
+async function deleteAsset(assetType, assetName, assetPath) {
+  const state = window.getState();
+  const project = state.currentProject;
+
+  if (!project || !project.projectDir) {
+    window.showToast('请先选择项目');
+    return;
+  }
+
+  try {
+    // 调用 Electron API 删除素材
+    const result = await window.electronAPI.deleteAsset({
+      projectDir: project.projectDir,
+      assetPath: assetPath,
+      assetType: assetType
+    });
+
+    if (result.success) {
+      window.showToast(`已删除 "${assetName}"`);
+      // 重新加载素材列表
+      loadAssetsList(currentProjectId);
+      // 如果预览模态框打开，关闭它
+      hidePreview();
+    } else {
+      window.showToast(`删除失败：${result.error}`);
+    }
+  } catch (error) {
+    console.error('[deleteAsset] 删除异常:', error);
+    window.showToast('删除失败，请重试');
   }
 }
 

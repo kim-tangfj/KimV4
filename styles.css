@@ -1209,6 +1209,41 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   gap: 10px;
 }
 
+/* 素材右键菜单 */
+.context-menu {
+  position: fixed;
+  background: var(--bg-color);
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+  padding: 4px 0;
+  z-index: 10000;
+  min-width: 120px;
+}
+
+.context-menu-item {
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 13px;
+  color: var(--text-color);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  transition: background-color 0.2s;
+}
+
+.context-menu-item:hover {
+  background-color: var(--hover-bg);
+}
+
+.context-menu-item[data-action="delete"] {
+  color: #d32f2f;
+}
+
+.context-menu-item[data-action="delete"]:hover {
+  background-color: rgba(211, 47, 47, 0.1);
+}
+
 /* 设置面板样式 */
 .settings-section {
   margin-bottom: 24px;
@@ -2333,5 +2368,16 @@ body.dark-theme .assets-section-title-clickable {
 }
 
 body.dark-theme .assets-section-title-clickable:hover {
+  background-color: #333;
+}
+
+/* 深色主题适配 - 右键菜单 */
+body.dark-theme .context-menu {
+  background: #252525;
+  border-color: #404040;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4);
+}
+
+body.dark-theme .context-menu-item:hover {
   background-color: #333;
 }

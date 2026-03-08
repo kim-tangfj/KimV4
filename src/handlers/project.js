@@ -572,6 +572,36 @@ function initProjectIPC(mainWindow) {
       return { success: true, assets: assets };
     }, '获取项目素材列表');
   });
+
+  // 删除素材
+  ipcMain.handle('project:deleteAsset', async (event, params) => {
+    return withErrorHandler(async () => {
+      validateParams(params, ['projectDir', 'assetPath', 'assetType']);
+
+      const { projectDir, assetPath, assetType } = params;
+
+      // 验证文件路径，防止目录遍历攻击
+      const normalizedPath = path.normalize(assetPath);
+      const assetsDir = path.join(projectDir, 'assets');
+
+      // 确保文件在 assets 目录内
+      if (!normalizedPath.startsWith(assetsDir)) {
+        throw new Error('非法的文件路径');
+      }
+
+      // 检查文件是否存在
+      if (!fs.existsSync(normalizedPath)) {
+        return { success: false, error: '文件不存在' };
+      }
+
+      // 删除文件
+      fs.unlinkSync(normalizedPath);
+
+      console.log(`[deleteAsset] 已删除：${normalizedPath}`);
+
+      return { success: true };
+    }, '删除素材');
+  });
 }
 
 /**
