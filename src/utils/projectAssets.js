@@ -195,9 +195,39 @@ function initUploadFunctionality() {
   });
 
   // 处理文件 drop
-  uploadArea.addEventListener('drop', (e) => {
+  uploadArea.addEventListener('drop', async (e) => {
     const dt = e.dataTransfer;
-    const files = Array.from(dt.files);
+    
+    // 尝试从 items 获取文件路径（Electron 支持）
+    const files = [];
+    for (let i = 0; i < dt.items.length; i++) {
+      const item = dt.items[i];
+      if (item.kind === 'file') {
+        const entry = item.webkitGetAsEntry();
+        if (entry) {
+          // 从 FileSystemEntry 获取路径
+          files.push({
+            name: entry.name,
+            path: entry.fullPath // 这可能需要进一步处理
+          });
+        }
+      }
+    }
+    
+    // 如果 items 方式失败，使用 files
+    if (files.length === 0) {
+      const dropFiles = Array.from(dt.files);
+      if (dropFiles.length > 0) {
+        // 对于拖放的文件，需要通过 IPC 获取路径
+        for (const file of dropFiles) {
+          files.push({
+            name: file.name,
+            path: file.path // Electron 中应该有这个属性
+          });
+        }
+      }
+    }
+    
     if (files.length > 0) {
       handleFilesUpload(files);
     }
@@ -221,6 +251,7 @@ async function handleFilesUpload(files) {
   const project = state.currentProject;
 
   console.log('[handleFilesUpload] currentProject:', project);
+  console.log('[handleFilesUpload] files:', files);
 
   if (!project || !project.projectDir) {
     window.showToast('请先选择项目');
@@ -235,10 +266,22 @@ async function handleFilesUpload(files) {
 
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
+    
+    // 检查文件路径
+    const filePath = file.path || file.webkitRelativePath;
+    console.log(`[handleFilesUpload] file ${i} path:`, filePath);
+    
+    if (!filePath) {
+      console.error(`[handleFilesUpload] file ${i} (${file.name}) 没有路径`);
+      failCount++;
+      continue;
+    }
+    
     try {
-      const result = await window.electronAPI.uploadAsset({
+      // 使用项目素材库上传 API（不需要 shotId）
+      const result = await window.electronAPI.uploadAssetToProject({
         projectDir: project.projectDir,
-        filePath: file.path
+        filePath: filePath
       });
 
       if (result.success) {

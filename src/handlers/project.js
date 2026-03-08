@@ -327,6 +327,68 @@ function initProjectIPC(mainWindow) {
     }
   });
 
+  // 上传素材到项目素材库（不关联片段）
+  ipcMain.handle('project:uploadAssetToProject', async (event, params) => {
+    try {
+      validateParams(params, ['projectDir', 'filePath']);
+
+      const { projectDir, filePath } = params;
+
+      // 检查源文件是否存在
+      if (!fs.existsSync(filePath)) {
+        return { success: false, error: '源文件不存在' };
+      }
+
+      // 确定素材类型
+      const ext = path.extname(filePath).toLowerCase();
+      let assetType = 'images';
+      if (['.mp4', '.webm', '.ogg', '.mov', '.avi'].includes(ext)) {
+        assetType = 'videos';
+      } else if (['.mp3', '.wav', '.ogg', '.aac', '.flac'].includes(ext)) {
+        assetType = 'audios';
+      }
+
+      // 目标目录
+      const assetsDir = path.join(projectDir, 'assets', assetType);
+      if (!fs.existsSync(assetsDir)) {
+        fs.mkdirSync(assetsDir, { recursive: true });
+      }
+
+      // 目标文件路径
+      const fileName = path.basename(filePath);
+      const targetPath = path.join(assetsDir, fileName);
+
+      // 如果文件已存在，添加时间戳
+      let finalTargetPath = targetPath;
+      let counter = 1;
+      while (fs.existsSync(finalTargetPath)) {
+        const nameWithoutExt = path.basename(fileName, ext);
+        finalTargetPath = path.join(assetsDir, `${nameWithoutExt}_${counter}${ext}`);
+        counter++;
+      }
+
+      // 复制文件
+      fs.copyFileSync(filePath, finalTargetPath);
+
+      // 返回成功（项目素材库不保存到 project.json，只保存文件）
+      const stats = fs.statSync(finalTargetPath);
+      return { 
+        success: true, 
+        asset: {
+          id: 'asset_' + assetType.slice(0, -1) + '_' + Date.now(),
+          name: path.basename(finalTargetPath),
+          path: finalTargetPath,
+          type: assetType.slice(0, -1),
+          size: formatFileSize(stats.size),
+          fileSize: stats.size
+        }
+      };
+    } catch (error) {
+      console.error('上传素材到项目失败:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   ipcMain.handle('project:startMonitor', async (event, projectDirs) => {
     try {
       if (folderMonitorInterval) {

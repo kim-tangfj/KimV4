@@ -24,6 +24,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   stopMonitor: () => ipcRenderer.invoke('project:stopMonitor'),
   getAssets: (projectDir) => ipcRenderer.invoke('project:getAssets', projectDir),
   uploadAsset: (params) => ipcRenderer.invoke('project:uploadAsset', params),
+  uploadAssetToProject: (params) => ipcRenderer.invoke('project:uploadAssetToProject', params),
   
   // LLM API
   testApiConnection: (provider, apiKey, model) => ipcRenderer.invoke('api:testConnection', provider, apiKey, model),
