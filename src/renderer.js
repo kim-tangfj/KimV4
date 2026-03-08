@@ -405,7 +405,7 @@ async function updateProjectStatus(project, newStatus) {
 }
 
 // 删除当前项目 - 使用模块中的 deleteCurrentProject 函数
-async function deleteCurrentProject() {
+async function handleDeleteCurrentProject() {
   await window.deleteCurrentProject(
     appState,
     elements,
