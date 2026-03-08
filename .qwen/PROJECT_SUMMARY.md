@@ -1,16 +1,18 @@
-The user wants me to create a comprehensive project summary based on the conversation history. Let me analyze what has been accomplished in this session:
+The user wants me to create a comprehensive project summary based on the conversation history. Let me analyze what was accomplished in this session and create a structured markdown summary.
 
-1. The user started with a project called "Kim 多级分镜提示词助手" (Kim Multi-level Storyboard Prompt Assistant) - an Electron desktop application
-2. Main work done in this session:
-   - Fixed video thumbnail extraction infinite loop issue
-   - Changed thumbnail size to vertical rectangle (140px height)
-   - Fixed search functionality counting issue
-   - Cleaned up debug console logs
+Key accomplishments in this session:
+1. Fixed projectAssets.js renderAssetsList function scope issues (multiple attempts)
+2. Unified asset preview modal for both project assets and scene assets
+3. Implemented scene assets library upload/preview/delete functionality
+4. Fixed scene assets library to read from projectData instead of currentProject
+5. Added collapsible sections to scene assets library
+6. Fixed custom options edit modal button event bindings
+7. Added customOptions.js module reference to index.html
 
-Let me create a comprehensive summary following the specified markdown format.# Project Summary
+Let me create a comprehensive summary.# Project Summary
 
 ## Overall Goal
-开发和完善 Kim 多级分镜提示词助手（Electron 桌面应用）的项目素材库功能，实现视频缩略图自动提取、素材搜索过滤和统计显示功能。
+开发和完善 Kim 多级分镜提示词助手（Electron 桌面应用）的片段素材库功能，实现素材上传、预览、删除、折叠展示等功能，并修复多个作用域冲突和模块引用问题。
 
 ## Key Knowledge
 
@@ -30,11 +32,27 @@ e:\AI\KimV4\
 │   ├── renderer.js          # 渲染进程
 │   ├── handlers/            # IPC 处理器模块
 │   └── utils/               # 工具模块
-│       └── projectAssets.js # 项目素材库管理（本次修改）
+│       ├── projectAssets.js # 项目素材库管理
+│       ├── sceneAssets.js   # 片段/镜头素材库管理
+│       └── customOptions.js # 自定义选项管理
 ├── index.html               # 主界面（四栏布局 + 侧边素材库）
 ├── styles.css               # 全局样式
 └── work/
     └── dev-log.md           # 开发日志
+```
+
+### 关键数据结构
+```javascript
+// 状态管理器分离存储
+state.currentProject  // 项目元数据（id, name 等，不含 shots）
+state.projectData     // 完整项目数据（包含 shots 数组）
+
+// 片段素材结构
+shot.assets = {
+  images: [{ id, name, path, type, size, fileSize }],
+  videos: [...],
+  audios: [...]
+}
 ```
 
 ### 构建和运行命令
@@ -52,78 +70,74 @@ npm run dev          # 开发模式（自动打开 DevTools）
 
 ## Recent Actions
 
-### 1. 视频缩略图提取功能修复 ✅
-**问题**: 视频缩略图提取时无限循环调用 `onseeked`
+### 1. 片段素材库功能实现 ✅
+**新增功能**:
+- 素材上传：支持图片/视频/音频，多文件同时上传
+- 素材预览：模态框预览，支持播放控制
+- 素材删除：确认对话框，物理删除 + 索引移除
+- 复制路径：一键复制素材绝对路径
 
-**原因**: 
-- 多个视频同时加载时并发处理
-- 没有跳转次数限制
-- 元素被替换后继续触发事件
+**修改文件**:
+- `index.html` (+20 行) - 上传按钮 + 预览模态框
+- `styles.css` (+80 行) - 预览模态框样式
+- `src/preload.js` (+1 行) - 暴露 uploadAsset API
+- `src/handlers/project.js` (+84 行) - uploadAsset IPC 处理器
+- `src/utils/sceneAssets.js` (+220 行) - 上传/预览/删除功能
 
-**解决方案**:
-```javascript
-// 1. 添加 extracting 标记防止并发
-if (video.dataset.extracting === 'true') return;
+### 2. 统一共用素材预览模态框 ✅
+**问题**: 项目素材库和片段素材库各有一个预览模态框，造成重复。
 
-// 2. 添加 seekCount 计数器
-let seekCount = 0;
-const maxSeeks = 2;
+**解决方案**: 删除重复模态框，两个素材库共用同一个预览模态框。
 
-// 3. 超过限制自动停止
-if (seekCount > maxSeeks) {
-  video.dataset.extracting = 'false';
-  return;
-}
+**修改文件**:
+- `index.html` (-18 行) - 删除重复模态框
+- `src/utils/projectAssets.js` (+20 行) - 更新为使用统一模态框
+- `src/utils/sceneAssets.js` (+10 行) - 更新为使用统一模态框
 
-// 4. 完成后标记
-video.dataset.frameExtracted = 'true';
-video.dataset.extracting = 'false';
-```
+### 3. 修复 renderAssetsList 作用域冲突 ✅
+**问题**: `projectAssets.js` 和 `renderer.js` 都声明了 `renderAssetsList`，导致重复声明错误。
 
-**黑场检测**:
-- 从 0.1 秒开始尝试
-- 如果是黑场，跳转到 1 秒重试
-- 亮度阈值：30（0-255 范围）
+**解决方案**: 将 `projectAssets.js` 中的 `renderAssetsList` 重命名为 `renderProjectAssetsList`。
 
-### 2. 缩略图尺寸优化 ✅
-**修改**: 改为纵向长方体布局
+**修改内容**:
+- 函数定义重命名：1 个
+- 函数调用重命名：10 处
 
-| 元素 | 修改前 | 修改后 |
-|------|--------|--------|
-| `.asset-thumbnail` | 90px | 140px |
-| `video` / `img` | 70px | 100px |
+### 4. 修复片段素材库数据读取问题 ✅
+**问题**: `loadShotAssetsList` 从 `state.currentProject` 读取数据，但 `currentProject` 不含 `shots` 字段。
 
-### 3. 搜索功能修复 ✅
-**问题**: 搜索素材后资源统计不正确，会被重置为空，计数为 0。
+**解决方案**: 从 `state.projectData.shots` 读取片段列表。
 
-**原因**: `filterAssetsByKeyword` 调用 `renderAssetsList` 时没有正确传递 `updateCount` 参数。
+**修改文件**: `src/utils/sceneAssets.js`
 
-**修复**:
-```javascript
-// 修改后
-renderAssetsList(filteredAssets, false, true);  // 明确更新计数
-```
+### 5. 片段素材库添加折叠功能 ✅
+**新增功能**:
+- 点击分类标题栏可折叠/展开
+- 箭头指示（▼展开，▶折叠）
+- 显示素材数量计数
+- 平滑过渡动画
 
-**测试结果**:
-- ✅ 搜索中文关键词（如 "小"）可以正确过滤
-- ✅ 计数显示过滤后的数量
-- ✅ 清空搜索后显示全部素材和正确计数
+**修改文件**:
+- `src/utils/sceneAssets.js` (+40 行) - 折叠功能实现
+- `styles.css` (+50 行) - 折叠样式 + 深色主题适配
 
-### 4. 调试日志清理 ✅
-- 移除所有 `console.log` 调试日志
-- 仅保留错误日志 `console.error`
+### 6. 修复自定义选项编辑弹窗事件绑定 ✅
+**问题**: 编辑面板的关闭/保存/取消按钮点击无效果。
 
-### Git 提交历史
-```
-03268b6 refactor: 清理项目素材库调试日志
-62b7883 docs: 更新开发日志记录搜索功能修复
-8d6e22e fix: 修复项目素材库搜索计数问题
-a57bc89 fix: 修复视频缩略图无限循环问题 + 改为纵向长方体
-```
+**解决方案**: 新增 `initCustomOptionEditModal` 函数，绑定所有按钮事件。
+
+**修改文件**:
+- `src/utils/customOptions.js` (+90 行) - 事件绑定函数
+- `src/utils/eventListeners.js` (+5 行) - 调用初始化
+
+### 7. 添加 customOptions.js 模块引用 ✅
+**问题**: `customOptions.js` 没有在 HTML 中引用，导致函数未定义错误。
+
+**修复**: 在 `index.html` 中添加脚本引用。
 
 ## Current Plan
 
-### 项目素材库功能开发
+### 片段素材库功能开发
 
 | 阶段 | 任务 | 状态 | 说明 |
 |------|------|------|------|
@@ -132,24 +146,25 @@ a57bc89 fix: 修复视频缩略图无限循环问题 + 改为纵向长方体
 | **P0-3** | JavaScript 交互 | ✅ DONE | 展开/收起、列表渲染 |
 | **P0-4** | 视频缩略图提取 | ✅ DONE | 自动提取第一帧，防循环机制 |
 | **P0-5** | 搜索功能 | ✅ DONE | 关键词过滤，计数更新 |
-| **P1-6** | 素材上传功能 | ⏸️ TODO | 文件选择器、IPC 处理器 |
-| **P1-7** | 素材预览模态框 | ⏸️ TODO | 独立模态框预览 |
-| **P1-8** | 素材删除功能 | ⏸️ TODO | 删除确认、使用前检查 |
+| **P1-6** | 素材上传功能 | ✅ DONE | 文件选择器、IPC 处理器 |
+| **P1-7** | 素材预览模态框 | ✅ DONE | 独立模态框预览 |
+| **P1-8** | 素材删除功能 | ✅ DONE | 删除确认、使用前检查 |
 | **P1-9** | 素材引用功能 | ⏸️ TODO | 复制路径、@引用 |
+| **P1-10** | 折叠展示功能 | ✅ DONE | 分类折叠/展开 |
 
 ### 下一步建议 [TODO]
-1. [TODO] 实现素材上传功能（文件选择、复制、索引更新）
-2. [TODO] 实现素材预览模态框（居中弹窗、大图预览）
-3. [TODO] 实现素材删除功能（使用前检查、确认对话框）
-4. [TODO] 实现素材引用功能（复制到片段素材引用字段）
+1. [TODO] 实现素材引用功能（复制到片段素材引用字段）
+2. [TODO] 添加素材拖拽排序功能
+3. [TODO] 实现素材批量删除功能
+4. [TODO] 添加素材使用统计（被哪些镜头引用）
 
 ---
 
 **文档更新时间**: 2026-03-08  
-**当前 Git 提交**: `03268b6` (refactor: 清理项目素材库调试日志)  
-**开发计划参考**: `work/plan/2026-03-06-002-plan.md`
+**当前 Git 提交**: `553cf0a` (fix: 添加自定义选项编辑弹窗事件绑定)  
+**开发计划参考**: `work/dev-log.md`
 
 ---
 
 ## Summary Metadata
-**Update time**: 2026-03-08T09:35:54.443Z 
+**Update time**: 2026-03-08T11:20:52.423Z 

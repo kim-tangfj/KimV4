@@ -11,7 +11,8 @@ const assetsSidebar = {
   projectName: null,
   searchInput: null,
   categories: null,
-  uploadBtn: null,
+  uploadArea: null,
+  fileInput: null,
   list: null,
   usageFill: null,
   usageText: null,
@@ -138,22 +139,181 @@ function initAssetsSidebar() {
   assetsSidebar.projectName = document.getElementById('assets-project-name');
   assetsSidebar.searchInput = document.getElementById('assets-search-input');
   assetsSidebar.categories = document.querySelectorAll('.assets-category');
-  assetsSidebar.uploadBtn = document.getElementById('assets-upload-btn');
+  assetsSidebar.uploadArea = document.getElementById('assets-upload-area');
+  assetsSidebar.fileInput = document.getElementById('assets-file-input');
   assetsSidebar.list = document.getElementById('assets-list');
   assetsSidebar.usageFill = document.getElementById('assets-usage-fill');
   assetsSidebar.usageText = document.getElementById('assets-usage-text');
   assetsSidebar.closeBtn = document.querySelector('.assets-sidebar-close');
-  
-  // 缓存预览模态框元素
-  previewModal.modal = document.getElementById('asset-preview-modal');
-  previewModal.container = document.getElementById('asset-preview-container');
-  previewModal.name = document.getElementById('asset-preview-name');
-  previewModal.size = document.getElementById('asset-preview-size');
-  previewModal.closeBtn = document.getElementById('asset-preview-close-btn');
-  previewModal.title = document.getElementById('asset-preview-title');
-  previewModal.copyPathBtn = document.getElementById('asset-preview-copy-path-btn');
-  previewModal.deleteBtn = document.getElementById('asset-preview-delete-btn');
 
+  // 初始化上传功能
+  initUploadFunctionality();
+
+  // 初始化其他事件
+  initAssetsSidebarEvents();
+}
+
+/**
+ * 初始化上传功能（点击 + 拖放）
+ */
+function initUploadFunctionality() {
+  const { uploadArea, fileInput } = assetsSidebar;
+
+  if (!uploadArea || !fileInput) return;
+
+  // 点击上传区域触发文件选择
+  uploadArea.addEventListener('click', () => {
+    fileInput.click();
+  });
+
+  // 文件选择变化时处理上传
+  fileInput.addEventListener('change', (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length > 0) {
+      handleFilesUpload(files);
+    }
+    // 清空 input，允许重复选择同一文件
+    fileInput.value = '';
+  });
+
+  // 拖放上传 - 阻止默认行为
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, preventDefaults, false);
+  });
+
+  // 拖放视觉效果
+  ['dragenter', 'dragover'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, () => {
+      uploadArea.classList.add('drag-over');
+    }, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, () => {
+      uploadArea.classList.remove('drag-over');
+    }, false);
+  });
+
+  // 处理文件 drop
+  uploadArea.addEventListener('drop', (e) => {
+    const dt = e.dataTransfer;
+    const files = Array.from(dt.files);
+    if (files.length > 0) {
+      handleFilesUpload(files);
+    }
+  });
+}
+
+/**
+ * 阻止拖放默认行为
+ */
+function preventDefaults(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+/**
+ * 处理文件上传
+ * @param {File[]} files - 文件列表
+ */
+async function handleFilesUpload(files) {
+  const state = window.getState();
+  const project = state.currentProject;
+
+  if (!project || !project.projectDir) {
+    window.showToast('请先选择项目');
+    return;
+  }
+
+  // 显示上传进度
+  showUploadProgress(0, files.length);
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+    try {
+      const result = await window.electronAPI.uploadAsset({
+        projectDir: project.projectDir,
+        filePath: file.path
+      });
+
+      if (result.success) {
+        successCount++;
+      } else {
+        failCount++;
+        console.error(`上传失败 ${file.name}:`, result.error);
+      }
+    } catch (error) {
+      failCount++;
+      console.error(`上传异常 ${file.name}:`, error);
+    }
+
+    // 更新进度
+    showUploadProgress(i + 1, files.length);
+  }
+
+  // 隐藏进度条
+  setTimeout(() => hideUploadProgress(), 1000);
+
+  // 显示结果
+  if (successCount > 0) {
+    window.showToast(`成功上传 ${successCount}/${files.length} 个素材`);
+    // 重新加载素材列表
+    loadAssetsList(currentProjectId);
+  } else {
+    window.showToast('上传失败，请检查文件格式');
+  }
+}
+
+/**
+ * 显示上传进度
+ * @param {number} current - 当前已上传数量
+ * @param {number} total - 总文件数
+ */
+function showUploadProgress(current, total) {
+  let progressEl = document.getElementById('upload-progress');
+
+  if (!progressEl) {
+    // 创建进度条元素
+    const uploadArea = assetsSidebar.uploadArea;
+    progressEl = document.createElement('div');
+    progressEl.id = 'upload-progress';
+    progressEl.className = 'upload-progress active';
+    progressEl.innerHTML = `
+      <div class="progress-bar">
+        <div class="progress-fill" id="progress-fill"></div>
+      </div>
+      <div class="progress-text" id="progress-text"></div>
+    `;
+    uploadArea.parentNode.insertBefore(progressEl, uploadArea.nextSibling);
+  } else {
+    progressEl.classList.add('active');
+  }
+
+  const percent = Math.round((current / total) * 100);
+  const fillEl = document.getElementById('progress-fill');
+  const textEl = document.getElementById('progress-text');
+
+  if (fillEl) fillEl.style.width = `${percent}%`;
+  if (textEl) textEl.textContent = `正在上传 ${current}/${total} (${percent}%)`;
+}
+
+/**
+ * 隐藏上传进度
+ */
+function hideUploadProgress() {
+  const progressEl = document.getElementById('upload-progress');
+  if (progressEl) {
+    progressEl.classList.remove('active');
+  }
+}
+
+/**
+ * 初始化素材库侧边窗体 - 绑定其他事件
+ */
+function initAssetsSidebarEvents() {
   // 绑定关闭按钮事件
   if (assetsSidebar.closeBtn) {
     assetsSidebar.closeBtn.addEventListener('click', closeAssetsSidebar);

@@ -4,6 +4,131 @@
 
 ---
 
+## 2026-03-08 - 修复 projectAssets.js renderAssetsList 作用域问题（最终修复）
+
+### 问题
+```
+TypeError: assets.forEach is not a function
+    at renderAssetsList (renderer.js:546:10)
+```
+
+### 原因
+- `projectAssets.js` 中的 `loadAssetsList` 函数调用 `renderAssetsList` 时，错误调用了 `window.renderAssetsList`（来自 `renderer.js`）
+- `window.renderAssetsList` 期望接收**数组**参数
+- 但 `projectAssets.js` 传递的是**对象** `{ images: [], videos: [], audios: [] }`
+
+### 尝试的解决方案
+
+#### 方案 1：移动函数定义位置 ❌
+将 `renderAssetsList` 函数移到 `loadAssetsList` 之前定义，但问题依然存在。
+
+#### 方案 2：添加 var 局部变量声明 ❌
+在文件顶部添加 `var renderAssetsList` 声明，但问题依然存在。
+
+#### 方案 3：改为 const 函数表达式赋值 ✅
+将所有局部函数改为 `const` 函数表达式赋值：
+```javascript
+const renderAssetsList = function(assets, cacheData = true, updateCount = true) {
+  // ...
+};
+```
+
+**原理**：
+- `const` 声明的变量不会被提升到 `window` 对象
+- 作用域链查找时优先使用当前文件作用域的变量
+- 确保调用的是局部函数而非 `window.renderAssetsList`
+
+### 修改的函数（共 10 个）
+- `renderAssetsSection`
+- `renderAssetsList`
+- `bindThumbnailClickEvents`
+- `renderAssetsListByType`
+- `filterAssetsByKeyword`
+- `updateAssetsCount`
+- `updateAssetsUsage`
+- `getMockAssets`
+- `showPreview`
+- `hidePreview`
+
+### 修改文件
+- `src/utils/projectAssets.js` - 10 个函数改为函数表达式（+10 行，-14 行）
+
+---
+
+## 2026-03-08 - 修复 projectAssets.js renderAssetsList 作用域问题
+
+### 问题
+```
+TypeError: assets.forEach is not a function
+    at renderAssetsList (renderer.js:546:10)
+```
+
+### 原因
+- `projectAssets.js` 中的 `loadAssetsList` 函数调用 `renderAssetsList` 时，错误调用了 `window.renderAssetsList`（来自 `renderer.js`）
+- `window.renderAssetsList` 期望接收**数组**参数
+- 但 `projectAssets.js` 传递的是**对象** `{ images: [], videos: [], audios: [] }`
+
+### 解决方案
+将 `renderAssetsList` 和 `renderAssetsSection` 函数移到 `loadAssetsList` 之前定义，确保 JavaScript 函数提升机制正确工作，局部函数优先于 `window.renderAssetsList`。
+
+### 修改文件
+- `src/utils/projectAssets.js` - 移动函数定义位置（+95 行）
+
+---
+
+## 2026-03-08 - 统一共用素材预览模态框
+
+### 问题
+项目素材库和片段素材库各有一个预览模态框，造成重复和资源浪费。
+
+### 解决方案
+删除重复的模态框，两个素材库共用同一个预览模态框。
+
+### 修改内容
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `index.html` | -18 行 | 删除片段素材库旁边的重复模态框 |
+| `src/utils/projectAssets.js` | +20 行 | 更新为使用统一模态框 ID，添加复制路径功能 |
+| `src/utils/sceneAssets.js` | +10 行 | 更新为使用统一模态框 ID |
+
+### 统一模态框结构
+
+```html
+<div id="asset-preview-modal" class="modal" style="display: none;">
+  <div class="modal-overlay"></div>
+  <div class="modal-content asset-preview-modal-content">
+    <div class="modal-header">
+      <h3 id="asset-preview-title">素材预览</h3>
+      <button class="modal-close" id="asset-preview-close-btn">×</button>
+    </div>
+    <div class="modal-body asset-preview-body">
+      <div class="asset-preview-container" id="asset-preview-container">
+        <!-- 动态渲染预览内容 -->
+      </div>
+      <div class="asset-preview-info">
+        <span id="asset-preview-name">-</span>
+        <span id="asset-preview-size">-</span>
+      </div>
+    </div>
+    <div class="modal-footer asset-preview-footer">
+      <button id="asset-preview-copy-path-btn" class="btn btn-secondary">复制路径</button>
+      <button id="asset-preview-delete-btn" class="btn btn-danger">删除</button>
+    </div>
+  </div>
+</div>
+```
+
+### 功能差异
+
+| 功能 | 项目素材库 | 片段素材库 |
+|------|------------|------------|
+| 预览 | ✅ 支持 | ✅ 支持 |
+| 复制路径 | ✅ 支持 | ✅ 支持 |
+| 删除 | ⏸️ 待实现 | ✅ 支持 |
+
+---
+
 ## 2026-03-08 - 片段素材库功能实现（P1 阶段）
 
 ### 新增功能

@@ -581,8 +581,15 @@
         <div class="assets-category" data-type="audios">📁 音频 (<span id="assets-count-audios">0</span>)</div>
       </div>
 
-      <!-- 上传按钮 -->
-      <button class="assets-upload-btn" id="assets-upload-btn">📤 上传素材</button>
+      <!-- 上传区域（支持点击和拖放） -->
+      <div class="assets-upload-area" id="assets-upload-area">
+        <input type="file" id="assets-file-input" accept="image/*,video/*,audio/*" multiple style="display: none;" />
+        <div class="upload-area-content">
+          <span class="upload-icon">📤</span>
+          <span class="upload-text">点击或拖放文件到此处上传</span>
+          <span class="upload-hint">支持图片、视频、音频文件</span>
+        </div>
+      </div>
 
       <!-- 素材列表 -->
       <div class="assets-list" id="assets-list">
