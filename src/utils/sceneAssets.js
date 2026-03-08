@@ -239,12 +239,18 @@ function bindSceneAssetsClickEvents(ownerType, ownerId) {
 function showAssetPreview(asset) {
   const modal = document.getElementById('asset-preview-modal');
   const title = document.getElementById('asset-preview-title');
+  const nameEl = document.getElementById('asset-preview-name');
+  const sizeEl = document.getElementById('asset-preview-size');
   const container = document.getElementById('asset-preview-container');
 
   if (!modal || !container) return;
 
-  title.textContent = asset.name;
+  if (title) title.textContent = asset.name;
+  if (nameEl) nameEl.textContent = asset.name;
+  if (sizeEl) sizeEl.textContent = asset.size || '-';
+
   container.innerHTML = '';
+  container.dataset.assetPath = asset.path;
 
   if (asset.type === 'image') {
     const img = document.createElement('img');
@@ -507,7 +513,7 @@ function initAssetPreviewModal() {
   const modal = document.getElementById('asset-preview-modal');
   if (modal) {
     modal.addEventListener('click', (e) => {
-      if (e.target === modal) {
+      if (e.target === modal || e.target.classList.contains('modal-overlay')) {
         hideAssetPreview();
       }
     });
@@ -517,8 +523,10 @@ function initAssetPreviewModal() {
   const copyPathBtn = document.getElementById('asset-preview-copy-path-btn');
   if (copyPathBtn) {
     copyPathBtn.addEventListener('click', () => {
-      if (currentPreviewAsset && currentPreviewAsset.path) {
-        navigator.clipboard.writeText(currentPreviewAsset.path)
+      const container = document.getElementById('asset-preview-container');
+      const path = container?.dataset.assetPath;
+      if (path) {
+        navigator.clipboard.writeText(path)
           .then(() => {
             window.showToast('路径已复制到剪贴板');
           })

@@ -54,24 +54,46 @@ function initAssetsSidebar() {
   previewModal.container = document.getElementById('asset-preview-container');
   previewModal.name = document.getElementById('asset-preview-name');
   previewModal.size = document.getElementById('asset-preview-size');
-  previewModal.closeBtn = document.getElementById('close-asset-preview-btn');
+  previewModal.closeBtn = document.getElementById('asset-preview-close-btn');
+  previewModal.title = document.getElementById('asset-preview-title');
+  previewModal.copyPathBtn = document.getElementById('asset-preview-copy-path-btn');
+  previewModal.deleteBtn = document.getElementById('asset-preview-delete-btn');
 
   // 绑定关闭按钮事件
   if (assetsSidebar.closeBtn) {
     assetsSidebar.closeBtn.addEventListener('click', closeAssetsSidebar);
   }
-  
+
   // 绑定模态框关闭按钮事件
   if (previewModal.closeBtn) {
     previewModal.closeBtn.addEventListener('click', hidePreview);
   }
-  
+
   // 绑定模态框遮罩层点击关闭
   if (previewModal.modal) {
     previewModal.modal.addEventListener('click', (e) => {
       if (e.target === previewModal.modal || e.target.classList.contains('modal-overlay')) {
         hidePreview();
       }
+    });
+  }
+
+  // 绑定复制路径按钮事件
+  if (previewModal.copyPathBtn) {
+    previewModal.copyPathBtn.addEventListener('click', () => {
+      const path = previewModal.container.dataset.assetPath;
+      if (path) {
+        navigator.clipboard.writeText(path)
+          .then(() => window.showToast('路径已复制到剪贴板'))
+          .catch(() => window.showToast('复制失败'));
+      }
+    });
+  }
+
+  // 绑定删除按钮事件（项目素材库暂不实现删除，仅提示）
+  if (previewModal.deleteBtn) {
+    previewModal.deleteBtn.addEventListener('click', () => {
+      window.showToast('项目素材库删除功能待实现');
     });
   }
 
@@ -586,7 +608,11 @@ function showPreview(type, name, size, path) {
   }
 
   previewModal.container.innerHTML = previewHTML;
+  previewModal.container.dataset.assetPath = path;
 
+  if (previewModal.title) {
+    previewModal.title.textContent = name;
+  }
   if (previewModal.name) {
     previewModal.name.textContent = name;
   }
@@ -607,6 +633,7 @@ function hidePreview() {
   previewModal.modal.style.display = 'none';
   if (previewModal.container) {
     previewModal.container.innerHTML = '';
+    previewModal.container.dataset.assetPath = '';
   }
 }
 

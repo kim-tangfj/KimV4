@@ -107,23 +107,6 @@
         </div>
       </div>
     </div>
-
-    <!-- 素材预览模态框 -->
-    <div id="asset-preview-modal" class="modal" style="display: none;">
-      <div class="modal-content asset-preview-modal-content">
-        <div class="modal-header">
-          <h3 id="asset-preview-title">素材预览</h3>
-          <button id="asset-preview-close-btn" class="modal-close">×</button>
-        </div>
-        <div class="modal-body asset-preview-body">
-          <div id="asset-preview-container"></div>
-        </div>
-        <div class="modal-footer asset-preview-footer">
-          <button id="asset-preview-copy-path-btn" class="btn btn-secondary">复制路径</button>
-          <button id="asset-preview-delete-btn" class="btn btn-danger">删除</button>
-        </div>
-      </div>
-    </div>
   </div>
 
   <!-- 设置面板 -->
@@ -336,7 +319,7 @@
           <div class="form-group">
             <label for="manual-project-json">AI 提示词 *</label>
             <textarea id="manual-project-json" class="json-input" placeholder='请粘贴符合 project.json 格式的结构化数据...'></textarea>
-            <small class="setting-hint">请前往DeepSeek、豆包等工具，粘贴 AI 生成的格式提示词，系统将自动组合成完整的项目结构</small>
+            <small class="setting-hint">请前往 DeepSeek、豆包等工具，粘贴 AI 生成的格式提示词，系统将自动组合成完整的项目结构</small>
           </div>
         </div>
 
@@ -616,15 +599,15 @@
     </div>
   </div>
 
-  <!-- 素材预览模态框 -->
+  <!-- 素材预览模态框（项目素材库和片段素材库共用） -->
   <div id="asset-preview-modal" class="modal" style="display: none;">
     <div class="modal-overlay"></div>
     <div class="modal-content asset-preview-modal-content">
       <div class="modal-header">
         <h3 id="asset-preview-title">素材预览</h3>
-        <button class="modal-close" id="close-asset-preview-btn">×</button>
+        <button class="modal-close" id="asset-preview-close-btn">×</button>
       </div>
-      <div class="modal-body">
+      <div class="modal-body asset-preview-body">
         <div class="asset-preview-container" id="asset-preview-container">
           <!-- 动态渲染预览内容 -->
         </div>
@@ -632,6 +615,10 @@
           <span id="asset-preview-name">-</span>
           <span id="asset-preview-size">-</span>
         </div>
+      </div>
+      <div class="modal-footer asset-preview-footer">
+        <button id="asset-preview-copy-path-btn" class="btn btn-secondary">复制路径</button>
+        <button id="asset-preview-delete-btn" class="btn btn-danger">删除</button>
       </div>
     </div>
   </div>
@@ -645,14 +632,11 @@
   <script src="./src/utils/propertyPanel.js" defer></script>
   <script src="./src/utils/promptGenerator.js" defer></script>
   <script src="./src/utils/settings.js" defer></script>
-  <script src="./src/utils/customOptions.js" defer></script>
-  <script src="./src/utils/eventListeners.js" defer></script>
   <script src="./src/utils/templateLibrary.js" defer></script>
   <script src="./src/utils/projectCreator.js" defer></script>
+  <script src="./src/utils/eventListeners.js" defer></script>
   <script src="./src/utils/projectAssets.js" defer></script>
   <script src="./src/utils/sceneAssets.js" defer></script>
-
-  <!-- 主渲染进程脚本 -->
-  <script src="./src/renderer.js"></script>
+  <script src="./src/renderer.js" defer></script>
 </body>
 </html>
