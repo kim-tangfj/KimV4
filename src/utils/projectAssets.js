@@ -288,7 +288,8 @@ let currentAssetsData = { images: [], videos: [], audios: [] };
 function renderAssetsListByType(type) {
   if (!currentProjectId) return;
 
-  console.log('[renderAssetsListByType] type:', type, 'currentAssetsData:', currentAssetsData);
+  console.log('[renderAssetsListByType] type:', type);
+  console.log('[renderAssetsListByType] currentAssetsData:', JSON.stringify(currentAssetsData, null, 2));
 
   // 使用缓存的真实数据
   const assets = currentAssetsData;

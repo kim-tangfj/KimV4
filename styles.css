@@ -1548,7 +1548,7 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   position: fixed;
   top: 100px;
   left: 0;
-  width: 400px; /* 增加宽度，让分类按钮能一行显示 */
+  width: 450px; /* 增加宽度，让分类按钮能一行显示 */
   height: calc(100vh - 140px);
   background-color: var(--bg-color);
   border-right: 1px solid var(--border-color);
