@@ -483,7 +483,11 @@ function initAssetsSidebarEvents() {
       const assetName = previewModal.container.dataset.assetName;
       const assetPath = previewModal.container.dataset.assetPath;
       if (assetPath) {
-        await confirmDeleteAsset(assetType, assetName, assetPath);
+        const result = await confirmDeleteAsset(assetType, assetName, assetPath);
+        if (result === false) {
+          // 删除被阻止（如片段素材），不关闭预览
+          return;
+        }
       }
     });
   }
@@ -707,11 +711,15 @@ function initContextMenuEvents() {
 
     if (action === 'view') {
       showPreview(assetType, assetName, assetSize, assetPath);
+      hideContextMenu();
     } else if (action === 'delete') {
-      await confirmDeleteAsset(assetType, assetName, assetPath);
+      const result = await confirmDeleteAsset(assetType, assetName, assetPath);
+      if (result !== false) {
+        // 删除成功或用户取消，关闭菜单
+        hideContextMenu();
+      }
+      // 如果返回 false（片段素材），不关闭菜单，让用户看到 toast 提示
     }
-
-    hideContextMenu();
   });
 
   // 点击其他地方关闭菜单
@@ -1058,7 +1066,7 @@ function hidePreview() {
 async function confirmDeleteAsset(assetType, assetName, assetPath) {
   if (!assetPath) {
     window.showToast('素材路径无效');
-    return;
+    return false;
   }
 
   // 检查素材来源
@@ -1070,7 +1078,7 @@ async function confirmDeleteAsset(assetType, assetName, assetPath) {
   // 如果是片段素材，不允许删除
   if (currentAsset && currentAsset.source === 'shot') {
     window.showToast(`⚠️ 片段素材不允许在项目素材库删除\n\n该素材属于片段：${currentAsset.shotId || '未知'}`);
-    return;
+    return false;
   }
 
   // 检查素材是否被镜头引用
@@ -1081,10 +1089,13 @@ async function confirmDeleteAsset(assetType, assetName, assetPath) {
     : `确定要删除 "${assetName}" 吗？\n\n此操作将永久删除文件，无法恢复。`;
 
   const confirmed = await window.showConfirm(confirmMsg);
-  
+
   if (confirmed) {
     deleteAsset(assetType, assetName, assetPath);
+    return true;
   }
+  
+  return false;
 }
 
 /**

@@ -54,6 +54,26 @@
 
 ---
 
+## 2026-03-08 - 优化项目素材库和片段素材库交互
+
+### 优化 1: 片段素材上传成功后自动刷新项目素材库
+**需求**: 片段素材库上传新素材后，项目素材库应实时显示
+
+**实现**:
+- 在 `addSceneAssetToShot` 中调用 `window.refreshProjectAssetsList()`
+- 项目素材库导出 `refreshProjectAssetsList` 函数到 window 对象
+- 项目数据同步后自动触发刷新
+
+### 优化 2: 项目素材库禁止删除片段素材
+**需求**: 项目素材库不允许删除片段专属素材
+
+**实现**:
+- `confirmDeleteAsset` 检查素材来源（`currentAsset.source`）
+- 片段素材（`source: 'shot'`）显示警告并阻止删除
+- 提示信息包含素材所属片段 ID
+
+---
+
 ## 2026-03-08 - 修复删除按钮和拖放上传问题
 
 ### 问题 1: 删除按钮报错 Cannot read properties of null
