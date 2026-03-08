@@ -1,11 +1,9 @@
-//
-// Kim 多级分镜提示词助手 - 项目素材库模块
-// 负责素材库侧边窗体的显示、隐藏、素材列表渲染等功能
+﻿//
+// Kim 澶氱骇鍒嗛暅鎻愮ず璇嶅姪鎵?- 椤圭洰绱犳潗搴撴ā鍧?// 璐熻矗绱犳潗搴撲晶杈圭獥浣撶殑鏄剧ず銆侀殣钘忋€佺礌鏉愬垪琛ㄦ覆鏌撶瓑鍔熻兘
 //
 
 /**
- * 素材库侧边窗体元素
- */
+ * 绱犳潗搴撲晶杈圭獥浣撳厓绱? */
 const assetsSidebar = {
   sidebar: null,
   projectName: null,
@@ -19,7 +17,7 @@ const assetsSidebar = {
 };
 
 /**
- * 素材预览模态框元素
+ * 绱犳潗棰勮妯℃€佹鍏冪礌
  */
 const previewModal = {
   modal: null,
@@ -30,26 +28,26 @@ const previewModal = {
 };
 
 /**
- * 当前打开素材库的项目 ID
+ * 褰撳墠鎵撳紑绱犳潗搴撶殑椤圭洰 ID
  */
 let currentProjectId = null;
 
 /**
- * 当前素材数据缓存
+ * 褰撳墠绱犳潗鏁版嵁缂撳瓨
  */
 let currentAssetsData = { images: [], videos: [], audios: [] };
 
 /**
- * 渲染素材分类
- * @param {string} title - 分类标题
- * @param {Array} items - 素材数组
- * @param {string} type - 素材类型 (image/video/audio)
+ * 娓叉煋绱犳潗鍒嗙被
+ * @param {string} title - 鍒嗙被鏍囬
+ * @param {Array} items - 绱犳潗鏁扮粍
+ * @param {string} type - 绱犳潗绫诲瀷 (image/video/audio)
  */
 const renderAssetsSection = function(title, items, type) {
   const icons = {
-    image: '🖼️',
-    video: '🎬',
-    audio: '🎵'
+    image: '馃柤锔?,
+    video: '馃幀',
+    audio: '馃幍'
   };
 
   return `
@@ -58,7 +56,7 @@ const renderAssetsSection = function(title, items, type) {
       ${items.map((item, index) => `
         <div class="asset-thumbnail" data-asset-id="${item.id}" data-asset-type="${type}" data-asset-name="${item.name}" data-asset-size="${item.size}" data-asset-path="${item.path}">
           ${type === 'image'
-            ? `<img src="${item.path}" alt="${item.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>🖼️</text></svg>'" />`
+            ? `<img src="${item.path}" alt="${item.name}" onerror="this.src='data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2280%22>馃柤锔?/text></svg>'" />`
             : type === 'video'
               ? `<video src="${item.path}" preload="auto" muted oncanplay="window.extractVideoFrame(this)" onerror="this.parentElement.innerHTML='<div class=\\'video-thumbnail\\'>${icons[type]}</div>'"></video>`
               : `<div class="${type}-thumbnail">${icons[type]}</div>`
@@ -74,17 +72,15 @@ const renderAssetsSection = function(title, items, type) {
 }
 
 /**
- * 渲染素材列表
- * @param {Object} assets - 素材对象 { images, videos, audios }
- * @param {boolean} cacheData - 是否缓存数据（默认 true）
- * @param {boolean} updateCount - 是否更新计数（默认 true）
- */
-const renderAssetsList = function(assets, cacheData = true, updateCount = true) {
+ * 娓叉煋绱犳潗鍒楄〃
+ * @param {Object} assets - 绱犳潗瀵硅薄 { images, videos, audios }
+ * @param {boolean} cacheData - 鏄惁缂撳瓨鏁版嵁锛堥粯璁?true锛? * @param {boolean} updateCount - 鏄惁鏇存柊璁℃暟锛堥粯璁?true锛? */
+const renderProjectAssetsList = function(assets, cacheData = true, updateCount = true) {
   if (!assetsSidebar.list) return;
 
   assetsSidebar.list.innerHTML = '';
 
-  // 缓存当前素材数据
+  // 缂撳瓨褰撳墠绱犳潗鏁版嵁
   if (cacheData) {
     currentAssetsData = {
       images: assets.images || [],
@@ -95,45 +91,44 @@ const renderAssetsList = function(assets, cacheData = true, updateCount = true) 
 
   let totalCount = 0;
 
-  // 渲染图片
+  // 娓叉煋鍥剧墖
   if (assets.images && assets.images.length > 0) {
     totalCount += assets.images.length;
-    assetsSidebar.list.innerHTML += renderAssetsSection('图片', assets.images, 'image');
+    assetsSidebar.list.innerHTML += renderAssetsSection('鍥剧墖', assets.images, 'image');
   }
 
-  // 渲染视频
+  // 娓叉煋瑙嗛
   if (assets.videos && assets.videos.length > 0) {
     totalCount += assets.videos.length;
-    assetsSidebar.list.innerHTML += renderAssetsSection('视频', assets.videos, 'video');
+    assetsSidebar.list.innerHTML += renderAssetsSection('瑙嗛', assets.videos, 'video');
   }
 
-  // 渲染音频
+  // 娓叉煋闊抽
   if (assets.audios && assets.audios.length > 0) {
     totalCount += assets.audios.length;
-    assetsSidebar.list.innerHTML += renderAssetsSection('音频', assets.audios, 'audio');
+    assetsSidebar.list.innerHTML += renderAssetsSection('闊抽', assets.audios, 'audio');
   }
 
   if (totalCount === 0) {
-    assetsSidebar.list.innerHTML = '<div class="placeholder-text">暂无素材，点击"上传素材"添加</div>';
+    assetsSidebar.list.innerHTML = '<div class="placeholder-text">鏆傛棤绱犳潗锛岀偣鍑?涓婁紶绱犳潗"娣诲姞</div>';
   }
 
-  // 更新计数
+  // 鏇存柊璁℃暟
   if (updateCount) {
     updateAssetsCount(assets);
   }
 
-  // 更新存储使用情况
+  // 鏇存柊瀛樺偍浣跨敤鎯呭喌
   updateAssetsUsage(assets);
 
-  // 绑定缩略图点击事件
-  bindThumbnailClickEvents();
+  // 缁戝畾缂╃暐鍥剧偣鍑讳簨浠?  bindThumbnailClickEvents();
 }
 
 /**
- * 初始化素材库侧边窗体
+ * 鍒濆鍖栫礌鏉愬簱渚ц竟绐椾綋
  */
 function initAssetsSidebar() {
-  // 缓存元素
+  // 缂撳瓨鍏冪礌
   assetsSidebar.sidebar = document.getElementById('project-assets-sidebar');
   assetsSidebar.projectName = document.getElementById('assets-project-name');
   assetsSidebar.searchInput = document.getElementById('assets-search-input');
@@ -144,7 +139,7 @@ function initAssetsSidebar() {
   assetsSidebar.usageText = document.getElementById('assets-usage-text');
   assetsSidebar.closeBtn = document.querySelector('.assets-sidebar-close');
   
-  // 缓存预览模态框元素
+  // 缂撳瓨棰勮妯℃€佹鍏冪礌
   previewModal.modal = document.getElementById('asset-preview-modal');
   previewModal.container = document.getElementById('asset-preview-container');
   previewModal.name = document.getElementById('asset-preview-name');
@@ -154,18 +149,17 @@ function initAssetsSidebar() {
   previewModal.copyPathBtn = document.getElementById('asset-preview-copy-path-btn');
   previewModal.deleteBtn = document.getElementById('asset-preview-delete-btn');
 
-  // 绑定关闭按钮事件
+  // 缁戝畾鍏抽棴鎸夐挳浜嬩欢
   if (assetsSidebar.closeBtn) {
     assetsSidebar.closeBtn.addEventListener('click', closeAssetsSidebar);
   }
 
-  // 绑定模态框关闭按钮事件
+  // 缁戝畾妯℃€佹鍏抽棴鎸夐挳浜嬩欢
   if (previewModal.closeBtn) {
     previewModal.closeBtn.addEventListener('click', hidePreview);
   }
 
-  // 绑定模态框遮罩层点击关闭
-  if (previewModal.modal) {
+  // 缁戝畾妯℃€佹閬僵灞傜偣鍑诲叧闂?  if (previewModal.modal) {
     previewModal.modal.addEventListener('click', (e) => {
       if (e.target === previewModal.modal || e.target.classList.contains('modal-overlay')) {
         hidePreview();
@@ -173,27 +167,25 @@ function initAssetsSidebar() {
     });
   }
 
-  // 绑定复制路径按钮事件
+  // 缁戝畾澶嶅埗璺緞鎸夐挳浜嬩欢
   if (previewModal.copyPathBtn) {
     previewModal.copyPathBtn.addEventListener('click', () => {
       const path = previewModal.container.dataset.assetPath;
       if (path) {
         navigator.clipboard.writeText(path)
-          .then(() => window.showToast('路径已复制到剪贴板'))
-          .catch(() => window.showToast('复制失败'));
+          .then(() => window.showToast('璺緞宸插鍒跺埌鍓创鏉?))
+          .catch(() => window.showToast('澶嶅埗澶辫触'));
       }
     });
   }
 
-  // 绑定删除按钮事件（项目素材库暂不实现删除，仅提示）
-  if (previewModal.deleteBtn) {
+  // 缁戝畾鍒犻櫎鎸夐挳浜嬩欢锛堥」鐩礌鏉愬簱鏆備笉瀹炵幇鍒犻櫎锛屼粎鎻愮ず锛?  if (previewModal.deleteBtn) {
     previewModal.deleteBtn.addEventListener('click', () => {
-      window.showToast('项目素材库删除功能待实现');
+      window.showToast('椤圭洰绱犳潗搴撳垹闄ゅ姛鑳藉緟瀹炵幇');
     });
   }
 
-  // 绑定分类筛选事件
-  assetsSidebar.categories.forEach(category => {
+  // 缁戝畾鍒嗙被绛涢€変簨浠?  assetsSidebar.categories.forEach(category => {
     category.addEventListener('click', () => {
       assetsSidebar.categories.forEach(c => c.classList.remove('active'));
       category.classList.add('active');
@@ -202,8 +194,7 @@ function initAssetsSidebar() {
     });
   });
 
-  // 绑定搜索框事件
-  if (assetsSidebar.searchInput) {
+  // 缁戝畾鎼滅储妗嗕簨浠?  if (assetsSidebar.searchInput) {
     assetsSidebar.searchInput.addEventListener('input', (e) => {
       const keyword = e.target.value.toLowerCase();
       filterAssetsByKeyword(keyword);
@@ -212,9 +203,8 @@ function initAssetsSidebar() {
 }
 
 /**
- * 打开素材库侧边窗体
- * @param {string} projectId - 项目 ID
- * @param {string} projectName - 项目名称
+ * 鎵撳紑绱犳潗搴撲晶杈圭獥浣? * @param {string} projectId - 椤圭洰 ID
+ * @param {string} projectName - 椤圭洰鍚嶇О
  */
 function openAssetsSidebar(projectId, projectName) {
   if (!assetsSidebar.sidebar) {
@@ -223,33 +213,31 @@ function openAssetsSidebar(projectId, projectName) {
 
   currentProjectId = projectId;
 
-  // 更新项目信息
+  // 鏇存柊椤圭洰淇℃伅
   if (assetsSidebar.projectName) {
     assetsSidebar.projectName.textContent = projectName;
   }
 
-  // 显示侧边窗体
+  // 鏄剧ず渚ц竟绐椾綋
   assetsSidebar.sidebar.style.display = 'flex';
 
-  // 使用 requestAnimationFrame 确保动画流畅
+  // 浣跨敤 requestAnimationFrame 纭繚鍔ㄧ敾娴佺晠
   requestAnimationFrame(() => {
     assetsSidebar.sidebar.classList.remove('hidden');
   });
 
-  // 加载素材列表
+  // 鍔犺浇绱犳潗鍒楄〃
   loadAssetsList(projectId);
 }
 
 /**
- * 关闭素材库侧边窗体
- */
+ * 鍏抽棴绱犳潗搴撲晶杈圭獥浣? */
 function closeAssetsSidebar() {
   if (!assetsSidebar.sidebar) return;
 
   assetsSidebar.sidebar.classList.add('hidden');
   
-  // 等待动画完成后隐藏
-  setTimeout(() => {
+  // 绛夊緟鍔ㄧ敾瀹屾垚鍚庨殣钘?  setTimeout(() => {
     if (assetsSidebar.sidebar) {
       assetsSidebar.sidebar.style.display = 'none';
     }
@@ -259,47 +247,45 @@ function closeAssetsSidebar() {
 }
 
 /**
- * 加载素材列表
- * @param {string} projectId - 项目 ID
+ * 鍔犺浇绱犳潗鍒楄〃
+ * @param {string} projectId - 椤圭洰 ID
  */
 async function loadAssetsList(projectId) {
   if (!assetsSidebar.list) return;
 
-  assetsSidebar.list.innerHTML = '<div class="placeholder-text">加载中...</div>';
+  assetsSidebar.list.innerHTML = '<div class="placeholder-text">鍔犺浇涓?..</div>';
 
   try {
-    // 从状态管理器获取当前项目目录
+    // 浠庣姸鎬佺鐞嗗櫒鑾峰彇褰撳墠椤圭洰鐩綍
     const state = window.getState();
     const project = state.projects?.find(p => p.id === projectId);
 
     if (!project || !project.projectDir) {
-      // 如果没有项目目录，使用示例数据
-      console.warn('[projectAssets] 项目目录不存在，使用示例数据');
+      // 濡傛灉娌℃湁椤圭洰鐩綍锛屼娇鐢ㄧず渚嬫暟鎹?      console.warn('[projectAssets] 椤圭洰鐩綍涓嶅瓨鍦紝浣跨敤绀轰緥鏁版嵁');
       const assets = getMockAssets();
-      renderAssetsList(assets);
+      renderProjectAssetsList(assets);
       return;
     }
 
-    // 调用 Electron API 获取真实素材列表
+    // 璋冪敤 Electron API 鑾峰彇鐪熷疄绱犳潗鍒楄〃
     const result = await window.electronAPI.getAssets(project.projectDir);
 
     if (result.success && result.assets) {
-      renderAssetsList(result.assets);
+      renderProjectAssetsList(result.assets);
     } else {
-      console.error('[projectAssets] 获取素材失败:', result.error);
-      renderAssetsList({ images: [], videos: [], audios: [] });
+      console.error('[projectAssets] 鑾峰彇绱犳潗澶辫触:', result.error);
+      renderProjectAssetsList({ images: [], videos: [], audios: [] });
     }
   } catch (error) {
-    console.error('[projectAssets] 加载素材列表异常:', error);
-    // 使用示例数据作为后备
+    console.error('[projectAssets] 鍔犺浇绱犳潗鍒楄〃寮傚父:', error);
+    // 浣跨敤绀轰緥鏁版嵁浣滀负鍚庡
     const assets = getMockAssets();
-    renderAssetsList(assets);
+    renderProjectAssetsList(assets);
   }
 }
 
 /**
- * 绑定缩略图点击事件
- */
+ * 缁戝畾缂╃暐鍥剧偣鍑讳簨浠? */
 const bindThumbnailClickEvents = function() {
   const thumbnails = document.querySelectorAll('.asset-thumbnail');
   thumbnails.forEach(thumb => {
@@ -314,17 +300,17 @@ const bindThumbnailClickEvents = function() {
 }
 
 /**
- * 提取视频第一帧作为缩略图
- * @param {HTMLVideoElement} video - 视频元素
+ * 鎻愬彇瑙嗛绗竴甯т綔涓虹缉鐣ュ浘
+ * @param {HTMLVideoElement} video - 瑙嗛鍏冪礌
  */
 function extractVideoFrame(video) {
   try {
-    // 检查是否已经处理过
+    // 妫€鏌ユ槸鍚﹀凡缁忓鐞嗚繃
     if (video.dataset.frameExtracted === 'true') {
       return;
     }
     
-    // 检查是否正在处理中
+    // 妫€鏌ユ槸鍚︽鍦ㄥ鐞嗕腑
     if (video.dataset.extracting === 'true') {
       return;
     }
@@ -332,8 +318,7 @@ function extractVideoFrame(video) {
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
-    // 等待视频元数据加载完成
-    if (video.readyState < 2) {
+    // 绛夊緟瑙嗛鍏冩暟鎹姞杞藉畬鎴?    if (video.readyState < 2) {
       video.onloadedmetadata = () => extractVideoFrame(video);
       return;
     }
@@ -341,7 +326,7 @@ function extractVideoFrame(video) {
     canvas.width = video.videoWidth;
     canvas.height = video.videoHeight;
 
-    // 检测画面是否为全黑
+    // 妫€娴嬬敾闈㈡槸鍚︿负鍏ㄩ粦
     function isFrameBlack() {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
@@ -361,64 +346,54 @@ function extractVideoFrame(video) {
       return avgBrightness < threshold;
     }
 
-    // 使用当前帧
-    function useCurrentFrame() {
-      // 再次检查是否已经处理过
+    // 浣跨敤褰撳墠甯?    function useCurrentFrame() {
+      // 鍐嶆妫€鏌ユ槸鍚﹀凡缁忓鐞嗚繃
       if (video.dataset.frameExtracted === 'true') {
         return;
       }
       
-      // 检查视频元素是否还在 DOM 中
-      if (!video || !video.parentNode || !document.contains(video)) {
+      // 妫€鏌ヨ棰戝厓绱犳槸鍚﹁繕鍦?DOM 涓?      if (!video || !video.parentNode || !document.contains(video)) {
         return;
       }
 
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
-      // 转换为图片
-      const img = document.createElement('img');
+      // 杞崲涓哄浘鐗?      const img = document.createElement('img');
       img.src = canvas.toDataURL('image/jpeg', 0.8);
       img.style.width = '100%';
       img.style.height = '100%';
       img.style.objectFit = 'cover';
       img.dataset.frameExtracted = 'true';
 
-      // 标记为已完成，防止重复处理
-      video.dataset.frameExtracted = 'true';
+      // 鏍囪涓哄凡瀹屾垚锛岄槻姝㈤噸澶嶅鐞?      video.dataset.frameExtracted = 'true';
       video.dataset.extracting = 'false';
 
-      // 替换 video 元素
+      // 鏇挎崲 video 鍏冪礌
       try {
         video.parentNode.replaceChild(img, video);
       } catch (error) {
-        console.error('提取视频封面失败:', error.message);
+        console.error('鎻愬彇瑙嗛灏侀潰澶辫触:', error.message);
       }
     }
 
-    // 标记为正在处理
-    video.dataset.extracting = 'true';
+    // 鏍囪涓烘鍦ㄥ鐞?    video.dataset.extracting = 'true';
     
     let seekCount = 0;
-    const maxSeeks = 2; // 最多跳转 2 次
-
-    // 只尝试一次，不循环跳转
-    video.onseeked = function() {
+    const maxSeeks = 2; // 鏈€澶氳烦杞?2 娆?
+    // 鍙皾璇曚竴娆★紝涓嶅惊鐜烦杞?    video.onseeked = function() {
       seekCount++;
       
-      // 检查元素是否还在 DOM 中
-      if (!video || !document.contains(video)) {
+      // 妫€鏌ュ厓绱犳槸鍚﹁繕鍦?DOM 涓?      if (!video || !document.contains(video)) {
         return;
       }
       
-      // 防止超过最大跳转次数
-      if (seekCount > maxSeeks) {
+      // 闃叉瓒呰繃鏈€澶ц烦杞鏁?      if (seekCount > maxSeeks) {
         video.dataset.extracting = 'false';
         return;
       }
 
       if (isFrameBlack()) {
-        // 是黑场，跳转到 1 秒再试一次
-        video.currentTime = 1.0;
+        // 鏄粦鍦猴紝璺宠浆鍒?1 绉掑啀璇曚竴娆?        video.currentTime = 1.0;
         video.onseeked = function() {
           seekCount++;
           if (!video || !document.contains(video)) {
@@ -429,60 +404,53 @@ function extractVideoFrame(video) {
             return;
           }
           if (isFrameBlack()) {
-            // 还是黑场，使用当前帧
+            // 杩樻槸榛戝満锛屼娇鐢ㄥ綋鍓嶅抚
             useCurrentFrame();
           } else {
             useCurrentFrame();
           }
         };
       } else {
-        // 不是黑场，直接使用
-        useCurrentFrame();
+        // 涓嶆槸榛戝満锛岀洿鎺ヤ娇鐢?        useCurrentFrame();
       }
     };
 
-    // 开始尝试
-    video.currentTime = 0.1;
+    // 寮€濮嬪皾璇?    video.currentTime = 0.1;
 
   } catch (error) {
-    console.error('提取视频封面失败:', error);
+    console.error('鎻愬彇瑙嗛灏侀潰澶辫触:', error);
   }
 }
 
 /**
- * 根据类型渲染素材列表
- * @param {string} type - 类型 (all/images/videos/audios)
+ * 鏍规嵁绫诲瀷娓叉煋绱犳潗鍒楄〃
+ * @param {string} type - 绫诲瀷 (all/images/videos/audios)
  */
 const renderAssetsListByType = function(type) {
   if (!currentProjectId) return;
 
-  // 使用缓存的真实数据
-  const assets = currentAssetsData;
+  // 浣跨敤缂撳瓨鐨勭湡瀹炴暟鎹?  const assets = currentAssetsData;
 
   if (type === 'all') {
-    renderAssetsList(assets, true, true);  // 缓存并更新计数
-  } else if (type === 'images') {
-    renderAssetsList({ images: assets.images || [], videos: [], audios: [] }, false, false);  // 不缓存不更新计数
+    renderProjectAssetsList(assets, true, true);  // 缂撳瓨骞舵洿鏂拌鏁?  } else if (type === 'images') {
+    renderProjectAssetsList({ images: assets.images || [], videos: [], audios: [] }, false, false);  // 涓嶇紦瀛樹笉鏇存柊璁℃暟
   } else if (type === 'videos') {
-    renderAssetsList({ images: [], videos: assets.videos || [], audios: [] }, false, false);  // 不缓存不更新计数
+    renderProjectAssetsList({ images: [], videos: assets.videos || [], audios: [] }, false, false);  // 涓嶇紦瀛樹笉鏇存柊璁℃暟
   } else if (type === 'audios') {
-    renderAssetsList({ images: [], videos: [], audios: assets.audios || [] }, false, false);  // 不缓存不更新计数
+    renderProjectAssetsList({ images: [], videos: [], audios: assets.audios || [] }, false, false);  // 涓嶇紦瀛樹笉鏇存柊璁℃暟
   }
 }
 
 /**
- * 根据关键词过滤素材
- * @param {string} keyword - 搜索关键词
- */
+ * 鏍规嵁鍏抽敭璇嶈繃婊ょ礌鏉? * @param {string} keyword - 鎼滅储鍏抽敭璇? */
 const filterAssetsByKeyword = function(keyword) {
   if (!currentProjectId) return;
 
-  // 使用缓存的真实数据
-  const assets = currentAssetsData;
+  // 浣跨敤缂撳瓨鐨勭湡瀹炴暟鎹?  const assets = currentAssetsData;
 
   if (keyword === '') {
-    // 清空搜索，显示全部素材并更新计数
-    renderAssetsList(assets, false, true);
+    // 娓呯┖鎼滅储锛屾樉绀哄叏閮ㄧ礌鏉愬苟鏇存柊璁℃暟
+    renderProjectAssetsList(assets, false, true);
     return;
   }
 
@@ -492,13 +460,12 @@ const filterAssetsByKeyword = function(keyword) {
     audios: assets.audios.filter(item => item.name.toLowerCase().includes(keyword))
   };
 
-  // 渲染过滤后的素材列表，并更新计数为过滤后的数量
-  renderAssetsList(filteredAssets, false, true);
+  // 娓叉煋杩囨护鍚庣殑绱犳潗鍒楄〃锛屽苟鏇存柊璁℃暟涓鸿繃婊ゅ悗鐨勬暟閲?  renderProjectAssetsList(filteredAssets, false, true);
 }
 
 /**
- * 更新素材计数
- * @param {Object} assets - 素材对象
+ * 鏇存柊绱犳潗璁℃暟
+ * @param {Object} assets - 绱犳潗瀵硅薄
  */
 const updateAssetsCount = function(assets) {
   const counts = {
@@ -523,12 +490,11 @@ const updateAssetsCount = function(assets) {
 }
 
 /**
- * 更新存储使用情况
- * @param {Object} assets - 素材对象
+ * 鏇存柊瀛樺偍浣跨敤鎯呭喌
+ * @param {Object} assets - 绱犳潗瀵硅薄
  */
 const updateAssetsUsage = function(assets) {
-  // 计算实际使用量
-  let totalBytes = 0;
+  // 璁＄畻瀹為檯浣跨敤閲?  let totalBytes = 0;
   
   if (assets.images) {
     totalBytes += assets.images.reduce((sum, item) => sum + (item.fileSize || 0), 0);
@@ -549,13 +515,13 @@ const updateAssetsUsage = function(assets) {
   }
 
   if (assetsSidebar.usageText) {
-    assetsSidebar.usageText.textContent = `已用 ${usedMB}MB / 限制 ${limitMB}MB`;
+    assetsSidebar.usageText.textContent = `宸茬敤 ${usedMB}MB / 闄愬埗 ${limitMB}MB`;
   }
 }
 
 /**
- * 获取示例素材数据（临时）
- * @returns {Object} 素材对象
+ * 鑾峰彇绀轰緥绱犳潗鏁版嵁锛堜复鏃讹級
+ * @returns {Object} 绱犳潗瀵硅薄
  */
 const getMockAssets = function() {
   return {
@@ -577,11 +543,11 @@ const getMockAssets = function() {
 }
 
 /**
- * 显示素材预览
- * @param {string} type - 素材类型 (image/video/audio)
- * @param {string} name - 素材名称
- * @param {string} size - 素材大小
- * @param {string} path - 素材路径
+ * 鏄剧ず绱犳潗棰勮
+ * @param {string} type - 绱犳潗绫诲瀷 (image/video/audio)
+ * @param {string} name - 绱犳潗鍚嶇О
+ * @param {string} size - 绱犳潗澶у皬
+ * @param {string} path - 绱犳潗璺緞
  */
 const showPreview = function(type, name, size, path) {
   if (!previewModal.modal || !previewModal.container) return;
@@ -594,16 +560,16 @@ const showPreview = function(type, name, size, path) {
     previewHTML = `
       <video controls autoplay>
         <source src="${path}" type="video/mp4">
-        您的浏览器不支持视频播放
+        鎮ㄧ殑娴忚鍣ㄤ笉鏀寔瑙嗛鎾斁
       </video>
     `;
   } else if (type === 'audio') {
     previewHTML = `
       <div class="audio-player">
-        <span class="audio-icon">🎵</span>
+        <span class="audio-icon">馃幍</span>
         <audio controls autoplay>
           <source src="${path}" type="audio/mpeg">
-          您的浏览器不支持音频播放
+          鎮ㄧ殑娴忚鍣ㄤ笉鏀寔闊抽鎾斁
         </audio>
       </div>
     `;
@@ -622,12 +588,12 @@ const showPreview = function(type, name, size, path) {
     previewModal.size.textContent = size;
   }
 
-  // 显示模态框
+  // 鏄剧ず妯℃€佹
   previewModal.modal.style.display = 'flex';
 }
 
 /**
- * 隐藏素材预览
+ * 闅愯棌绱犳潗棰勮
  */
 const hidePreview = function() {
   if (!previewModal.modal) return;
@@ -639,10 +605,11 @@ const hidePreview = function() {
   }
 }
 
-// 导出到 window 对象
+// 瀵煎嚭鍒?window 瀵硅薄
 window.openAssetsSidebar = openAssetsSidebar;
 window.closeAssetsSidebar = closeAssetsSidebar;
 window.initAssetsSidebar = initAssetsSidebar;
 window.showPreview = showPreview;
 window.hidePreview = hidePreview;
 window.extractVideoFrame = extractVideoFrame;
+
