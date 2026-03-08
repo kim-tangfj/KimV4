@@ -606,6 +606,19 @@ async function loadAssetsList(projectId) {
 }
 
 /**
+ * 刷新项目素材列表（由外部调用，如片段素材上传成功后）
+ */
+function refreshProjectAssetsList() {
+  if (currentProjectId) {
+    console.log('[refreshProjectAssetsList] 刷新项目素材列表');
+    loadAssetsList(currentProjectId);
+  }
+}
+
+// 导出刷新函数到 window 对象
+window.refreshProjectAssetsList = refreshProjectAssetsList;
+
+/**
  * 绑定缩略图点击事件
  */
 function bindThumbnailClickEvents() {
