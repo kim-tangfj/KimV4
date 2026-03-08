@@ -465,10 +465,19 @@ async function handleSceneDroppedFiles(files) {
 
       console.log('[handleSceneDroppedFiles] saveDroppedFile result:', result);
 
-      if (result.success && result.asset) {
+      if (result.success) {
+        // 将返回数据包装成 asset 对象格式
+        const asset = {
+          id: 'asset_' + assetType + '_' + Date.now(),
+          name: result.name,
+          path: result.path,
+          type: result.type,
+          size: result.size,
+          fileSize: result.fileSize
+        };
         // 添加到片段素材库
-        console.log('[handleSceneDroppedFiles] 添加素材到片段:', result.asset);
-        await addSceneAssetToShot(shotId, result.asset);
+        console.log('[handleSceneDroppedFiles] 添加素材到片段:', asset);
+        await addSceneAssetToShot(shotId, asset);
         successCount++;
       } else {
         failCount++;

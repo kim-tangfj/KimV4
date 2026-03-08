@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-08 - 修复片段素材库拖放上传类型错误
+
+### 问题
+拖放上传时报错 `Cannot read properties of undefined (reading 'type')`
+
+### 原因
+`result.asset` 可能为 `undefined`，导致访问 `asset.type` 时报错
+
+### 修复
+- 添加 `result.asset` 存在性检查
+- 在 `addSceneAssetToShot` 中添加 asset 对象安全检查
+- 添加调试日志确认返回数据
+
+---
+
 ## 2026-03-08 - 修复片段素材库添加素材时片段查找错误
 
 ### 问题
