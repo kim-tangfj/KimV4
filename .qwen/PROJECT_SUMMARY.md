@@ -1,13 +1,32 @@
 The user wants me to create a comprehensive project summary based on the conversation history. Let me analyze what was accomplished in this session:
 
-1. **Main Task**: Develop project asset library upload functionality for the KimV4 Electron app
-2. **Key Challenge**: Electron sandbox mode prevents direct file path access
-3. **Solution**: Use dialog API to get real file paths
+1. **Main Task**: Develop storyboard image (分镜图片) upload and drag-drop functionality for the KimV4 Electron app's scene properties panel
 
-Let me structure this properly following the markdown format provided.# Project Summary
+2. **Key Features Implemented**:
+   - Storyboard image upload area in scene properties panel
+   - Click to upload and drag-drop upload functionality
+   - Support for dragging from project asset library and scene asset library
+   - Storyboard images saved to `shots/{shotId}/images/storyboard/` directory
+   - Storyboard image preview and delete functionality
+   - Storyboard thumbnail display in scene list cards
+
+3. **Issues Fixed**:
+   - Storyboard upload area size adjusted to match asset library
+   - Scene list cards now show storyboard thumbnails on the right side
+   - Fixed thumbnail display location (was showing in shot list, now correctly in scene list)
+   - Allowed dragging from scene asset library (was previously blocked)
+   - Fixed scene list refresh after upload
+
+4. **Technical Details**:
+   - Electron sandbox mode compatible
+   - Uses IPC for file operations
+   - Drag-drop data transfer with asset metadata
+   - Automatic refresh of scene list after upload
+
+Let me create a comprehensive summary.# Project Summary
 
 ## Overall Goal
-开发和完善 Kim 多级分镜提示词助手（Electron 桌面应用）的项目素材库功能，实现素材上传、预览和管理功能。
+实现 Kim 多级分镜提示词助手的镜头属性分镜图片上传和拖放功能，支持从本地、项目素材库和片段素材库上传分镜图片，并在镜头列表卡片上显示缩略图。
 
 ## Key Knowledge
 
@@ -25,14 +44,44 @@ e:\AI\KimV4\
 │   ├── main.js              # Electron 主进程
 │   ├── preload.js           # 预加载脚本（IPC 桥接）
 │   ├── renderer.js          # 渲染进程
-│   ├── handlers/            # IPC 处理器模块
-│   │   └── project.js       # 项目管理（新增 uploadAssetToProject）
-│   └── utils/               # 工具模块
-│       └── projectAssets.js # 项目素材库管理
-├── index.html               # 主界面（四栏布局 + 侧边素材库）
+│   ├── handlers/
+│   │   └── project.js       # 项目管理（含分镜图片上传 IPC）
+│   └── utils/
+│       ├── propertyPanel.js # 属性面板（含分镜图片上传功能）
+│       ├── sceneList.js     # 镜头列表（含分镜图缩略图显示）
+│       ├── projectAssets.js # 项目素材库
+│       └── sceneAssets.js   # 片段素材库
+├── index.html               # 主界面
 ├── styles.css               # 全局样式
 └── work/
     └── dev-log.md           # 开发日志
+```
+
+### 分镜图片存储结构
+```
+项目目录/
+├── assets/
+│   ├── images/              # 项目素材库 - 图片
+│   └── shots/               # 片段素材库
+│       └── {shotId}/
+│           └── images/
+│               └── storyboard/  # 分镜图片独立目录
+```
+
+### 镜头数据结构
+```json
+{
+  "id": "scene_001",
+  "name": "森林中的团团",
+  "storyboardImage": {
+    "id": "asset_storyboard_1234567890",
+    "name": "分镜图_001.jpg",
+    "path": "assets/shots/shot_001/images/storyboard/分镜图_001.jpg",
+    "type": "image",
+    "size": "1.2MB",
+    "fileSize": 1258291
+  }
+}
 ```
 
 ### 构建和运行命令
@@ -48,144 +97,102 @@ npm run dev          # 开发模式（自动打开 DevTools）
 3. **代码规范**：ES6+，禁用 var，优先 const/let，异步用 async/await
 4. **每次开发完成**：记录 dev-log.md 并 git 提交
 
-### Sandbox 模式限制与解决方案
-- **限制**: 渲染进程无法直接访问 File 对象的真实路径
-- **解决方案**: 使用 `window.electronAPI.showOpenDialog()` 获取真实路径
-- **路径处理**: 使用 `filePath.split(/[\\/]/).pop()` 提取文件名（兼容 Windows/Unix）
-
 ## Recent Actions
 
-### 1. 项目素材库上传功能实现 ✅
+### 1. 分镜图片上传功能实现 ✅
 **功能特性**:
 - 点击上传区域选择文件（使用 dialog API）
-- 支持多文件同时选择
-- 自动分类复制到项目 assets 目录（images/videos/audios）
-- 文件重名时自动添加时间戳
-- 上传进度实时显示
-- 上传成功后自动刷新素材列表
+- 拖放本地文件到上传区域自动上传
+- 从项目素材库拖放图片（允许）
+- 从片段素材库拖放图片（允许）
+- 分镜图片保存到 `shots/{shotId}/images/storyboard/`
+- 文件重名自动添加时间戳
+- 分镜图预览和删除功能
 
-**修改的文件**:
+**修改文件**:
 | 文件 | 变更 | 说明 |
 |------|------|------|
-| `index.html` | +12 行 | 上传区域 HTML（替换按钮） |
-| `styles.css` | +85 行 | 上传区域 + 进度条样式 + 深色主题 |
-| `src/preload.js` | +2 行 | 暴露 showOpenDialog API |
-| `src/handlers/project.js` | +70 行 | 新增 uploadAssetToProject IPC 处理器 |
-| `src/utils/projectAssets.js` | +200 行 | 上传功能实现 |
+| `index.html` | 修改 | 镜头属性表单分镜图片 HTML |
+| `styles.css` | +130 行 | 分镜图片上传区域样式 |
+| `src/utils/propertyPanel.js` | +280 行 | 上传功能实现 |
+| `src/utils/projectAssets.js` | 修改 | 添加素材拖放支持 |
+| `src/utils/sceneAssets.js` | 修改 | 添加素材拖放支持 |
+| `src/preload.js` | +1 行 | 暴露 `uploadStoryboardImage` API |
+| `src/handlers/project.js` | +50 行 | 新增 IPC 处理器 |
 
-**核心 API**:
-```javascript
-// preload.js
-uploadAssetToProject: (params) => ipcRenderer.invoke('project:uploadAssetToProject', params)
-
-// project.js
-ipcMain.handle('project:uploadAssetToProject', async (event, params) => {
-  // 验证参数：projectDir, filePath
-  // 自动分类到 images/videos/audios
-  // 复制文件到项目 assets 目录
-  // 返回素材信息
-})
-```
-
-### 2. 素材预览功能修复 ✅
-**问题**: 预览模态框元素未初始化，点击素材无响应
-
-**修复**: 在 `initAssetsSidebar` 函数中添加 previewModal 元素缓存：
-```javascript
-previewModal.modal = document.getElementById('asset-preview-modal');
-previewModal.container = document.getElementById('asset-preview-container');
-previewModal.name = document.getElementById('asset-preview-name');
-// ... 等 7 个元素
-```
-
+### 2. 镜头列表缩略图显示 ✅
 **功能**:
-- 图片预览：直接显示大图
-- 视频预览：HTML5 播放器
-- 音频预览：音频播放器 + 图标
-- 复制路径：复制素材绝对路径
-- 删除按钮：提示待实现
+- 镜头列表卡片右侧显示 50x50 分镜图缩略图
+- 无分镜图时不显示缩略图
+- 缩略图自适应填充，使用 `object-fit: cover`
+- 上传成功后自动刷新镜头列表
 
-### 3. 片段素材库折叠功能 ✅
-**功能**: 素材分类（图片/视频/音频）支持折叠/展开
+**修改文件**:
+- `styles.css`: 添加 `.storyboard-thumbnail` 样式
+- `src/utils/sceneList.js`: 镜头卡片渲染添加分镜图检查
+- `src/utils/propertyPanel.js`: 上传成功后调用 `renderSceneList` 刷新
 
-**修改**:
-- 添加折叠箭头指示（▼/▶）
-- 显示素材数量计数
-- 平滑过渡动画
-- 深色主题适配
-
-### 4. 统一共用预览模态框 ✅
-**优化**: 项目素材库和片段素材库共用同一个预览模态框
-
-**修改**:
-- 删除重复的预览模态框 HTML
-- 统一使用 `#asset-preview-modal`
-- 两个素材库共享预览功能
+### 3. 问题修复
+| 问题 | 修复 |
+|------|------|
+| 分镜图预览太大 | 调整为与素材库缩略图一致（140px 高，图片 100px） |
+| 片段素材库禁止拖放 | 移除限制，允许所有素材库拖放 |
+| 镜头列表不显示缩略图 | 上传成功后调用 `renderSceneList` 刷新 |
+| 缩略图显示位置错误 | 从片段列表移到镜头列表 |
 
 ### Git 提交历史（本次会话）
 ```
-9f4acf6 fix: 修复项目素材库预览功能失效
-3603dac fix: 修复 path 模块未定义错误
-eabfc7e feat: 使用 dialog API 实现项目素材库上传
-e4c70e3 fix: 修复 sandbox 模式下文件上传路径问题
-3f23d1a feat: 新增项目素材库上传 API
-7ec3566 fix: 修复项目素材库上传功能
-ce7a7bd style: 上传区域改为自适应宽度
-13409d5 style: 调整上传区域尺寸和布局
-5e07237 docs: 更新开发日志记录项目素材库上传功能
-d4cea21 feat: 片段素材库添加折叠功能
-553cf0a fix: 添加自定义选项编辑弹窗事件绑定
-5138717 fix: 添加 customOptions.js 模块引用
-218adea fix: 从 projectData 读取片段数据
-... (更多历史提交)
+0ee2b7a fix: 修复镜头列表缩略图显示位置错误
+5d34e16 fix: 修复分镜图片功能问题
+c5221e2 feat: 优化分镜图片上传框大小和镜头卡片缩略图
+c01632f feat: 实现镜头属性分镜图片上传和拖放功能
 ```
 
 ## Current Plan
 
-### 项目素材库功能开发
+### 分镜图片功能开发
 
 | 阶段 | 任务 | 状态 | 说明 |
 |------|------|------|------|
-| **P0-1** | HTML 结构 | ✅ DONE | 素材按钮、侧边窗体 HTML |
-| **P0-2** | CSS 样式 | ✅ DONE | 素材按钮、侧边窗体样式 |
-| **P0-3** | JavaScript 交互 | ✅ DONE | 展开/收起、列表渲染 |
-| **P0-4** | 视频缩略图提取 | ✅ DONE | 自动提取第一帧，防循环机制 |
-| **P0-5** | 搜索功能 | ✅ DONE | 关键词过滤，计数更新 |
-| **P1-6** | 素材上传功能 | ✅ DONE | 文件选择器、IPC 处理器、自动分类 |
-| **P1-7** | 素材预览模态框 | ✅ DONE | 统一共用预览模态框 |
-| **P1-8** | 素材删除功能 | ⏸️ TODO | 删除确认、使用前检查、物理删除 |
-| **P1-9** | 素材引用功能 | ⏸️ TODO | 复制路径、@引用到镜头 |
+| **P0-1** | HTML 结构 | ✅ DONE | 分镜图片上传区域 HTML |
+| **P0-2** | CSS 样式 | ✅ DONE | 上传区域 + 缩略图样式 |
+| **P0-3** | 点击上传 | ✅ DONE | 调用 dialog 选择文件 |
+| **P0-4** | 拖放上传 | ✅ DONE | 本地文件拖放 |
+| **P0-5** | 素材库拖放 | ✅ DONE | 项目/片段素材库拖放 |
+| **P0-6** | IPC 处理器 | ✅ DONE | `project:uploadStoryboardImage` |
+| **P0-7** | 独立存储 | ✅ DONE | 保存到 `shots/{shotId}/images/storyboard/` |
+| **P0-8** | 预览删除 | ✅ DONE | 分镜图预览和删除 |
+| **P0-9** | 镜头列表缩略图 | ✅ DONE | 镜头卡片右侧显示缩略图 |
 
 ### 下一步建议 [TODO]
 
-1. **[TODO] 实现素材删除功能**
-   - 删除确认对话框
-   - 检查素材是否被镜头引用
-   - 物理删除文件 + 更新索引
+1. **[TODO] 分镜图批量管理**
+   - 支持一次上传多张分镜图
+   - 分镜图顺序调整
+   - 分镜图批量删除
 
-2. **[TODO] 实现素材引用功能**
-   - 复制素材路径到剪贴板
-   - @引用到镜头的素材字段
-   - 快速插入到提示词
+2. **[TODO] 分镜图 AI 生成**
+   - 根据镜头描述生成分镜图
+   - 集成 AI 绘画 API
+   - 生成历史记录
 
-3. **[TODO] 优化拖放上传体验**
-   - 当前限制：sandbox 模式下拖放文件无法获取真实路径
-   - 方案 A: 禁用 sandbox 模式（有安全风险）
-   - 方案 B: preload 暴露更多文件 API
+3. **[TODO] 分镜图导出**
+   - 导出分镜图为 PDF
+   - 导出分镜图为图片包
+   - 打印分镜脚本
 
 ### 已知问题
-
-- 拖放上传暂不支持（sandbox 模式限制）
-- 视频预览依赖浏览器支持的编码格式（推荐 H.264/MP4）
-- 大文件上传无取消功能
+- 大文件上传无进度显示
+- 分镜图编辑功能待实现（裁剪、标注等）
+- 分镜图版本管理待实现
 
 ---
 
 **文档更新时间**: 2026-03-08  
-**当前 Git 提交**: `9f4acf6` (fix: 修复项目素材库预览功能失效)  
-**开发计划参考**: `work/plan/2026-03-06-002-plan.md`
+**当前 Git 提交**: `0ee2b7a` (fix: 修复镜头列表缩略图显示位置错误)  
+**开发计划参考**: `work/plan/镜头属性分镜图片实现计划_2026-03-08.md`
 
 ---
 
 ## Summary Metadata
-**Update time**: 2026-03-08T12:18:31.736Z 
+**Update time**: 2026-03-08T17:38:00.774Z 
