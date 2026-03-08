@@ -174,11 +174,15 @@ function initUploadFunctionality() {
     });
 
     if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
-      // 将 filePaths 转换为 File 对象格式
-      const files = result.filePaths.map(filePath => ({
-        name: path.basename(filePath),
-        path: filePath
-      }));
+      // 将 filePaths 转换为文件对象格式
+      const files = result.filePaths.map(filePath => {
+        // 从路径提取文件名（兼容 Windows 和 Unix）
+        const fileName = filePath.split(/[\\/]/).pop();
+        return {
+          name: fileName,
+          path: filePath
+        };
+      });
       handleFilesUpload(files);
     }
   });
