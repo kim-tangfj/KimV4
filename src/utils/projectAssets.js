@@ -220,6 +220,8 @@ async function handleFilesUpload(files) {
   const state = window.getState();
   const project = state.currentProject;
 
+  console.log('[handleFilesUpload] currentProject:', project);
+
   if (!project || !project.projectDir) {
     window.showToast('请先选择项目');
     return;
@@ -382,6 +384,15 @@ function openAssetsSidebar(projectId, projectName) {
   }
 
   currentProjectId = projectId;
+
+  // 从 projects 中查找项目并设置为 currentProject
+  const state = window.getState();
+  const project = state.projects?.find(p => p.id === projectId);
+  
+  if (project) {
+    // 设置 currentProject 以便上传功能使用
+    window.updateState('currentProject', project);
+  }
 
   // 更新项目信息
   if (assetsSidebar.projectName) {
