@@ -610,14 +610,25 @@ async function addSceneAssetToShot(shotId, asset) {
 
   console.log('[addSceneAssetToShot] 添加素材:', asset, '到片段:', shotId);
 
-  // 保存项目
+  // 保存项目 - 使用 projectData 或 currentProject
   const project = state.currentProject;
   if (!project || !project.projectDir) {
     console.error('[addSceneAssetToShot] 项目目录不存在');
     return;
   }
 
-  const saveResult = await window.electronAPI.saveProject(project.projectDir, projectData);
+  // 构建完整的项目 JSON 对象
+  const projectJson = {
+    project: project.project || project,
+    shots: projectData.shots || project.shots,
+    promptTemplates: projectData.promptTemplates || project.promptTemplates || [],
+    selected: projectData.selected || project.selected || {},
+    theme: projectData.theme || project.theme || {}
+  };
+
+  console.log('[addSceneAssetToShot] 保存项目，projectDir:', project.projectDir);
+
+  const saveResult = await window.electronAPI.saveProject(project.projectDir, projectJson);
   console.log('[addSceneAssetToShot] 保存结果:', saveResult);
 
   // 重新加载项目数据以确保同步

@@ -4,6 +4,29 @@
 
 ---
 
+## 2026-03-08 - 修复片段素材库拖放上传返回数据格式问题
+
+### 问题
+拖放上传时 `saveDroppedFile` 返回的数据没有 `asset` 属性，导致上传失败
+
+### 原因
+`saveDroppedFile` 直接返回文件信息 `{ success: true, path, name, type, size, fileSize }`，而不是 `{ success: true, asset: {...} }` 格式
+
+### 修复
+在 `handleSceneDroppedFiles` 中将返回数据包装成 `asset` 对象格式：
+```javascript
+const asset = {
+  id: 'asset_' + assetType + '_' + Date.now(),
+  name: result.name,
+  path: result.path,
+  type: result.type,
+  size: result.size,
+  fileSize: result.fileSize
+};
+```
+
+---
+
 ## 2026-03-08 - 修复片段素材库拖放上传类型错误
 
 ### 问题
