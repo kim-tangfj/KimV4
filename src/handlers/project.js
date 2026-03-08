@@ -569,6 +569,57 @@ function initProjectIPC(mainWindow) {
     }, '保存拖放片段文件');
   });
 
+  // 上传分镜图片到片段素材库
+  ipcMain.handle('project:uploadStoryboardImage', async (event, params) => {
+    try {
+      validateParams(params, ['projectDir', 'filePath', 'shotId', 'sceneId', 'fileName']);
+
+      const { projectDir, filePath, shotId, sceneId, fileName } = params;
+
+      // 检查源文件是否存在
+      if (!fs.existsSync(filePath)) {
+        return { success: false, error: '源文件不存在' };
+      }
+
+      // 分镜图片存储目录：assets/shots/{shotId}/images/storyboard/
+      const storyboardDir = path.join(projectDir, 'assets', 'shots', shotId, 'images', 'storyboard');
+      if (!fs.existsSync(storyboardDir)) {
+        fs.mkdirSync(storyboardDir, { recursive: true });
+      }
+
+      // 目标文件路径
+      let targetPath = path.join(storyboardDir, fileName);
+
+      // 如果文件已存在，添加时间戳
+      if (fs.existsSync(targetPath)) {
+        const ext = path.extname(fileName);
+        const nameWithoutExt = path.basename(fileName, ext);
+        targetPath = path.join(storyboardDir, `${nameWithoutExt}_${Date.now()}${ext}`);
+      }
+
+      // 复制文件
+      fs.copyFileSync(filePath, targetPath);
+
+      // 返回成功
+      const stats = fs.statSync(targetPath);
+      return {
+        success: true,
+        asset: {
+          id: 'asset_storyboard_' + Date.now(),
+          name: path.basename(targetPath),
+          path: targetPath,
+          type: 'image',
+          size: formatFileSize(stats.size),
+          fileSize: stats.size,
+          sceneId: sceneId
+        }
+      };
+    } catch (error) {
+      console.error('上传分镜图片失败:', error);
+      return { success: false, error: error.message };
+    }
+  });
+
   ipcMain.handle('project:startMonitor', async (event, projectDirs) => {
     try {
       if (folderMonitorInterval) {

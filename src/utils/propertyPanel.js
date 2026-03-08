@@ -461,11 +461,23 @@ async function showSceneProperties(scene) {
           <label for="sceneDuration">时长（秒）</label>
           <input type="number" id="sceneDuration" value="${scene.duration || 2}" min="1" step="0.5" data-autosave="true">
         </div>
+        
+        <!-- 分镜图片上传区域 -->
         <div class="form-group">
-          <label for="sceneImage">分镜图片</label>
-          <textarea id="sceneImage" rows="2" placeholder="点击上传或拖放图片，支持多张图片" data-autosave="true">${scene.image || ''}</textarea>
-          <small class="setting-hint">支持上传和拖放图片</small>
+          <label for="sceneStoryboardImage">分镜图片</label>
+          <div class="storyboard-upload-area" id="storyboard-upload-area" data-shot-id="${scene.shotId || ''}" data-scene-id="${scene.id}">
+            <input type="file" id="storyboard-file-input" accept="image/*" style="display: none;" />
+            <div class="upload-area-content">
+              <span class="upload-icon">📤</span>
+              <span class="upload-text">点击或拖放图片到此处</span>
+              <span class="upload-hint">支持 jpg, png, webp 格式</span>
+            </div>
+            <!-- 已上传预览区域 -->
+            <div class="storyboard-preview" id="storyboard-preview"></div>
+          </div>
+          <small class="setting-hint">支持上传和从素材库拖放（📋片段素材不可用）</small>
         </div>
+        
         <div class="form-group">
           <label for="sceneContent">内容描述</label>
           <textarea id="sceneContent" rows="4" placeholder="输入镜头内容描述" data-autosave="true">${scene.content || ''}</textarea>
@@ -496,6 +508,14 @@ async function showSceneProperties(scene) {
 
   // 绑定添加选项按钮事件
   setupAddOptionButtons();
+  
+  // 初始化分镜图片上传功能
+  initStoryboardImageUpload();
+  
+  // 加载分镜图预览
+  setTimeout(() => {
+    loadStoryboardPreview();
+  }, 100);
 }
 
 /**
@@ -866,6 +886,274 @@ window.showSceneProperties = showSceneProperties;
 window.autoSaveShotProperties = autoSaveShotProperties;
 window.autoSaveSceneProperties = autoSaveSceneProperties;
 window.saveShotProperties = saveShotProperties;
+window.saveSceneProperties = saveSceneProperties;
+window.initStoryboardImageUpload = initStoryboardImageUpload;
+
+/**
+ * 初始化分镜图片上传功能
+ */
+function initStoryboardImageUpload() {
+  const uploadArea = document.getElementById('storyboard-upload-area');
+  const fileInput = document.getElementById('storyboard-file-input');
+  
+  if (!uploadArea || !fileInput) return;
+  
+  const shotId = uploadArea.dataset.shotId;
+  const sceneId = uploadArea.dataset.sceneId;
+  
+  // 点击上传区域
+  uploadArea.addEventListener('click', async () => {
+    const result = await window.electronAPI.showOpenDialog({
+      properties: ['openFile'],
+      filters: [
+        { name: '图片', extensions: ['jpg', 'jpeg', 'png', 'webp', 'gif'] }
+      ]
+    });
+    
+    if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+      const filePath = result.filePaths[0];
+      const fileName = filePath.split(/[\\/]/).pop();
+      uploadStoryboardImage(filePath, fileName, shotId, sceneId);
+    }
+  });
+  
+  // 拖放上传 - 阻止默认行为
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+    }, false);
+  });
+  
+  // 拖放视觉效果
+  uploadArea.addEventListener('dragenter', () => {
+    uploadArea.classList.add('drag-over');
+  });
+  
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('drag-over');
+  });
+  
+  // 处理文件 drop
+  uploadArea.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    
+    uploadArea.classList.remove('drag-over');
+    
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const file = files[0];
+      if (file.type.startsWith('image/')) {
+        // 本地文件拖放
+        const filePath = file.path || await getFileLocalPath(file);
+        if (filePath) {
+          uploadStoryboardImage(filePath, file.name, shotId, sceneId);
+        }
+      }
+    }
+  });
+  
+  // 从素材库拖放处理
+  uploadArea.addEventListener('dragover', (e) => {
+    const assetData = e.dataTransfer.getData('text/asset-data');
+    if (assetData) {
+      try {
+        const data = JSON.parse(assetData);
+        if (data.source === 'shot') {
+          // 片段素材，禁止拖放
+          uploadArea.classList.add('drag-forbidden');
+          e.dataTransfer.dropEffect = 'none';
+        } else {
+          uploadArea.classList.remove('drag-forbidden');
+          e.dataTransfer.dropEffect = 'copy';
+        }
+      } catch (err) {
+        console.error('[storyboard dragover] 解析素材数据失败:', err);
+      }
+    }
+  });
+  
+  uploadArea.addEventListener('dragleave', () => {
+    uploadArea.classList.remove('drag-forbidden');
+  });
+  
+  uploadArea.addEventListener('drop', async (e) => {
+    const assetData = e.dataTransfer.getData('text/asset-data');
+    if (assetData) {
+      try {
+        const data = JSON.parse(assetData);
+        uploadArea.classList.remove('drag-forbidden');
+        
+        if (data.source === 'shot') {
+          window.showToast('⚠️ 片段素材不可用于分镜图片');
+          return;
+        }
+        
+        // 从项目素材库拖放
+        if (data.path) {
+          uploadStoryboardImage(data.path, data.name, shotId, sceneId);
+        }
+      } catch (err) {
+        console.error('[storyboard drop] 解析素材数据失败:', err);
+      }
+    }
+  });
+}
+
+/**
+ * 获取本地文件路径（sandbox 模式兼容）
+ */
+async function getFileLocalPath(file) {
+  // 在 sandbox 模式下，File 对象没有 path 属性
+  // 这里返回 null，表示需要通过其他方式获取路径
+  return null;
+}
+
+/**
+ * 上传分镜图片
+ */
+async function uploadStoryboardImage(filePath, fileName, shotId, sceneId) {
+  const state = window.getState();
+  const project = state.currentProject;
+  
+  if (!project || !project.projectDir) {
+    window.showToast('项目未加载');
+    return;
+  }
+  
+  try {
+    const result = await window.electronAPI.uploadStoryboardImage({
+      projectDir: project.projectDir,
+      filePath: filePath,
+      shotId: shotId,
+      sceneId: sceneId,
+      fileName: fileName
+    });
+    
+    if (result.success) {
+      window.showToast('分镜图片已上传');
+      // 更新镜头数据
+      updateSceneStoryboardImage(sceneId, result.asset);
+      // 刷新预览
+      renderStoryboardPreview(result.asset);
+    } else {
+      window.showToast('上传失败：' + result.error);
+    }
+  } catch (error) {
+    console.error('[uploadStoryboardImage] 上传失败:', error);
+    window.showToast('上传失败：' + error.message);
+  }
+}
+
+/**
+ * 更新镜头分镜图片数据
+ */
+function updateSceneStoryboardImage(sceneId, asset) {
+  const state = window.getState();
+  const projectData = state.projectData;
+  
+  if (!projectData || !projectData.shots) return;
+  
+  // 查找镜头
+  for (const shot of projectData.shots) {
+    const scene = shot.scenes?.find(s => s.id === sceneId);
+    if (scene) {
+      scene.storyboardImage = asset;
+      break;
+    }
+  }
+  
+  // 保存项目
+  saveProjectData(projectData);
+}
+
+/**
+ * 保存项目数据
+ */
+async function saveProjectData(projectData) {
+  const state = window.getState();
+  const project = state.currentProject;
+  
+  if (!project || !project.projectDir) return;
+  
+  try {
+    await window.electronAPI.saveProject(project.projectDir, projectData);
+    window.updateState('projectData', projectData);
+  } catch (error) {
+    console.error('[saveProjectData] 保存失败:', error);
+  }
+}
+
+/**
+ * 渲染分镜图预览
+ */
+function renderStoryboardPreview(asset) {
+  const previewEl = document.getElementById('storyboard-preview');
+  const uploadArea = document.getElementById('storyboard-upload-area');
+  
+  if (!previewEl || !uploadArea) return;
+  
+  if (asset) {
+    previewEl.innerHTML = `
+      <div class="storyboard-preview-item">
+        <img src="${asset.path}" alt="${asset.name}" />
+        <div class="storyboard-preview-info">
+          <span class="storyboard-preview-name">${asset.name}</span>
+          <button class="storyboard-preview-delete" title="删除">×</button>
+        </div>
+      </div>
+    `;
+    previewEl.classList.add('has-image');
+    uploadArea.querySelector('.upload-area-content').style.display = 'none';
+    
+    // 绑定删除按钮事件
+    const deleteBtn = previewEl.querySelector('.storyboard-preview-delete');
+    if (deleteBtn) {
+      deleteBtn.addEventListener('click', (e) => {
+        e.stopPropagation();
+        deleteStoryboardImage();
+      });
+    }
+  } else {
+    previewEl.innerHTML = '';
+    previewEl.classList.remove('has-image');
+    uploadArea.querySelector('.upload-area-content').style.display = 'flex';
+  }
+}
+
+/**
+ * 删除分镜图片
+ */
+function deleteStoryboardImage() {
+  const state = window.getState();
+  const currentScene = state.currentScene;
+  
+  if (!currentScene) return;
+  
+  currentScene.storyboardImage = null;
+  
+  // 保存项目
+  const projectData = state.projectData;
+  saveProjectData(projectData);
+  
+  // 刷新预览
+  renderStoryboardPreview(null);
+  
+  window.showToast('分镜图片已删除');
+}
+
+/**
+ * 加载分镜图预览
+ */
+function loadStoryboardPreview() {
+  const state = window.getState();
+  const currentScene = state.currentScene;
+  
+  if (currentScene && currentScene.storyboardImage) {
+    renderStoryboardPreview(currentScene.storyboardImage);
+  }
+}
 window.saveSceneProperties = saveSceneProperties;
 window.setupOptionHintListeners = setupOptionHintListeners;
 window.setupSceneOptionHintListeners = setupSceneOptionHintListeners;

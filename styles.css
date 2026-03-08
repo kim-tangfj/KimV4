@@ -1781,6 +1781,136 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   animation: bounce 0.6s ease-in-out infinite;
 }
 
+/* 分镜图片上传区域 */
+.storyboard-upload-area {
+  border: 2px dashed var(--border-color);
+  border-radius: 8px;
+  padding: 16px;
+  background: transparent;
+  transition: all 0.3s;
+  cursor: pointer;
+  min-height: 120px;
+  position: relative;
+}
+
+.storyboard-upload-area:hover {
+  border-color: var(--text-color);
+  background-color: var(--hover-bg);
+}
+
+.storyboard-upload-area.drag-over {
+  border-color: #4CAF50;
+  background-color: rgba(76, 175, 80, 0.15);
+  transform: scale(1.01);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.3);
+}
+
+.storyboard-upload-area.drag-over .upload-icon {
+  animation: bounce 0.6s ease-in-out infinite;
+}
+
+.storyboard-upload-area.drag-forbidden {
+  border-color: #f44336;
+  background-color: rgba(244, 67, 54, 0.1);
+}
+
+.storyboard-upload-area .upload-area-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+  pointer-events: none;
+}
+
+.storyboard-upload-area .upload-icon {
+  font-size: 28px;
+  line-height: 1;
+}
+
+.storyboard-upload-area .upload-text {
+  font-size: 13px;
+  font-weight: 500;
+  color: var(--text-color);
+}
+
+.storyboard-upload-area .upload-hint {
+  font-size: 11px;
+  color: #888;
+}
+
+/* 分镜图预览区域 */
+.storyboard-preview {
+  margin-top: 12px;
+  display: none;
+}
+
+.storyboard-preview.has-image {
+  display: block;
+}
+
+.storyboard-preview-item {
+  position: relative;
+  border: 1px solid var(--border-color);
+  border-radius: 6px;
+  overflow: hidden;
+  background: var(--bg-color);
+}
+
+.storyboard-preview-item img {
+  width: 100%;
+  max-height: 200px;
+  object-fit: contain;
+  display: block;
+}
+
+.storyboard-preview-info {
+  padding: 8px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 12px;
+}
+
+.storyboard-preview-name {
+  color: var(--text-color);
+  font-weight: 500;
+}
+
+.storyboard-preview-delete {
+  width: 24px;
+  height: 24px;
+  border: none;
+  background: #f44336;
+  color: white;
+  border-radius: 4px;
+  cursor: pointer;
+  font-size: 16px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  transition: background-color 0.2s;
+}
+
+.storyboard-preview-delete:hover {
+  background: #d32f2f;
+}
+
+/* 深色主题适配 */
+body.dark-theme .storyboard-upload-area {
+  border-color: #404040;
+}
+
+body.dark-theme .storyboard-upload-area:hover {
+  border-color: #e0e0e0;
+  background-color: #2a2a2a;
+}
+
+body.dark-theme .storyboard-upload-area.drag-over {
+  border-color: #4CAF50;
+  background-color: rgba(76, 175, 80, 0.2);
+  box-shadow: 0 0 15px rgba(76, 175, 80, 0.4);
+}
+
 @keyframes bounce {
   0%, 100% { transform: translateY(0); }
   50% { transform: translateY(-5px); }

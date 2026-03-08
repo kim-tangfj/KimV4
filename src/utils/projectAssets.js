@@ -648,6 +648,20 @@ function bindThumbnailClickEvents() {
         path: thumb.dataset.assetPath
       });
     });
+    
+    // 支持拖放
+    thumb.setAttribute('draggable', 'true');
+    thumb.addEventListener('dragstart', (e) => {
+      const assetData = {
+        source: thumb.dataset.assetSource || 'project',
+        type: thumb.dataset.assetType,
+        name: thumb.dataset.assetName,
+        path: thumb.dataset.assetPath,
+        size: thumb.dataset.assetSize
+      };
+      e.dataTransfer.setData('text/asset-data', JSON.stringify(assetData));
+      e.dataTransfer.effectAllowed = 'copy';
+    });
   });
 }
 

@@ -281,6 +281,20 @@ function bindSceneAssetsClickEvents(ownerType, ownerId) {
         source: assetSource || 'shot'
       });
     });
+    
+    // 支持拖放
+    thumb.setAttribute('draggable', 'true');
+    thumb.addEventListener('dragstart', (e) => {
+      const assetData = {
+        source: 'shot', // 片段素材库的素材
+        type: thumb.dataset.assetType,
+        name: thumb.dataset.assetName,
+        path: thumb.dataset.assetPath,
+        id: thumb.dataset.assetId
+      };
+      e.dataTransfer.setData('text/asset-data', JSON.stringify(assetData));
+      e.dataTransfer.effectAllowed = 'copy';
+    });
   });
 }
 
