@@ -4,6 +4,75 @@
 
 ---
 
+## 2026-03-08 - 项目素材库视频缩略图提取功能
+
+### 问题修复
+
+#### 1. 无限循环问题 ✅
+**问题**: 视频缩略图提取时无限循环调用 `onseeked`
+
+**原因**: 
+- 多个视频同时加载时并发处理
+- 没有跳转次数限制
+- 元素被替换后继续触发事件
+
+**解决方案**:
+```javascript
+// 1. 添加 extracting 标记防止并发
+if (video.dataset.extracting === 'true') return;
+
+// 2. 添加 seekCount 计数器
+let seekCount = 0;
+const maxSeeks = 2;
+
+// 3. 超过限制自动停止
+if (seekCount > maxSeeks) {
+  video.dataset.extracting = 'false';
+  return;
+}
+
+// 4. 完成后标记
+video.dataset.frameExtracted = 'true';
+video.dataset.extracting = 'false';
+```
+
+#### 2. 缩略图尺寸优化 ✅
+**修改**: 改为纵向长方体布局
+
+| 元素 | 修改前 | 修改后 |
+|------|--------|--------|
+| `.asset-thumbnail` | 90px | 140px |
+| `video` / `img` | 70px | 100px |
+
+### 功能特性
+
+1. **黑场检测**
+   - 从 0.1 秒开始尝试
+   - 如果是黑场，跳转到 1 秒重试
+   - 亮度阈值：30（0-255 范围）
+
+2. **调试日志**
+   ```
+   [extractVideoFrame] 开始提取，视频尺寸：720 x 1280
+   [extractVideoFrame] onseeked 调用次数：1
+   [extractVideoFrame] 亮度检测：152.26 (正常)
+   [extractVideoFrame] ✅ 提取完成
+   ```
+
+3. **容错处理**
+   - 元素不在 DOM 中时自动跳过
+   - 替换失败时静默处理
+   - 最多尝试 2 次后停止
+
+### 修改的文件
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `src/utils/projectAssets.js` | +60 行 | 添加防循环机制和调试日志 |
+| `styles.css` | +10 行 | 修改缩略图尺寸为纵向长方体 |
+
+---
+
 ## 2026-03-08 - 片段素材库功能实现
 
 ### 新增模块
