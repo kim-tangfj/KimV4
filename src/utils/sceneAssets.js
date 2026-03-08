@@ -277,11 +277,21 @@ function showAssetPreview(asset) {
 
   container.innerHTML = '';
   container.dataset.assetPath = asset.path;
+  container.dataset.assetType = asset.type;
+  container.dataset.assetName = asset.name;
 
   if (asset.type === 'image') {
     const img = document.createElement('img');
     img.src = asset.path;
     img.alt = asset.name;
+    // 检查文件是否存在
+    img.onerror = () => {
+      img.style.display = 'none';
+      const errorDiv = document.createElement('div');
+      errorDiv.style.cssText = 'display:flex;align-items:center;justify-content:center;height:200px;background:#333;color:#fff;flex-direction:column;gap:10px;';
+      errorDiv.innerHTML = '<div style="font-size:48px">⚠️</div><div>文件不存在</div>';
+      container.appendChild(errorDiv);
+    };
     container.appendChild(img);
   } else if (asset.type === 'video') {
     const video = document.createElement('video');
@@ -289,6 +299,14 @@ function showAssetPreview(asset) {
     video.controls = true;
     video.style.maxWidth = '100%';
     video.style.maxHeight = '60vh';
+    // 检查文件是否存在
+    video.onerror = () => {
+      video.style.display = 'none';
+      const errorDiv = document.createElement('div');
+      errorDiv.style.cssText = 'display:flex;align-items:center;justify-content:center;height:200px;background:#333;color:#fff;flex-direction:column;gap:10px;';
+      errorDiv.innerHTML = '<div style="font-size:48px">⚠️</div><div>文件不存在</div>';
+      container.appendChild(errorDiv);
+    };
     container.appendChild(video);
   } else if (asset.type === 'audio') {
     const audioContainer = document.createElement('div');
@@ -302,11 +320,25 @@ function showAssetPreview(asset) {
     const audio = document.createElement('audio');
     audio.src = asset.path;
     audio.controls = true;
+    // 检查文件是否存在
+    audio.onerror = () => {
+      audioContainer.innerHTML = '<div style="font-size:48px">⚠️</div><div>文件不存在</div>';
+    };
     audioContainer.appendChild(audio);
     container.appendChild(audioContainer);
   }
 
+  // 保存项目目录用于删除操作
+  const state = window.getState();
+  const projectDir = state.projectData?.project?.projectDir || state.currentProject?.projectDir;
+
   modal.style.display = 'flex';
+
+  // 更新 currentPreviewAsset
+  currentPreviewAsset = {
+    ...asset,
+    projectDir: projectDir
+  };
 }
 
 /**
@@ -428,11 +460,17 @@ async function handleSceneDroppedFiles(files) {
     return;
   }
 
-  const project = state.currentProject;
-  if (!project || !project.projectDir) {
-    window.showToast('项目未加载');
+  // 使用 projectData 获取项目信息（更可靠）
+  const projectData = state.projectData || state.currentProject;
+  const projectDir = projectData?.project?.projectDir || state.currentProject?.projectDir;
+
+  if (!projectDir) {
+    console.error('[handleSceneDroppedFiles] 项目目录不存在', state);
+    window.showToast('项目未加载，请重新打开项目');
     return;
   }
+
+  console.log('[handleSceneDroppedFiles] 项目目录:', projectDir);
 
   // 显示上传进度
   showSceneUploadProgress(0, files.length);
@@ -459,7 +497,7 @@ async function handleSceneDroppedFiles(files) {
       const result = await window.electronAPI.saveDroppedSceneAsset(
         file.name,
         fileData,
-        project.projectDir,
+        projectDir,
         assetType,
         shotId
       );
@@ -518,9 +556,13 @@ async function handleSceneFilesUpload(files) {
     return;
   }
 
-  const project = state.currentProject;
-  if (!project || !project.projectDir) {
-    window.showToast('项目未加载');
+  // 使用 projectData 获取项目信息（更可靠）
+  const projectData = state.projectData || state.currentProject;
+  const projectDir = projectData?.project?.projectDir || state.currentProject?.projectDir;
+
+  if (!projectDir) {
+    console.error('[handleSceneFilesUpload] 项目目录不存在', state);
+    window.showToast('项目未加载，请重新打开项目');
     return;
   }
 
@@ -541,7 +583,7 @@ async function handleSceneFilesUpload(files) {
     try {
       // 使用片段素材上传 API（独立存储）
       const result = await window.electronAPI.uploadSceneAsset({
-        projectDir: project.projectDir,
+        projectDir: projectDir,
         filePath: file.path,
         fileName: file.name,
         shotId: shotId
@@ -873,13 +915,37 @@ function initAssetPreviewModal() {
     deleteBtn.addEventListener('click', async () => {
       if (!currentPreviewAsset) return;
 
-      const confirmed = await window.showConfirm(
-        `确定要删除素材 "${currentPreviewAsset.name}" 吗？`,
-        '删除素材'
-      );
+      const assetPath = currentPreviewAsset.path;
+      const assetName = currentPreviewAsset.name;
+
+      // 检查文件是否存在
+      const fileExists = await window.electronAPI.fileExists(assetPath);
+
+      let confirmMsg;
+      if (!fileExists) {
+        confirmMsg = `⚠️ 文件已不存在，仅删除配置记录。\n\n确定要删除 "${assetName}" 吗？`;
+      } else {
+        confirmMsg = `确定要删除素材 "${assetName}" 吗？\n\n此操作将永久删除文件，无法恢复。`;
+      }
+
+      const confirmed = await window.showConfirm(confirmMsg, '删除素材');
 
       if (!confirmed) return;
 
+      // 如果文件存在，先删除物理文件
+      if (fileExists) {
+        const deleteResult = await window.electronAPI.deleteAsset({
+          projectDir: currentPreviewAsset.projectDir,
+          assetPath: assetPath,
+          assetType: currentPreviewAsset.type
+        });
+        if (!deleteResult.success) {
+          console.warn('[sceneAssets] 删除物理文件失败:', deleteResult.error);
+          // 文件删除失败但仍然可以继续删除配置
+        }
+      }
+
+      // 删除配置记录
       const result = await removeSceneAsset(
         currentPreviewAsset.ownerType,
         currentPreviewAsset.ownerId,
@@ -887,7 +953,7 @@ function initAssetPreviewModal() {
       );
 
       if (result.success) {
-        window.showToast('素材已删除');
+        window.showToast(!fileExists ? '配置记录已删除' : '素材已删除');
         hideAssetPreview();
         // 重新加载素材列表
         if (currentPreviewAsset.ownerType === 'shot') {
