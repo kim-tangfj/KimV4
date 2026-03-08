@@ -635,6 +635,15 @@ async function handleSceneDroppedFiles(files) {
       // 读取文件为 Base64
       const fileData = await readSceneFileAsBase64(file);
 
+      console.log('[handleSceneDroppedFiles] file:', file.name, 'type:', file.type, 'size:', file.size);
+      console.log('[handleSceneDroppedFiles] fileData:', fileData ? 'ok' : 'undefined');
+
+      if (!fileData) {
+        console.error('[handleSceneDroppedFiles] 文件读取失败:', file.name);
+        failCount++;
+        continue;
+      }
+
       // 确定素材类型
       let assetType = 'image';
       if (file.type.startsWith('video/')) {
@@ -642,6 +651,8 @@ async function handleSceneDroppedFiles(files) {
       } else if (file.type.startsWith('audio/')) {
         assetType = 'audio';
       }
+
+      console.log('[handleSceneDroppedFiles] 调用 saveDroppedSceneAsset:', { fileName: file.name, projectDir, assetType, shotId });
 
       // 使用片段素材库上传 API（通过 Base64 保存，独立存储）
       const result = await window.electronAPI.saveDroppedSceneAsset(
@@ -1116,6 +1127,11 @@ function initAssetPreviewModal() {
       }
 
       // 删除配置记录
+      if (!currentPreviewAsset) {
+        window.showToast('素材信息已丢失，请刷新后重试');
+        return;
+      }
+
       const result = await removeSceneAsset(
         currentPreviewAsset.ownerType,
         currentPreviewAsset.ownerId,
