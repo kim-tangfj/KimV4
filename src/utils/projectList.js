@@ -294,12 +294,10 @@ async function updateProjectStatus(project, newStatus, appState, useElectronAPI,
  * @param {Object} elements - DOM 元素引用
  * @param {boolean} useElectronAPI - 是否使用 Electron API
  * @param {Function} loadProjects - 重新加载项目列表回调
- * @param {Function} renderShotList - 渲染片段列表回调
- * @param {Function} renderSceneList - 渲染镜头列表回调
  * @param {Function} showToast - 显示提示回调
  * @param {Function} showConfirm - 显示确认对话框回调
  */
-async function deleteCurrentProject(elements, useElectronAPI, loadProjects, renderShotList, renderSceneList, showToast, showConfirm) {
+async function deleteCurrentProject(elements, useElectronAPI, loadProjects, showToast, showConfirm) {
   const state = window.getState();
   if (!state || !state.currentProject) {
     showToast('请先选择一个项目');
@@ -325,8 +323,6 @@ async function deleteCurrentProject(elements, useElectronAPI, loadProjects, rend
         window.updateState('currentScene', null);
         window.updateState('projectData', null);
         await loadProjects();
-        renderShotList([]);
-        renderSceneList([]);
         if (elements.promptPreview) {
           elements.promptPreview.innerHTML = '<div class="placeholder-text">请选中项目 > 片段 > 镜头，自动生成提示词</div>';
         }
@@ -403,7 +399,7 @@ async function loadProjects() {
         const projects = result.projects || [];
         window.updateState('projects', projects);
         window.renderProjectList(projects, window.elements, window.selectProject, (project, e) => {
-          window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(window.getState(), window.elements, window.useElectronAPI, loadProjects, window.renderShotList, window.renderSceneList, window.showToast, window.showConfirm), window.openProjectFolderByProject);
+          window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(window.elements, window.useElectronAPI, loadProjects, window.showToast, window.showConfirm), window.openProjectFolderByProject);
         }, (project, e) => {
           window.showProjectStatusMenu(project, e, (p, newStatus) => {
             window.updateProjectStatus(p, newStatus, window.getState(), window.useElectronAPI, loadProjects, window.showUpdateNotification);
@@ -426,7 +422,7 @@ async function loadProjects() {
       window.updateState('projects', []);
     }
     window.renderProjectList(window.getState().projects, window.elements, window.selectProject, (project, e) => {
-      window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(window.elements, window.useElectronAPI, loadProjects, window.renderShotList, window.renderSceneList, window.showToast, window.showConfirm), window.openProjectFolderByProject);
+      window.showProjectContextMenu(project, e, window.selectProject, () => window.deleteCurrentProject(window.elements, window.useElectronAPI, loadProjects, window.showToast, window.showConfirm), window.openProjectFolderByProject);
     }, (project, e) => {
       window.showProjectStatusMenu(project, e, (p, newStatus) => {
         window.updateProjectStatus(p, newStatus, window.getState(), window.useElectronAPI, loadProjects, window.showUpdateNotification);

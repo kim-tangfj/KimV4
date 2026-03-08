@@ -54,6 +54,16 @@
 
 ---
 
+## 2026-03-08 - 修复 loadSceneAssetsList 未定义错误
+
+### 问题
+`removeSceneAsset` 函数调用了不存在的 `loadSceneAssetsList` 函数
+
+### 修复
+镜头素材库暂未实现，添加警告日志
+
+---
+
 ## 2026-03-08 - 修复 deleteCurrentProject 递归调用导致堆栈溢出
 
 ### 问题
