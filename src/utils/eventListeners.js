@@ -278,18 +278,7 @@ function setupEventListeners() {
     });
   }
 
-  // 片段素材库面板事件绑定
-  if (window.elements.assetsPanelToggleHeader) {
-    window.elements.assetsPanelToggleHeader.addEventListener('click', () => {
-      window.toggleSceneAssetsPanel();
-    });
-  }
-  if (window.elements.assetsPanelToggleBtn) {
-    window.elements.assetsPanelToggleBtn.addEventListener('click', (e) => {
-      e.stopPropagation();
-      window.toggleSceneAssetsPanel();
-    });
-  }
+  // 片段素材库上传按钮事件绑定
   if (window.elements.assetsPanelUploadBtn) {
     window.elements.assetsPanelUploadBtn.addEventListener('click', (e) => {
       e.stopPropagation();
