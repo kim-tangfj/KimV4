@@ -4,6 +4,23 @@
 
 ---
 
+## 2026-03-08 - 修复预览模态框删除按钮无效
+
+### 问题
+预览模态框中的删除按钮点击无效
+
+### 原因
+`showPreview` 函数只设置了 `dataset.assetPath`，未设置 `dataset.assetType` 和 `dataset.assetName`
+
+### 修复
+在 `showPreview` 函数中添加：
+```javascript
+previewModal.container.dataset.assetType = type;
+previewModal.container.dataset.assetName = name;
+```
+
+---
+
 ## 2026-03-08 - 实现素材删除功能（右键菜单 + 预览删除）
 
 ### 需求
