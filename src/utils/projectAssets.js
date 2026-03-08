@@ -665,6 +665,8 @@ function showContextMenu(e, asset) {
   contextMenu.dataset.assetName = asset.name;
   contextMenu.dataset.assetSize = asset.size;
   contextMenu.dataset.assetPath = asset.path;
+  contextMenu.dataset.assetSource = asset.source || 'project'; // 标记素材来源
+  contextMenu.dataset.activeLibrary = 'project'; // 标记当前激活的库
 
   // 定位菜单
   contextMenu.style.display = 'block';
@@ -703,6 +705,11 @@ function initContextMenuEvents() {
     const menuItem = e.target.closest('.context-menu-item');
     if (!menuItem) return;
 
+    // 只处理项目素材库触发的右键菜单
+    if (contextMenu.dataset.activeLibrary !== 'project') {
+      return;
+    }
+
     const action = menuItem.dataset.action;
     const assetType = contextMenu.dataset.assetType;
     const assetName = contextMenu.dataset.assetName;
@@ -710,21 +717,23 @@ function initContextMenuEvents() {
     const assetPath = contextMenu.dataset.assetPath;
     const assetSource = contextMenu.dataset.assetSource; // 素材来源：project 或 shot
 
-    // 只处理项目素材，片段素材由 sceneAssets.js 处理
-    if (assetSource === 'shot') {
-      return;
-    }
-
     if (action === 'view') {
+      // 预览功能：项目和片段素材都支持
       showPreview(assetType, assetName, assetSize, assetPath);
       hideContextMenu();
     } else if (action === 'delete') {
+      // 删除功能：只处理项目素材，片段素材由 sceneAssets.js 处理
+      if (assetSource === 'shot') {
+        // 片段素材：显示提示，不关闭菜单
+        window.showToast(`⚠️ 片段素材不允许在项目素材库删除\n\n请使用片段素材库管理此素材`);
+        return;
+      }
+
+      // 项目素材：正常删除流程
       const result = await confirmDeleteAsset(assetType, assetName, assetPath);
       if (result !== false) {
-        // 删除成功或用户取消，关闭菜单
         hideContextMenu();
       }
-      // 如果返回 false（片段素材），不关闭菜单，让用户看到 toast 提示
     }
   });
 

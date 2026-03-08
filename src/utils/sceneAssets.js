@@ -300,7 +300,8 @@ function showSceneContextMenu(e, asset) {
   contextMenu.dataset.assetId = asset.id;
   contextMenu.dataset.ownerType = asset.ownerType;
   contextMenu.dataset.ownerId = asset.ownerId;
-  contextMenu.dataset.assetSource = asset.source;
+  contextMenu.dataset.assetSource = 'shot'; // 标记为片段素材
+  contextMenu.dataset.activeLibrary = 'shot'; // 标记当前激活的库
 
   // 定位菜单
   contextMenu.style.display = 'block';
@@ -339,6 +340,11 @@ function initSceneContextMenuEvents() {
     const menuItem = e.target.closest('.context-menu-item');
     if (!menuItem) return;
 
+    // 只处理片段素材库触发的右键菜单
+    if (contextMenu.dataset.activeLibrary !== 'shot') {
+      return;
+    }
+
     const action = menuItem.dataset.action;
     const assetPath = contextMenu.dataset.assetPath;
     const assetName = contextMenu.dataset.assetName;
@@ -346,11 +352,6 @@ function initSceneContextMenuEvents() {
     const ownerType = contextMenu.dataset.ownerType;
     const ownerId = contextMenu.dataset.ownerId;
     const assetSource = contextMenu.dataset.assetSource;
-
-    // 只处理片段素材，项目素材由 projectAssets.js 处理
-    if (assetSource !== 'shot') {
-      return;
-    }
 
     if (action === 'view') {
       // 显示预览
