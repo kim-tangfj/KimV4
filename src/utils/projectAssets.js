@@ -710,17 +710,15 @@ function initContextMenuEvents() {
     const assetPath = contextMenu.dataset.assetPath;
     const assetSource = contextMenu.dataset.assetSource; // 素材来源：project 或 shot
 
+    // 只处理项目素材，片段素材由 sceneAssets.js 处理
+    if (assetSource === 'shot') {
+      return;
+    }
+
     if (action === 'view') {
       showPreview(assetType, assetName, assetSize, assetPath);
       hideContextMenu();
     } else if (action === 'delete') {
-      // 如果是片段素材，不允许在项目素材库删除
-      if (assetSource === 'shot') {
-        window.showToast(`⚠️ 片段素材不允许在项目素材库删除\n\n请使用片段素材库管理此素材`);
-        hideContextMenu();
-        return;
-      }
-
       const result = await confirmDeleteAsset(assetType, assetName, assetPath);
       if (result !== false) {
         // 删除成功或用户取消，关闭菜单

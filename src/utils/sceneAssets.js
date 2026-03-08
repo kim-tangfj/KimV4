@@ -345,6 +345,12 @@ function initSceneContextMenuEvents() {
     const assetId = contextMenu.dataset.assetId;
     const ownerType = contextMenu.dataset.ownerType;
     const ownerId = contextMenu.dataset.ownerId;
+    const assetSource = contextMenu.dataset.assetSource;
+
+    // 只处理片段素材，项目素材由 projectAssets.js 处理
+    if (assetSource !== 'shot') {
+      return;
+    }
 
     if (action === 'view') {
       // 显示预览
