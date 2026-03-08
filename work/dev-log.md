@@ -4,6 +4,21 @@
 
 ---
 
+## 2026-03-08 - 修复片段素材库上传功能初始化时机问题
+
+### 问题
+片段素材库上传功能无效，点击上传区域无响应
+
+### 原因
+`initSceneAssetsPanel` 在 DOM 完全加载之前被调用，导致 uploadArea 和 fileInput 元素为 null
+
+### 修复
+在 `initSceneAssetsPanel` 中检查 `document.readyState`：
+- 如果为 `'loading'`，等待 `DOMContentLoaded` 事件
+- 否则直接初始化
+
+---
+
 ## 2026-03-08 - 实现片段素材库上传和拖放上传功能
 
 ### 需求

@@ -569,11 +569,17 @@ async function addSceneAssetToShot(shotId, asset) {
   const state = window.getState();
   const project = state.currentProject;
 
-  if (!project) return;
+  if (!project) {
+    console.error('[addSceneAssetToShot] 项目未加载');
+    return;
+  }
 
   // 查找片段
   const shot = project.shots?.find(s => s.id === shotId);
-  if (!shot) return;
+  if (!shot) {
+    console.error('[addSceneAssetToShot] 片段不存在:', shotId);
+    return;
+  }
 
   // 初始化素材库
   if (!shot.assets) {
@@ -582,10 +588,34 @@ async function addSceneAssetToShot(shotId, asset) {
 
   // 根据类型添加到对应数组
   const assetType = asset.type || getAssetType(asset.name);
+  const assetArray = shot.assets[assetType + 's'];
+  if (!Array.isArray(assetArray)) {
+    shot.assets[assetType + 's'] = [];
+  }
   shot.assets[assetType + 's'].push(asset);
 
+  console.log('[addSceneAssetToShot] 添加素材:', asset, '到片段:', shotId);
+
   // 保存项目
-  await window.electronAPI.saveProject(project.projectDir, project);
+  const saveResult = await window.electronAPI.saveProject(project.projectDir, project);
+  console.log('[addSceneAssetToShot] 保存结果:', saveResult);
+
+  // 重新加载项目数据以确保同步
+  if (saveResult.success) {
+    const loadResult = await window.electronAPI.loadProject(project.projectDir);
+    if (loadResult.success && loadResult.projectJson) {
+      // 更新 state 中的两个项目对象
+      const projects = state.projects || [];
+      const index = projects.findIndex(p => p.projectDir === project.projectDir);
+      if (index !== -1) {
+        projects[index] = { ...projects[index], ...loadResult.projectJson.project };
+      }
+      window.updateState('projects', projects);
+      window.updateState('currentProject', loadResult.projectJson);
+      window.updateState('projectData', loadResult.projectJson);
+      console.log('[addSceneAssetToShot] 项目数据已同步');
+    }
+  }
 }
 
 /**
