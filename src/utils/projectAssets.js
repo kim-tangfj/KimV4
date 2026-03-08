@@ -140,7 +140,7 @@ async function loadAssetsList(projectId) {
     // 从状态管理器获取当前项目目录
     const state = window.getState();
     const project = state.projects?.find(p => p.id === projectId);
-    
+
     if (!project || !project.projectDir) {
       // 如果没有项目目录，使用示例数据
       console.warn('[projectAssets] 项目目录不存在，使用示例数据');
@@ -151,7 +151,7 @@ async function loadAssetsList(projectId) {
 
     // 调用 Electron API 获取真实素材列表
     const result = await window.electronAPI.getAssets(project.projectDir);
-    
+
     if (result.success && result.assets) {
       renderAssetsList(result.assets);
     } else {

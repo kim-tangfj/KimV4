@@ -307,7 +307,7 @@ function initProjectIPC(mainWindow) {
               id: 'asset_img_' + file.replace(/\.[^/.]+$/, ''),
               name: file,
               size: formatFileSize(stats.size),
-              path: path.relative(projectDir, filePath),
+              path: filePath,  // 使用绝对路径
               type: 'image',
               fileSize: stats.size
             });
@@ -327,7 +327,7 @@ function initProjectIPC(mainWindow) {
               id: 'asset_vid_' + file.replace(/\.[^/.]+$/, ''),
               name: file,
               size: formatFileSize(stats.size),
-              path: path.relative(projectDir, filePath),
+              path: filePath,  // 使用绝对路径
               type: 'video',
               fileSize: stats.size
             });
@@ -347,7 +347,7 @@ function initProjectIPC(mainWindow) {
               id: 'asset_aud_' + file.replace(/\.[^/.]+$/, ''),
               name: file,
               size: formatFileSize(stats.size),
-              path: path.relative(projectDir, filePath),
+              path: filePath,  // 使用绝对路径
               type: 'audio',
               fileSize: stats.size
             });
