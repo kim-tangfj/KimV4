@@ -359,11 +359,7 @@ function extractVideoFrame(video) {
       }
     }
 
-    // 从 1 秒开始尝试，避免黑场
-    let attemptTime = 1.0;
-    const maxAttempts = 10;
-    let attempt = 0;
-
+    // 只尝试一次，不循环跳转
     video.onseeked = function() {
       // 检查元素是否还在 DOM 中
       if (!video || !document.contains(video)) {
@@ -371,20 +367,24 @@ function extractVideoFrame(video) {
       }
 
       if (isFrameBlack()) {
-        attemptTime += 1.0;
-        attempt++;
-        if (attempt < maxAttempts) {
-          video.currentTime = attemptTime;
-        } else {
-          useCurrentFrame();
-        }
+        // 是黑场，跳转到 1 秒再试一次
+        video.currentTime = 1.0;
+        video.onseeked = function() {
+          if (isFrameBlack()) {
+            // 还是黑场，使用当前帧
+            useCurrentFrame();
+          } else {
+            useCurrentFrame();
+          }
+        };
       } else {
+        // 不是黑场，直接使用
         useCurrentFrame();
       }
     };
 
     // 开始尝试
-    video.currentTime = attemptTime;
+    video.currentTime = 0.1;
 
   } catch (error) {
     console.error('提取视频封面失败:', error);
