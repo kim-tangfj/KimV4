@@ -267,8 +267,17 @@ async function handleFilesUpload(files) {
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     
-    // 检查文件路径
-    const filePath = file.path || file.webkitRelativePath;
+    // 检查文件路径 - 在 Electron sandbox 模式下，file.path 可能是相对路径
+    let filePath = file.path || file.webkitRelativePath;
+    
+    // 如果是相对路径（以 / 开头），尝试使用 file 对象的 path 属性
+    if (filePath && filePath.startsWith('/')) {
+      // 在 sandbox 模式下，需要使用 IPC 获取真实路径
+      // 这里尝试直接使用文件名，让主进程处理
+      filePath = file.name;
+    }
+    
+    console.log(`[handleFilesUpload] file ${i} name:`, file.name);
     console.log(`[handleFilesUpload] file ${i} path:`, filePath);
     
     if (!filePath) {
@@ -281,7 +290,8 @@ async function handleFilesUpload(files) {
       // 使用项目素材库上传 API（不需要 shotId）
       const result = await window.electronAPI.uploadAssetToProject({
         projectDir: project.projectDir,
-        filePath: filePath
+        filePath: filePath,
+        fileName: file.name // 传递文件名用于处理
       });
 
       if (result.success) {

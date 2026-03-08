@@ -332,7 +332,32 @@ function initProjectIPC(mainWindow) {
     try {
       validateParams(params, ['projectDir', 'filePath']);
 
-      const { projectDir, filePath } = params;
+      let { projectDir, filePath, fileName } = params;
+
+      // 在 sandbox 模式下，filePath 可能是相对路径或文件名
+      // 如果 filePath 不以盘符或 UNC 路径开头，认为是文件名
+      if (!filePath.match(/^[A-Za-z]:/ ) && !filePath.startsWith('\\\\')) {
+        // 使用 fileName 作为实际文件名
+        fileName = fileName || path.basename(filePath);
+        
+        // 提示用户选择文件（sandbox 模式下无法直接访问文件路径）
+        const { dialog } = require('electron');
+        const result = await dialog.showOpenDialog({
+          properties: ['openFile'],
+          filters: [
+            { name: '图片', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'] },
+            { name: '视频', extensions: ['mp4', 'webm', 'ogg', 'mov', 'avi'] },
+            { name: '音频', extensions: ['mp3', 'wav', 'ogg', 'aac', 'flac'] },
+            { name: '所有文件', extensions: ['*'] }
+          ]
+        });
+
+        if (result.canceled || result.filePaths.length === 0) {
+          return { success: false, error: '用户取消了选择' };
+        }
+
+        filePath = result.filePaths[0];
+      }
 
       // 检查源文件是否存在
       if (!fs.existsSync(filePath)) {
@@ -354,15 +379,15 @@ function initProjectIPC(mainWindow) {
         fs.mkdirSync(assetsDir, { recursive: true });
       }
 
-      // 目标文件路径
-      const fileName = path.basename(filePath);
-      const targetPath = path.join(assetsDir, fileName);
+      // 目标文件路径 - 使用原始文件名
+      const originalFileName = fileName || path.basename(filePath);
+      const targetPath = path.join(assetsDir, originalFileName);
 
       // 如果文件已存在，添加时间戳
       let finalTargetPath = targetPath;
       let counter = 1;
       while (fs.existsSync(finalTargetPath)) {
-        const nameWithoutExt = path.basename(fileName, ext);
+        const nameWithoutExt = path.basename(originalFileName, ext);
         finalTargetPath = path.join(assetsDir, `${nameWithoutExt}_${counter}${ext}`);
         counter++;
       }
@@ -370,7 +395,7 @@ function initProjectIPC(mainWindow) {
       // 复制文件
       fs.copyFileSync(filePath, finalTargetPath);
 
-      // 返回成功（项目素材库不保存到 project.json，只保存文件）
+      // 返回成功
       const stats = fs.statSync(finalTargetPath);
       return { 
         success: true, 
