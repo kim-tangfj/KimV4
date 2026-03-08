@@ -998,6 +998,8 @@ function showPreview(type, name, size, path) {
 
   previewModal.container.innerHTML = previewHTML;
   previewModal.container.dataset.assetPath = path;
+  previewModal.container.dataset.assetType = type;
+  previewModal.container.dataset.assetName = name;
 
   if (previewModal.title) {
     previewModal.title.textContent = name;
