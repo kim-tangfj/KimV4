@@ -657,7 +657,7 @@ function bindThumbnailClickEvents() {
  * @param {Object} asset - 素材信息
  */
 function showContextMenu(e, asset) {
-  const contextMenu = document.getElementById('asset-context-menu');
+  const contextMenu = document.getElementById('project-asset-context-menu');
   if (!contextMenu) return;
 
   // 存储当前选中的素材信息
@@ -665,8 +665,7 @@ function showContextMenu(e, asset) {
   contextMenu.dataset.assetName = asset.name;
   contextMenu.dataset.assetSize = asset.size;
   contextMenu.dataset.assetPath = asset.path;
-  contextMenu.dataset.assetSource = asset.source || 'project'; // 标记素材来源
-  contextMenu.dataset.activeLibrary = 'project'; // 标记当前激活的库
+  contextMenu.dataset.assetSource = asset.source || 'project';
 
   // 定位菜单
   contextMenu.style.display = 'block';
@@ -687,7 +686,7 @@ function showContextMenu(e, asset) {
  * 隐藏右键菜单
  */
 function hideContextMenu() {
-  const contextMenu = document.getElementById('asset-context-menu');
+  const contextMenu = document.getElementById('project-asset-context-menu');
   if (contextMenu) {
     contextMenu.style.display = 'none';
   }
@@ -697,7 +696,7 @@ function hideContextMenu() {
  * 初始化右键菜单事件
  */
 function initContextMenuEvents() {
-  const contextMenu = document.getElementById('asset-context-menu');
+  const contextMenu = document.getElementById('project-asset-context-menu');
   if (!contextMenu) return;
 
   // 菜单项点击事件
@@ -705,31 +704,24 @@ function initContextMenuEvents() {
     const menuItem = e.target.closest('.context-menu-item');
     if (!menuItem) return;
 
-    // 只处理项目素材库触发的右键菜单
-    if (contextMenu.dataset.activeLibrary !== 'project') {
-      return;
-    }
-
     const action = menuItem.dataset.action;
     const assetType = contextMenu.dataset.assetType;
     const assetName = contextMenu.dataset.assetName;
     const assetSize = contextMenu.dataset.assetSize;
     const assetPath = contextMenu.dataset.assetPath;
-    const assetSource = contextMenu.dataset.assetSource; // 素材来源：project 或 shot
+    const assetSource = contextMenu.dataset.assetSource;
 
     if (action === 'view') {
-      // 预览功能：项目和片段素材都支持
       showPreview(assetType, assetName, assetSize, assetPath);
       hideContextMenu();
     } else if (action === 'delete') {
-      // 删除功能：只处理项目素材，片段素材由 sceneAssets.js 处理
+      // 片段素材不允许在项目素材库删除
       if (assetSource === 'shot') {
-        // 片段素材：显示提示，不关闭菜单
         window.showToast(`⚠️ 片段素材不允许在项目素材库删除\n\n请使用片段素材库管理此素材`);
+        hideContextMenu();
         return;
       }
 
-      // 项目素材：正常删除流程
       const result = await confirmDeleteAsset(assetType, assetName, assetPath);
       if (result !== false) {
         hideContextMenu();

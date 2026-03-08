@@ -290,7 +290,7 @@ function bindSceneAssetsClickEvents(ownerType, ownerId) {
  * @param {Object} asset - 素材信息
  */
 function showSceneContextMenu(e, asset) {
-  const contextMenu = document.getElementById('asset-context-menu');
+  const contextMenu = document.getElementById('scene-asset-context-menu');
   if (!contextMenu) return;
 
   // 存储当前选中的素材信息
@@ -300,8 +300,6 @@ function showSceneContextMenu(e, asset) {
   contextMenu.dataset.assetId = asset.id;
   contextMenu.dataset.ownerType = asset.ownerType;
   contextMenu.dataset.ownerId = asset.ownerId;
-  contextMenu.dataset.assetSource = 'shot'; // 标记为片段素材
-  contextMenu.dataset.activeLibrary = 'shot'; // 标记当前激活的库
 
   // 定位菜单
   contextMenu.style.display = 'block';
@@ -322,7 +320,7 @@ function showSceneContextMenu(e, asset) {
  * 隐藏右键菜单
  */
 function hideSceneContextMenu() {
-  const contextMenu = document.getElementById('asset-context-menu');
+  const contextMenu = document.getElementById('scene-asset-context-menu');
   if (contextMenu) {
     contextMenu.style.display = 'none';
   }
@@ -332,7 +330,7 @@ function hideSceneContextMenu() {
  * 初始化片段素材右键菜单事件
  */
 function initSceneContextMenuEvents() {
-  const contextMenu = document.getElementById('asset-context-menu');
+  const contextMenu = document.getElementById('scene-asset-context-menu');
   if (!contextMenu) return;
 
   // 菜单项点击事件
@@ -340,18 +338,12 @@ function initSceneContextMenuEvents() {
     const menuItem = e.target.closest('.context-menu-item');
     if (!menuItem) return;
 
-    // 只处理片段素材库触发的右键菜单
-    if (contextMenu.dataset.activeLibrary !== 'shot') {
-      return;
-    }
-
     const action = menuItem.dataset.action;
     const assetPath = contextMenu.dataset.assetPath;
     const assetName = contextMenu.dataset.assetName;
     const assetId = contextMenu.dataset.assetId;
     const ownerType = contextMenu.dataset.ownerType;
     const ownerId = contextMenu.dataset.ownerId;
-    const assetSource = contextMenu.dataset.assetSource;
 
     if (action === 'view') {
       // 显示预览
