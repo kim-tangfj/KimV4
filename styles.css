@@ -1878,13 +1878,17 @@ body.dark-theme ::-webkit-scrollbar-thumb:hover {
   border-radius: 6px;
   overflow: hidden;
   background: var(--bg-color);
+  display: flex;
+  flex-direction: column;
+  height: 140px;
 }
 
 .storyboard-preview-item img {
   width: 100%;
-  max-height: 200px;
-  object-fit: contain;
+  height: 100px;
+  object-fit: cover;
   display: block;
+  background-color: #000;
 }
 
 .storyboard-preview-info {

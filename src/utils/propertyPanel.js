@@ -960,14 +960,9 @@ function initStoryboardImageUpload() {
     if (assetData) {
       try {
         const data = JSON.parse(assetData);
-        if (data.source === 'shot') {
-          // 片段素材，禁止拖放
-          uploadArea.classList.add('drag-forbidden');
-          e.dataTransfer.dropEffect = 'none';
-        } else {
-          uploadArea.classList.remove('drag-forbidden');
-          e.dataTransfer.dropEffect = 'copy';
-        }
+        // 允许所有素材拖放（项目和片段素材库都允许）
+        uploadArea.classList.remove('drag-forbidden');
+        e.dataTransfer.dropEffect = 'copy';
       } catch (err) {
         console.error('[storyboard dragover] 解析素材数据失败:', err);
       }
@@ -984,15 +979,10 @@ function initStoryboardImageUpload() {
       try {
         const data = JSON.parse(assetData);
         uploadArea.classList.remove('drag-forbidden');
-        
-        if (data.source === 'shot') {
-          window.showToast('⚠️ 片段素材不可用于分镜图片');
-          return;
-        }
-        
-        // 从项目素材库拖放
+
+        // 从项目素材库或片段素材库拖放
         if (data.path) {
-          uploadStoryboardImage(data.path, data.name, shotId, sceneId);
+          uploadStoryboardImage(data.path, data.name, shotId, sceneId, data.source);
         }
       } catch (err) {
         console.error('[storyboard drop] 解析素材数据失败:', err);
@@ -1013,30 +1003,35 @@ async function getFileLocalPath(file) {
 /**
  * 上传分镜图片
  */
-async function uploadStoryboardImage(filePath, fileName, shotId, sceneId) {
+async function uploadStoryboardImage(filePath, fileName, shotId, sceneId, source = 'project') {
   const state = window.getState();
   const project = state.currentProject;
-  
+
   if (!project || !project.projectDir) {
     window.showToast('项目未加载');
     return;
   }
-  
+
   try {
     const result = await window.electronAPI.uploadStoryboardImage({
       projectDir: project.projectDir,
       filePath: filePath,
       shotId: shotId,
       sceneId: sceneId,
-      fileName: fileName
+      fileName: fileName,
+      source: source // project 或 shot
     });
-    
+
     if (result.success) {
       window.showToast('分镜图片已上传');
       // 更新镜头数据
       updateSceneStoryboardImage(sceneId, result.asset);
       // 刷新预览
       renderStoryboardPreview(result.asset);
+      // 刷新镜头列表缩略图
+      if (window.renderShotList) {
+        window.renderShotList(project.shots || []);
+      }
     } else {
       window.showToast('上传失败：' + result.error);
     }
