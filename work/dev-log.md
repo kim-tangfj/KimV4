@@ -4,6 +4,43 @@
 
 ---
 
+## 2026-03-08 - 项目素材库上传功能（点击 + 拖放）
+
+### 新增功能
+
+#### 1. HTML 结构修改
+- 删除原有的 `<button class="assets-upload-btn">`
+- 新增 `<div class="assets-upload-area">` 拖放区域
+- 内置隐藏的 `<input type="file">` 元素
+- 支持 `image/*,video/*,audio/*` 多文件选择
+
+#### 2. CSS 样式
+- 上传区域样式（虚线边框、最小高度 80px）
+- 拖放时高亮效果（绿色边框 + 背景）
+- 上传进度条样式
+- 深色主题适配
+
+#### 3. JavaScript 功能
+**核心函数**:
+- `initUploadFunctionality()`: 初始化上传功能
+- `handleFilesUpload(files)`: 处理文件上传
+- `showUploadProgress(current, total)`: 显示上传进度
+- `hideUploadProgress()`: 隐藏进度条
+
+**功能特性**:
+- ✅ 点击上传区域触发文件选择
+- ✅ 拖放文件到上传区域自动上传
+- ✅ 支持多文件同时上传
+- ✅ 上传进度实时显示
+- ✅ 自动根据文件类型分类存储
+- ✅ 上传完成后自动刷新素材列表
+
+### 使用方式
+1. **点击上传**: 点击上传区域 → 选择文件 → 自动上传
+2. **拖放上传**: 拖拽文件到上传区域 → 释放 → 自动上传
+
+---
+
 ## 2026-03-08 - 修复 projectAssets.js renderAssetsList 作用域问题（最终修复）
 
 ### 问题
