@@ -4,6 +4,110 @@
 
 ---
 
+## 2026-03-08 - 片段素材库功能实现（P1 阶段）
+
+### 新增功能
+
+#### 1. 素材上传功能
+- **触发方式**: 点击片段素材库右上角「📤」上传按钮
+- **支持格式**:
+  - 图片：jpg, jpeg, png, gif, webp, bmp
+  - 视频：mp4, webm, ogg, mov, avi
+  - 音频：mp3, wav, ogg, aac, flac
+- **功能特性**:
+  - 支持多文件同时选择上传
+  - 自动分类复制到项目 assets 目录
+  - 自动创建分类文件夹（images/videos/audios）
+  - 文件重名时自动添加时间戳
+  - 上传成功后自动刷新素材列表
+
+#### 2. 素材预览功能
+- **触发方式**: 点击素材缩略图
+- **预览模态框**:
+  - 图片预览：直接显示大图（自适应窗口）
+  - 视频预览：HTML5 播放器，支持播放控制
+  - 音频预览：音频播放器 + 封面图标
+- **操作按钮**:
+  - 复制路径：复制素材绝对路径到剪贴板
+  - 删除：删除素材（物理删除 + 索引移除）
+
+#### 3. 素材删除功能
+- **删除确认**: 弹窗确认，防止误删
+- **双重删除**:
+  - 从 project.json 移除索引记录
+  - 物理删除 assets 目录中的文件
+- **自动刷新**: 删除成功后自动刷新素材列表
+
+### 修改的文件
+
+| 文件 | 变更 | 说明 |
+|------|------|------|
+| `index.html` | +20 行 | 上传按钮可见 + 预览模态框 HTML |
+| `styles.css` | +80 行 | 预览模态框样式 + 深色主题适配 |
+| `src/preload.js` | +1 行 | 暴露 `uploadAsset` API |
+| `src/handlers/project.js` | +84 行 | 新增 `project:uploadAsset` IPC 处理器 |
+| `src/utils/sceneAssets.js` | +220 行 | 上传/预览/删除功能实现 |
+| `src/utils/eventListeners.js` | +10 行 | 初始化素材库面板和预览模态框 |
+
+### 核心函数
+
+```javascript
+// sceneAssets.js
+function handleUploadAsset()           // 处理文件上传
+function showAssetPreview(asset)       // 显示素材预览
+function hideAssetPreview()            // 隐藏预览
+function bindSceneAssetsClickEvents()  // 绑定缩略图点击事件
+function initAssetPreviewModal()       // 初始化预览模态框事件
+
+// project.js
+ipcMain.handle('project:uploadAsset', ...)  // 上传素材 IPC 处理器
+```
+
+### 数据结构
+
+**片段素材结构**（存储在 project.json）:
+```json
+{
+  "shots": [{
+    "id": "shot_001",
+    "name": "片段 01",
+    "assets": {
+      "images": [
+        {
+          "id": "asset_img_1234567890",
+          "name": "test.png",
+          "path": "e:\\AI\\KimV4\\work\\projects\\测试\\assets\\images\\test.png",
+          "type": "image",
+          "size": "1.2MB",
+          "fileSize": 1258291
+        }
+      ],
+      "videos": [],
+      "audios": []
+    }
+  }]
+}
+```
+
+### 使用说明
+
+1. **创建项目** → 创建片段 → 选中片段
+2. **展开素材库**: 点击底部「片段素材库」面板标题栏
+3. **上传素材**: 点击右上角「📤」按钮，选择文件
+4. **预览素材**: 点击任意素材缩略图
+5. **删除素材**: 预览时点击「删除」按钮
+
+### 测试指南
+
+详见：`work/scene-assets-test-guide.md`
+
+### 已知问题
+
+- 视频预览依赖浏览器支持的编码格式（推荐 H.264/MP4）
+- 大文件上传可能需要较长时间（无进度条显示）
+
+---
+
 ## 2026-03-08 - 项目素材库搜索功能修复
 
 ### 问题

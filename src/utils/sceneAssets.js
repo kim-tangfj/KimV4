@@ -11,9 +11,15 @@ const sceneAssetsPanel = {
   header: null,
   toggleBtn: null,
   list: null,
+  uploadBtn: null,
   currentShotId: null,
   currentSceneId: null
 };
+
+/**
+ * 当前预览的素材信息
+ */
+let currentPreviewAsset = null;
 
 /**
  * 初始化片段素材库面板
@@ -23,6 +29,12 @@ function initSceneAssetsPanel() {
   sceneAssetsPanel.header = document.getElementById('assets-panel-toggle-header');
   sceneAssetsPanel.toggleBtn = document.getElementById('assets-panel-toggle-btn');
   sceneAssetsPanel.list = document.getElementById('shot-assets-list');
+  sceneAssetsPanel.uploadBtn = document.getElementById('assets-panel-upload-btn');
+
+  // 绑定上传按钮事件
+  if (sceneAssetsPanel.uploadBtn) {
+    sceneAssetsPanel.uploadBtn.addEventListener('click', handleUploadAsset);
+  }
 }
 
 /**
@@ -197,17 +209,153 @@ function updateAssetsPanelTitle(ownerType, count) {
  * 绑定缩略图点击事件
  */
 function bindSceneAssetsClickEvents(ownerType, ownerId) {
-  const thumbnails = document.querySelectorAll('#assets-list .asset-thumbnail');
+  const thumbnails = document.querySelectorAll('#shot-assets-list .asset-thumbnail');
   thumbnails.forEach(thumb => {
     thumb.addEventListener('click', () => {
       const assetType = thumb.dataset.assetType;
       const assetName = thumb.dataset.assetName;
       const assetPath = thumb.dataset.assetPath;
-      
-      // TODO: 实现素材预览或删除菜单
-      console.log(`点击素材：${assetName}, 类型：${assetType}, 所有者：${ownerType}(${ownerId})`);
+      const assetId = thumb.dataset.assetId;
+
+      // 显示预览
+      currentPreviewAsset = {
+        id: assetId,
+        type: assetType,
+        name: assetName,
+        path: assetPath,
+        ownerType: ownerType,
+        ownerId: ownerId
+      };
+
+      showAssetPreview(currentPreviewAsset);
     });
   });
+}
+
+/**
+ * 显示素材预览
+ * @param {Object} asset - 素材信息
+ */
+function showAssetPreview(asset) {
+  const modal = document.getElementById('asset-preview-modal');
+  const title = document.getElementById('asset-preview-title');
+  const container = document.getElementById('asset-preview-container');
+
+  if (!modal || !container) return;
+
+  title.textContent = asset.name;
+  container.innerHTML = '';
+
+  if (asset.type === 'image') {
+    const img = document.createElement('img');
+    img.src = asset.path;
+    img.alt = asset.name;
+    container.appendChild(img);
+  } else if (asset.type === 'video') {
+    const video = document.createElement('video');
+    video.src = asset.path;
+    video.controls = true;
+    video.style.maxWidth = '100%';
+    video.style.maxHeight = '60vh';
+    container.appendChild(video);
+  } else if (asset.type === 'audio') {
+    const audioContainer = document.createElement('div');
+    audioContainer.style.textAlign = 'center';
+    audioContainer.innerHTML = `
+      <div style="font-size: 48px; margin-bottom: 15px;">🎵</div>
+      <div class="asset-preview-info">
+        <h4>${asset.name}</h4>
+      </div>
+    `;
+    const audio = document.createElement('audio');
+    audio.src = asset.path;
+    audio.controls = true;
+    audioContainer.appendChild(audio);
+    container.appendChild(audioContainer);
+  }
+
+  modal.style.display = 'flex';
+}
+
+/**
+ * 隐藏素材预览
+ */
+function hideAssetPreview() {
+  const modal = document.getElementById('asset-preview-modal');
+  const container = document.getElementById('asset-preview-container');
+
+  if (!modal) return;
+
+  modal.style.display = 'none';
+  container.innerHTML = '';
+  currentPreviewAsset = null;
+}
+
+/**
+ * 处理上传素材
+ */
+async function handleUploadAsset() {
+  const state = window.getState();
+  const shotId = sceneAssetsPanel.currentShotId;
+
+  if (!shotId) {
+    window.showToast('请先选择一个片段');
+    return;
+  }
+
+  // 创建隐藏的文件选择器
+  const input = document.createElement('input');
+  input.type = 'file';
+  input.accept = 'image/*,video/*,audio/*';
+  input.multiple = true;
+
+  input.addEventListener('change', async (e) => {
+    const files = Array.from(e.target.files);
+    if (files.length === 0) return;
+
+    const project = state.currentProject;
+    if (!project || !project.projectDir) {
+      window.showToast('项目未加载');
+      return;
+    }
+
+    // 查找片段
+    const shot = project.shots?.find(s => s.id === shotId);
+    if (!shot) {
+      window.showToast('片段不存在');
+      return;
+    }
+
+    // 上传每个文件
+    let successCount = 0;
+    for (const file of files) {
+      try {
+        const result = await window.electronAPI.uploadAsset({
+          projectDir: project.projectDir,
+          filePath: file.path,
+          shotId: shotId
+        });
+
+        if (result.success) {
+          successCount++;
+        } else {
+          console.error('[sceneAssets] 上传失败:', result.error);
+        }
+      } catch (error) {
+        console.error('[sceneAssets] 上传异常:', error);
+      }
+    }
+
+    if (successCount > 0) {
+      window.showToast(`成功上传 ${successCount}/${files.length} 个素材`);
+      // 重新加载素材列表
+      loadShotAssetsList(shotId);
+    } else {
+      window.showToast('上传失败');
+    }
+  });
+
+  input.click();
 }
 
 /**
@@ -345,6 +493,76 @@ function getAssetType(filename) {
   return 'image'; // 默认
 }
 
+/**
+ * 初始化预览模态框事件
+ */
+function initAssetPreviewModal() {
+  // 关闭按钮
+  const closeBtn = document.getElementById('asset-preview-close-btn');
+  if (closeBtn) {
+    closeBtn.addEventListener('click', hideAssetPreview);
+  }
+
+  // 点击遮罩关闭
+  const modal = document.getElementById('asset-preview-modal');
+  if (modal) {
+    modal.addEventListener('click', (e) => {
+      if (e.target === modal) {
+        hideAssetPreview();
+      }
+    });
+  }
+
+  // 复制路径按钮
+  const copyPathBtn = document.getElementById('asset-preview-copy-path-btn');
+  if (copyPathBtn) {
+    copyPathBtn.addEventListener('click', () => {
+      if (currentPreviewAsset && currentPreviewAsset.path) {
+        navigator.clipboard.writeText(currentPreviewAsset.path)
+          .then(() => {
+            window.showToast('路径已复制到剪贴板');
+          })
+          .catch(err => {
+            console.error('[sceneAssets] 复制路径失败:', err);
+            window.showToast('复制失败');
+          });
+      }
+    });
+  }
+
+  // 删除按钮
+  const deleteBtn = document.getElementById('asset-preview-delete-btn');
+  if (deleteBtn) {
+    deleteBtn.addEventListener('click', async () => {
+      if (!currentPreviewAsset) return;
+
+      const confirmed = await window.showConfirm(
+        `确定要删除素材 "${currentPreviewAsset.name}" 吗？`,
+        '删除素材'
+      );
+
+      if (!confirmed) return;
+
+      const result = await removeSceneAsset(
+        currentPreviewAsset.ownerType,
+        currentPreviewAsset.ownerId,
+        currentPreviewAsset.id
+      );
+
+      if (result.success) {
+        window.showToast('素材已删除');
+        hideAssetPreview();
+        // 重新加载素材列表
+        if (currentPreviewAsset.ownerType === 'shot') {
+          loadShotAssetsList(currentPreviewAsset.ownerId);
+        }
+      } else {
+        window.showToast('删除失败：' + result.error);
+      }
+    });
+  }
+}
+
 // 导出到 window 对象
 window.initSceneAssetsPanel = initSceneAssetsPanel;
 window.openSceneAssetsPanel = openSceneAssetsPanel;
@@ -353,3 +571,5 @@ window.toggleSceneAssetsPanel = toggleSceneAssetsPanel;
 window.loadShotAssetsList = loadShotAssetsList;
 window.addSceneAsset = addSceneAsset;
 window.removeSceneAsset = removeSceneAsset;
+window.initAssetPreviewModal = initAssetPreviewModal;
+window.hideAssetPreview = hideAssetPreview;

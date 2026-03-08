@@ -9,6 +9,16 @@
  * 使用全局变量：window.elements, window.appState, window.settings, window.useElectronAPI
  */
 function setupEventListeners() {
+  // 初始化片段素材库面板
+  if (window.initSceneAssetsPanel) {
+    window.initSceneAssetsPanel();
+  }
+
+  // 初始化素材预览模态框
+  if (window.initAssetPreviewModal) {
+    window.initAssetPreviewModal();
+  }
+
   // 初始化面板拖拽
   if (window.initPanelResizers) {
     window.initPanelResizers();
