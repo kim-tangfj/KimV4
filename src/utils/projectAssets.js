@@ -294,14 +294,18 @@ function extractVideoFrame(video) {
   try {
     // 检查是否已经处理过
     if (video.dataset.frameExtracted === 'true') {
+      console.log('[extractVideoFrame] 已处理过，跳过');
       return;
     }
+    
+    console.log('[extractVideoFrame] 开始提取，视频尺寸:', video.videoWidth, 'x', video.videoHeight);
     
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
     // 等待视频元数据加载完成
     if (video.readyState < 2) {
+      console.log('[extractVideoFrame] 视频未就绪，等待 loadedmetadata');
       video.onloadedmetadata = () => extractVideoFrame(video);
       return;
     }
@@ -326,6 +330,7 @@ function extractVideoFrame(video) {
       }
 
       const avgBrightness = totalBrightness / (data.length / 64);
+      console.log('[extractVideoFrame] 亮度检测:', avgBrightness.toFixed(2), threshold < avgBrightness ? '(正常)' : '(黑场)');
       return avgBrightness < threshold;
     }
 
@@ -333,14 +338,17 @@ function extractVideoFrame(video) {
     function useCurrentFrame() {
       // 再次检查是否已经处理过
       if (video.dataset.frameExtracted === 'true') {
+        console.log('[extractVideoFrame] 处理中已被其他任务完成，跳过');
         return;
       }
       
       // 检查视频元素是否还在 DOM 中
       if (!video || !video.parentNode || !document.contains(video)) {
+        console.log('[extractVideoFrame] 视频元素已不在 DOM 中，跳过');
         return;
       }
 
+      console.log('[extractVideoFrame] 生成缩略图...');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       // 转换为图片
@@ -354,8 +362,9 @@ function extractVideoFrame(video) {
       // 替换 video 元素
       try {
         video.parentNode.replaceChild(img, video);
+        console.log('[extractVideoFrame] ✅ 提取完成');
       } catch (error) {
-        // 替换失败，静默处理
+        console.log('[extractVideoFrame] 替换失败:', error.message);
       }
     }
 
@@ -363,27 +372,39 @@ function extractVideoFrame(video) {
     video.onseeked = function() {
       // 检查元素是否还在 DOM 中
       if (!video || !document.contains(video)) {
+        console.log('[extractVideoFrame] onseeked: 视频元素已不在 DOM 中，跳过');
         return;
       }
 
+      console.log('[extractVideoFrame] onseeked: currentTime =', video.currentTime);
+
       if (isFrameBlack()) {
+        console.log('[extractVideoFrame] 检测到黑场，跳转到 1 秒重试');
         // 是黑场，跳转到 1 秒再试一次
         video.currentTime = 1.0;
         video.onseeked = function() {
+          if (!video || !document.contains(video)) {
+            return;
+          }
+          console.log('[extractVideoFrame] onseeked(2): currentTime =', video.currentTime);
           if (isFrameBlack()) {
+            console.log('[extractVideoFrame] 仍然是黑场，使用当前帧');
             // 还是黑场，使用当前帧
             useCurrentFrame();
           } else {
+            console.log('[extractVideoFrame] 找到正常画面');
             useCurrentFrame();
           }
         };
       } else {
+        console.log('[extractVideoFrame] 找到正常画面，直接使用');
         // 不是黑场，直接使用
         useCurrentFrame();
       }
     };
 
     // 开始尝试
+    console.log('[extractVideoFrame] 开始尝试，currentTime = 0.1');
     video.currentTime = 0.1;
 
   } catch (error) {
