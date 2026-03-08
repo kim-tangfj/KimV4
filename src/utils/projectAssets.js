@@ -303,7 +303,7 @@ async function loadAssetsList(projectId) {
  * @param {boolean} cacheData - 是否缓存数据（默认 true）
  * @param {boolean} updateCount - 是否更新计数（默认 true）
  */
-const renderAssetsList = function(assets, cacheData = true, updateCount = true) {
+const renderProjectAssetsList = function(assets, cacheData = true, updateCount = true) {
   if (!assetsSidebar.list) return;
 
   assetsSidebar.list.innerHTML = '';

@@ -509,7 +509,7 @@ initializeApp = async function() {
 
 // 渲染素材库列表（占位符）
 // 注意：此函数仅在 renderer.js 中定义，已被 window.renderAssetsList 引用
-const renderAssetsList = function(assets) {
+function renderAssetsList(assets) {
   if (!elements.assetsList) return;
 
   elements.assetsList.innerHTML = '';
