@@ -1029,8 +1029,9 @@ async function uploadStoryboardImage(filePath, fileName, shotId, sceneId, source
       // 刷新预览
       renderStoryboardPreview(result.asset);
       // 刷新镜头列表缩略图
-      if (window.renderShotList) {
-        window.renderShotList(project.shots || []);
+      const state = window.getState();
+      if (window.renderSceneList && state.currentShot && state.currentShot.scenes) {
+        window.renderSceneList(state.currentShot.scenes || []);
       }
     } else {
       window.showToast('上传失败：' + result.error);

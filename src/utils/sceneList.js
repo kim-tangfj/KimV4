@@ -44,6 +44,9 @@ function renderSceneList(scenes) {
 
     // 生成镜头编号（如果没有 serialNumber，使用序号）
     const sceneNumber = scene.serialNumber || `镜头${index + 1}`;
+    
+    // 检查是否有分镜图片
+    const storyboardImage = scene.storyboardImage;
 
     sceneElement.innerHTML = `
       <div class="list-item-content">
@@ -52,6 +55,11 @@ function renderSceneList(scenes) {
           ${scene.shotType} • ${scene.angle} • ${scene.duration}s
         </div>
       </div>
+      ${storyboardImage ? `
+        <div class="storyboard-thumbnail" title="分镜图：${storyboardImage.name}">
+          <img src="${storyboardImage.path}" alt="${storyboardImage.name}" />
+        </div>
+      ` : ''}
     `;
     sceneElement.addEventListener('click', async () => { await selectScene(scene); });
     window.elements.sceneList.appendChild(sceneElement);
