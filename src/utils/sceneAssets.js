@@ -11,7 +11,8 @@ const sceneAssetsPanel = {
   header: null,
   toggleBtn: null,
   list: null,
-  uploadBtn: null,
+  uploadArea: null,
+  fileInput: null,
   currentShotId: null,
   currentSceneId: null
 };
@@ -29,12 +30,11 @@ function initSceneAssetsPanel() {
   sceneAssetsPanel.header = document.getElementById('assets-panel-toggle-header');
   sceneAssetsPanel.toggleBtn = document.getElementById('assets-panel-toggle-btn');
   sceneAssetsPanel.list = document.getElementById('shot-assets-list');
-  sceneAssetsPanel.uploadBtn = document.getElementById('assets-panel-upload-btn');
+  sceneAssetsPanel.uploadArea = document.getElementById('scene-assets-upload-area');
+  sceneAssetsPanel.fileInput = document.getElementById('scene-assets-file-input');
 
-  // 绑定上传按钮事件
-  if (sceneAssetsPanel.uploadBtn) {
-    sceneAssetsPanel.uploadBtn.addEventListener('click', handleUploadAsset);
-  }
+  // 初始化上传功能
+  initSceneAssetUpload();
 }
 
 /**
@@ -316,9 +316,94 @@ function hideAssetPreview() {
 }
 
 /**
- * 处理上传素材
+ * 初始化片段素材上传功能（点击 + 拖放）
  */
-async function handleUploadAsset() {
+function initSceneAssetUpload() {
+  const { uploadArea, fileInput } = sceneAssetsPanel;
+
+  if (!uploadArea || !fileInput) return;
+
+  // 点击上传区域 - 使用 dialog 选择文件
+  uploadArea.addEventListener('click', async () => {
+    const result = await window.electronAPI.showOpenDialog({
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: '图片', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'] },
+        { name: '视频', extensions: ['mp4', 'webm', 'ogg', 'mov', 'avi'] },
+        { name: '音频', extensions: ['mp3', 'wav', 'ogg', 'aac', 'flac'] },
+        { name: '所有文件', extensions: ['*'] }
+      ]
+    });
+
+    if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+      const files = result.filePaths.map(filePath => ({
+        name: filePath.split(/[\\/]/).pop(),
+        path: filePath
+      }));
+      handleSceneFilesUpload(files);
+    }
+  });
+
+  // 拖放上传 - 阻止默认行为
+  ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, preventDefaults, false);
+  });
+
+  // 拖放视觉效果
+  ['dragenter', 'dragover'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, () => {
+      uploadArea.classList.add('drag-over');
+    }, false);
+  });
+
+  ['dragleave', 'drop'].forEach(eventName => {
+    uploadArea.addEventListener(eventName, () => {
+      uploadArea.classList.remove('drag-over');
+    }, false);
+  });
+
+  // 处理文件 drop
+  uploadArea.addEventListener('drop', async (e) => {
+    e.preventDefault();
+    e.stopPropagation();
+
+    uploadArea.classList.remove('drag-over');
+
+    const files = e.dataTransfer.files;
+    if (files && files.length > 0) {
+      const fileArray = Array.from(files);
+      handleSceneDroppedFiles(fileArray);
+    }
+  });
+}
+
+/**
+ * 阻止拖放默认行为
+ */
+function preventDefaults(e) {
+  e.preventDefault();
+  e.stopPropagation();
+}
+
+/**
+ * 读取文件为 Base64
+ * @param {File} file - 文件对象
+ * @returns {Promise<string>} Base64 数据 URL
+ */
+function readSceneFileAsBase64(file) {
+  return new Promise((resolve, reject) => {
+    const reader = new FileReader();
+    reader.onload = () => resolve(reader.result);
+    reader.onerror = () => reject(reader.error);
+    reader.readAsDataURL(file);
+  });
+}
+
+/**
+ * 处理拖放的文件
+ * @param {File[]} files - 文件对象数组
+ */
+async function handleSceneDroppedFiles(files) {
   const state = window.getState();
   const shotId = sceneAssetsPanel.currentShotId;
 
@@ -327,59 +412,206 @@ async function handleUploadAsset() {
     return;
   }
 
-  // 创建隐藏的文件选择器
-  const input = document.createElement('input');
-  input.type = 'file';
-  input.accept = 'image/*,video/*,audio/*';
-  input.multiple = true;
+  const project = state.currentProject;
+  if (!project || !project.projectDir) {
+    window.showToast('项目未加载');
+    return;
+  }
 
-  input.addEventListener('change', async (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length === 0) return;
+  // 显示上传进度
+  showSceneUploadProgress(0, files.length);
 
-    const project = state.currentProject;
-    if (!project || !project.projectDir) {
-      window.showToast('项目未加载');
-      return;
-    }
+  let successCount = 0;
+  let failCount = 0;
 
-    // 查找片段
-    const shot = project.shots?.find(s => s.id === shotId);
-    if (!shot) {
-      window.showToast('片段不存在');
-      return;
-    }
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
 
-    // 上传每个文件
-    let successCount = 0;
-    for (const file of files) {
-      try {
-        const result = await window.electronAPI.uploadAsset({
-          projectDir: project.projectDir,
-          filePath: file.path,
-          shotId: shotId
-        });
+    try {
+      // 读取文件为 Base64
+      const fileData = await readSceneFileAsBase64(file);
 
-        if (result.success) {
-          successCount++;
-        } else {
-          console.error('[sceneAssets] 上传失败:', result.error);
-        }
-      } catch (error) {
-        console.error('[sceneAssets] 上传异常:', error);
+      // 确定素材类型
+      let assetType = 'image';
+      if (file.type.startsWith('video/')) {
+        assetType = 'video';
+      } else if (file.type.startsWith('audio/')) {
+        assetType = 'audio';
       }
+
+      // 使用项目素材库上传 API（通过 Base64 保存）
+      const result = await window.electronAPI.saveDroppedFile(
+        file.name,
+        fileData,
+        project.projectDir,
+        assetType
+      );
+
+      if (result.success) {
+        // 添加到片段素材库
+        await addSceneAssetToShot(shotId, result.asset);
+        successCount++;
+      } else {
+        failCount++;
+      }
+    } catch (error) {
+      failCount++;
+      console.error('[handleSceneDroppedFiles] 上传异常:', error);
     }
 
-    if (successCount > 0) {
-      window.showToast(`成功上传 ${successCount}/${files.length} 个素材`);
-      // 重新加载素材列表
-      loadShotAssetsList(shotId);
-    } else {
-      window.showToast('上传失败');
-    }
-  });
+    // 更新进度
+    showSceneUploadProgress(i + 1, files.length);
+  }
 
-  input.click();
+  // 隐藏进度条
+  setTimeout(() => hideSceneUploadProgress(), 1000);
+
+  // 显示结果
+  if (successCount > 0) {
+    window.showToast(`成功上传 ${successCount}/${files.length} 个素材`);
+    loadShotAssetsList(shotId);
+  } else {
+    window.showToast('上传失败，请检查文件格式');
+  }
+}
+
+/**
+ * 处理文件上传（点击方式）
+ * @param {Object[]} files - 文件列表（包含 name 和 path 属性）
+ */
+async function handleSceneFilesUpload(files) {
+  const state = window.getState();
+  const shotId = sceneAssetsPanel.currentShotId;
+
+  if (!shotId) {
+    window.showToast('请先选择一个片段');
+    return;
+  }
+
+  const project = state.currentProject;
+  if (!project || !project.projectDir) {
+    window.showToast('项目未加载');
+    return;
+  }
+
+  // 显示上传进度
+  showSceneUploadProgress(0, files.length);
+
+  let successCount = 0;
+  let failCount = 0;
+
+  for (let i = 0; i < files.length; i++) {
+    const file = files[i];
+
+    if (!file.path) {
+      failCount++;
+      continue;
+    }
+
+    try {
+      // 使用项目素材库上传 API
+      const result = await window.electronAPI.uploadAssetToProject({
+        projectDir: project.projectDir,
+        filePath: file.path,
+        fileName: file.name
+      });
+
+      if (result.success) {
+        // 添加到片段素材库
+        await addSceneAssetToShot(shotId, result.asset);
+        successCount++;
+      } else {
+        failCount++;
+      }
+    } catch (error) {
+      failCount++;
+      console.error('[handleSceneFilesUpload] 上传异常:', error);
+    }
+
+    // 更新进度
+    showSceneUploadProgress(i + 1, files.length);
+  }
+
+  // 隐藏进度条
+  setTimeout(() => hideSceneUploadProgress(), 1000);
+
+  // 显示结果
+  if (successCount > 0) {
+    window.showToast(`成功上传 ${successCount}/${files.length} 个素材`);
+    loadShotAssetsList(shotId);
+  } else {
+    window.showToast('上传失败');
+  }
+}
+
+/**
+ * 添加素材到片段
+ * @param {string} shotId - 片段 ID
+ * @param {Object} asset - 素材对象
+ */
+async function addSceneAssetToShot(shotId, asset) {
+  const state = window.getState();
+  const project = state.currentProject;
+
+  if (!project) return;
+
+  // 查找片段
+  const shot = project.shots?.find(s => s.id === shotId);
+  if (!shot) return;
+
+  // 初始化素材库
+  if (!shot.assets) {
+    shot.assets = { images: [], videos: [], audios: [] };
+  }
+
+  // 根据类型添加到对应数组
+  const assetType = asset.type || getAssetType(asset.name);
+  shot.assets[assetType + 's'].push(asset);
+
+  // 保存项目
+  await window.electronAPI.saveProject(project.projectDir, project);
+}
+
+/**
+ * 显示上传进度
+ * @param {number} current - 当前已上传数量
+ * @param {number} total - 总文件数
+ */
+function showSceneUploadProgress(current, total) {
+  let progressEl = document.getElementById('scene-upload-progress');
+
+  if (!progressEl) {
+    const uploadArea = sceneAssetsPanel.uploadArea;
+    progressEl = document.createElement('div');
+    progressEl.id = 'scene-upload-progress';
+    progressEl.className = 'upload-progress active';
+    progressEl.innerHTML = `
+      <div class="progress-bar">
+        <div class="progress-fill" id="scene-progress-fill"></div>
+      </div>
+      <div class="progress-text" id="scene-progress-text"></div>
+    `;
+    uploadArea.parentNode.insertBefore(progressEl, uploadArea.nextSibling);
+  } else {
+    progressEl.classList.add('active');
+  }
+
+  const percent = Math.round((current / total) * 100);
+  const fillEl = document.getElementById('scene-progress-fill');
+  const textEl = document.getElementById('scene-progress-text');
+
+  if (fillEl) fillEl.style.width = `${percent}%`;
+  if (textEl) textEl.textContent = `正在上传 ${current}/${total} (${percent}%)`;
+}
+
+/**
+ * 隐藏上传进度
+ */
+function hideSceneUploadProgress() {
+  const progressEl = document.getElementById('scene-upload-progress');
+  if (progressEl) {
+    progressEl.classList.remove('active');
+  }
 }
 
 /**

@@ -97,11 +97,20 @@
       <div class="panel-header" id="assets-panel-toggle-header">
         <h3>片段素材库</h3>
         <div class="header-actions">
-          <button id="assets-panel-upload-btn" class="icon-btn small" title="上传素材">📤</button>
           <button id="assets-panel-toggle-btn" class="icon-btn" style="visibility: hidden;">▲</button>
         </div>
       </div>
       <div class="panel-content">
+        <!-- 上传区域（支持点击和拖放） -->
+        <div class="scene-assets-upload-area" id="scene-assets-upload-area">
+          <input type="file" id="scene-assets-file-input" accept="image/*,video/*,audio/*" multiple style="display: none;" />
+          <div class="upload-area-content">
+            <span class="upload-icon">📤</span>
+            <span class="upload-text">点击或拖放文件到此处上传</span>
+            <span class="upload-hint">支持图片、视频、音频文件</span>
+          </div>
+        </div>
+        <!-- 素材列表 -->
         <div id="shot-assets-list" class="assets-list">
           <div class="placeholder-text">请选择项目</div>
         </div>
