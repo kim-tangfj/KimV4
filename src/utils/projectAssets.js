@@ -333,21 +333,28 @@ function extractVideoFrame(video) {
     // 使用当前帧
     function useCurrentFrame() {
       console.log('[extractVideoFrame] 使用当前帧，时间:', video.currentTime);
-      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       
-      // 转换为图片并替换 video 元素
+      // 检查视频元素是否还在 DOM 中
+      if (!video || !video.parentNode || !document.contains(video)) {
+        console.warn('[extractVideoFrame] 视频元素已不在 DOM 中，跳过提取');
+        return;
+      }
+      
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+
+      // 转换为图片
       const img = document.createElement('img');
       img.src = canvas.toDataURL('image/jpeg', 0.8);
       img.style.width = '100%';
       img.style.height = '100%';
       img.style.objectFit = 'cover';
-      
-      // 安全替换：检查 parentElement 是否存在
-      if (video && video.parentElement) {
-        video.parentElement.replaceChild(img, video);
+
+      // 替换 video 元素
+      try {
+        video.parentNode.replaceChild(img, video);
         console.log('[extractVideoFrame] 提取完成');
-      } else {
-        console.warn('[extractVideoFrame] video.parentElement 为 null，无法替换');
+      } catch (error) {
+        console.warn('[extractVideoFrame] 替换失败:', error.message);
       }
     }
     
@@ -358,7 +365,13 @@ function extractVideoFrame(video) {
     
     video.onseeked = function() {
       console.log('[extractVideoFrame] 已跳转到:', video.currentTime, '秒，尝试次数:', attempt + 1);
-      
+
+      // 检查视频元素是否还在 DOM 中
+      if (!video || !video.parentNode || !document.contains(video)) {
+        console.warn('[extractVideoFrame] 视频元素已不在 DOM 中，停止提取');
+        return;
+      }
+
       if (isFrameBlack()) {
         // 当前帧是黑的，尝试下一帧
         attemptTime += 1.0;
