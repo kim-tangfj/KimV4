@@ -4,12 +4,14 @@ const { contextBridge, ipcRenderer } = require('electron');
 contextBridge.exposeInMainWorld('electronAPI', {
   // 对话框 API
   openProjectDialog: () => ipcRenderer.invoke('dialog:openProject'),
-  
+  showOpenDialog: (options) => ipcRenderer.invoke('dialog:showOpenDialog', options),
+
   // 文件系统 API
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
   writeFile: (filePath, data) => ipcRenderer.invoke('fs:writeFile', filePath, data),
   fileExists: (filePath) => ipcRenderer.invoke('fs:exists', filePath),
-  
+  getFilePaths: (files) => ipcRenderer.invoke('fs:getFilePaths', files),
+
   // Shell API
   openPath: (filePath) => ipcRenderer.invoke('shell:openPath', filePath),
   

@@ -161,19 +161,26 @@ function initUploadFunctionality() {
 
   if (!uploadArea || !fileInput) return;
 
-  // 点击上传区域触发文件选择
-  uploadArea.addEventListener('click', () => {
-    fileInput.click();
-  });
+  // 点击上传区域 - 使用 dialog 选择文件
+  uploadArea.addEventListener('click', async () => {
+    const result = await window.electronAPI.showOpenDialog({
+      properties: ['openFile', 'multiSelections'],
+      filters: [
+        { name: '图片', extensions: ['jpg', 'jpeg', 'png', 'gif', 'webp', 'bmp'] },
+        { name: '视频', extensions: ['mp4', 'webm', 'ogg', 'mov', 'avi'] },
+        { name: '音频', extensions: ['mp3', 'wav', 'ogg', 'aac', 'flac'] },
+        { name: '所有文件', extensions: ['*'] }
+      ]
+    });
 
-  // 文件选择变化时处理上传
-  fileInput.addEventListener('change', (e) => {
-    const files = Array.from(e.target.files);
-    if (files.length > 0) {
+    if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+      // 将 filePaths 转换为 File 对象格式
+      const files = result.filePaths.map(filePath => ({
+        name: path.basename(filePath),
+        path: filePath
+      }));
       handleFilesUpload(files);
     }
-    // 清空 input，允许重复选择同一文件
-    fileInput.value = '';
   });
 
   // 拖放上传 - 阻止默认行为
@@ -194,43 +201,16 @@ function initUploadFunctionality() {
     }, false);
   });
 
-  // 处理文件 drop
+  // 处理文件 drop - 拖放的文件也需要通过 dialog 获取路径
   uploadArea.addEventListener('drop', async (e) => {
-    const dt = e.dataTransfer;
-    
-    // 尝试从 items 获取文件路径（Electron 支持）
-    const files = [];
-    for (let i = 0; i < dt.items.length; i++) {
-      const item = dt.items[i];
-      if (item.kind === 'file') {
-        const entry = item.webkitGetAsEntry();
-        if (entry) {
-          // 从 FileSystemEntry 获取路径
-          files.push({
-            name: entry.name,
-            path: entry.fullPath // 这可能需要进一步处理
-          });
-        }
-      }
-    }
-    
-    // 如果 items 方式失败，使用 files
-    if (files.length === 0) {
-      const dropFiles = Array.from(dt.files);
-      if (dropFiles.length > 0) {
-        // 对于拖放的文件，需要通过 IPC 获取路径
-        for (const file of dropFiles) {
-          files.push({
-            name: file.name,
-            path: file.path // Electron 中应该有这个属性
-          });
-        }
-      }
-    }
-    
-    if (files.length > 0) {
-      handleFilesUpload(files);
-    }
+    e.preventDefault();
+    e.stopPropagation();
+
+    uploadArea.classList.remove('drag-over');
+
+    // 在 sandbox 模式下，拖放的文件无法获取真实路径
+    // 提示用户使用点击上传方式
+    window.showToast('拖放上传暂不支持，请点击上传区域选择文件');
   });
 }
 
@@ -244,14 +224,11 @@ function preventDefaults(e) {
 
 /**
  * 处理文件上传
- * @param {File[]} files - 文件列表
+ * @param {Object[]} files - 文件列表（包含 name 和 path 属性）
  */
 async function handleFilesUpload(files) {
   const state = window.getState();
   const project = state.currentProject;
-
-  console.log('[handleFilesUpload] currentProject:', project);
-  console.log('[handleFilesUpload] files:', files);
 
   if (!project || !project.projectDir) {
     window.showToast('请先选择项目');
@@ -267,20 +244,9 @@ async function handleFilesUpload(files) {
   for (let i = 0; i < files.length; i++) {
     const file = files[i];
     
-    // 检查文件路径 - 在 Electron sandbox 模式下，file.path 可能是相对路径
-    let filePath = file.path || file.webkitRelativePath;
+    console.log(`[handleFilesUpload] file ${i}:`, file.name, file.path);
     
-    // 如果是相对路径（以 / 开头），尝试使用 file 对象的 path 属性
-    if (filePath && filePath.startsWith('/')) {
-      // 在 sandbox 模式下，需要使用 IPC 获取真实路径
-      // 这里尝试直接使用文件名，让主进程处理
-      filePath = file.name;
-    }
-    
-    console.log(`[handleFilesUpload] file ${i} name:`, file.name);
-    console.log(`[handleFilesUpload] file ${i} path:`, filePath);
-    
-    if (!filePath) {
+    if (!file.path) {
       console.error(`[handleFilesUpload] file ${i} (${file.name}) 没有路径`);
       failCount++;
       continue;
@@ -290,8 +256,8 @@ async function handleFilesUpload(files) {
       // 使用项目素材库上传 API（不需要 shotId）
       const result = await window.electronAPI.uploadAssetToProject({
         projectDir: project.projectDir,
-        filePath: filePath,
-        fileName: file.name // 传递文件名用于处理
+        filePath: file.path,
+        fileName: file.name
       });
 
       if (result.success) {
