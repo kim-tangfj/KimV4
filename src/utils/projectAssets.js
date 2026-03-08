@@ -146,6 +146,16 @@ function initAssetsSidebar() {
   assetsSidebar.usageText = document.getElementById('assets-usage-text');
   assetsSidebar.closeBtn = document.querySelector('.assets-sidebar-close');
 
+  // 缓存预览模态框元素
+  previewModal.modal = document.getElementById('asset-preview-modal');
+  previewModal.container = document.getElementById('asset-preview-container');
+  previewModal.name = document.getElementById('asset-preview-name');
+  previewModal.size = document.getElementById('asset-preview-size');
+  previewModal.closeBtn = document.getElementById('asset-preview-close-btn');
+  previewModal.title = document.getElementById('asset-preview-title');
+  previewModal.copyPathBtn = document.getElementById('asset-preview-copy-path-btn');
+  previewModal.deleteBtn = document.getElementById('asset-preview-delete-btn');
+
   // 初始化上传功能
   initUploadFunctionality();
 
