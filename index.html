@@ -584,21 +584,6 @@
       <!-- 上传按钮 -->
       <button class="assets-upload-btn" id="assets-upload-btn">📤 上传素材</button>
 
-      <!-- 素材预览区域（点击素材时显示） -->
-      <div id="assets-preview-panel" class="assets-preview-panel" style="display: none;">
-        <div class="assets-preview-header">
-          <span class="preview-title">预览</span>
-          <button class="assets-preview-close" title="关闭预览">×</button>
-        </div>
-        <div class="assets-preview-content" id="assets-preview-content">
-          <!-- 动态渲染预览内容 -->
-        </div>
-        <div class="assets-preview-info">
-          <span id="assets-preview-name">-</span>
-          <span id="assets-preview-size">-</span>
-        </div>
-      </div>
-
       <!-- 素材列表 -->
       <div class="assets-list" id="assets-list">
         <!-- 动态渲染素材列表 -->
@@ -610,6 +595,26 @@
           <div class="usage-fill" id="assets-usage-fill" style="width: 0%"></div>
         </div>
         <span class="usage-text" id="assets-usage-text">已用 0MB / 限制 500MB</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- 素材预览模态框 -->
+  <div id="asset-preview-modal" class="modal" style="display: none;">
+    <div class="modal-overlay"></div>
+    <div class="modal-content asset-preview-modal-content">
+      <div class="modal-header">
+        <h3 id="asset-preview-title">素材预览</h3>
+        <button class="modal-close" id="close-asset-preview-btn">×</button>
+      </div>
+      <div class="modal-body">
+        <div class="asset-preview-container" id="asset-preview-container">
+          <!-- 动态渲染预览内容 -->
+        </div>
+        <div class="asset-preview-info">
+          <span id="asset-preview-name">-</span>
+          <span id="asset-preview-size">-</span>
+        </div>
       </div>
     </div>
   </div>

@@ -15,13 +15,18 @@ const assetsSidebar = {
   list: null,
   usageFill: null,
   usageText: null,
-  closeBtn: null,
-  // 预览面板元素
-  previewPanel: null,
-  previewContent: null,
-  previewName: null,
-  previewSize: null,
-  previewCloseBtn: null
+  closeBtn: null
+};
+
+/**
+ * 素材预览模态框元素
+ */
+const previewModal = {
+  modal: null,
+  container: null,
+  name: null,
+  size: null,
+  closeBtn: null
 };
 
 /**
@@ -44,21 +49,30 @@ function initAssetsSidebar() {
   assetsSidebar.usageText = document.getElementById('assets-usage-text');
   assetsSidebar.closeBtn = document.querySelector('.assets-sidebar-close');
   
-  // 缓存预览面板元素
-  assetsSidebar.previewPanel = document.getElementById('assets-preview-panel');
-  assetsSidebar.previewContent = document.getElementById('assets-preview-content');
-  assetsSidebar.previewName = document.getElementById('assets-preview-name');
-  assetsSidebar.previewSize = document.getElementById('assets-preview-size');
-  assetsSidebar.previewCloseBtn = document.querySelector('.assets-preview-close');
+  // 缓存预览模态框元素
+  previewModal.modal = document.getElementById('asset-preview-modal');
+  previewModal.container = document.getElementById('asset-preview-container');
+  previewModal.name = document.getElementById('asset-preview-name');
+  previewModal.size = document.getElementById('asset-preview-size');
+  previewModal.closeBtn = document.getElementById('close-asset-preview-btn');
 
   // 绑定关闭按钮事件
   if (assetsSidebar.closeBtn) {
     assetsSidebar.closeBtn.addEventListener('click', closeAssetsSidebar);
   }
   
-  // 绑定预览关闭按钮事件
-  if (assetsSidebar.previewCloseBtn) {
-    assetsSidebar.previewCloseBtn.addEventListener('click', hidePreview);
+  // 绑定模态框关闭按钮事件
+  if (previewModal.closeBtn) {
+    previewModal.closeBtn.addEventListener('click', hidePreview);
+  }
+  
+  // 绑定模态框遮罩层点击关闭
+  if (previewModal.modal) {
+    previewModal.modal.addEventListener('click', (e) => {
+      if (e.target === previewModal.modal || e.target.classList.contains('modal-overlay')) {
+        hidePreview();
+      }
+    });
   }
 
   // 绑定分类筛选事件
@@ -175,6 +189,13 @@ function renderAssetsList(assets) {
 
   assetsSidebar.list.innerHTML = '';
 
+  // 缓存当前素材数据
+  currentAssetsData = {
+    images: assets.images || [],
+    videos: assets.videos || [],
+    audios: assets.audios || []
+  };
+
   let totalCount = 0;
 
   // 渲染图片
@@ -204,7 +225,7 @@ function renderAssetsList(assets) {
 
   // 更新存储使用情况
   updateAssetsUsage(assets);
-  
+
   // 绑定缩略图点击事件
   bindThumbnailClickEvents();
 }
@@ -257,6 +278,9 @@ function renderAssetsSection(title, items, type) {
   `;
 }
 
+// 当前素材数据缓存
+let currentAssetsData = { images: [], videos: [], audios: [] };
+
 /**
  * 根据类型渲染素材列表
  * @param {string} type - 类型 (all/images/videos/audios)
@@ -264,7 +288,8 @@ function renderAssetsSection(title, items, type) {
 function renderAssetsListByType(type) {
   if (!currentProjectId) return;
 
-  const assets = getMockAssets();
+  // 使用缓存的真实数据
+  const assets = currentAssetsData;
 
   if (type === 'all') {
     renderAssetsList(assets);
@@ -284,8 +309,9 @@ function renderAssetsListByType(type) {
 function filterAssetsByKeyword(keyword) {
   if (!currentProjectId) return;
 
-  const assets = getMockAssets();
-  
+  // 使用缓存的真实数据
+  const assets = currentAssetsData;
+
   if (keyword === '') {
     renderAssetsList(assets);
     return;
@@ -388,15 +414,15 @@ function getMockAssets() {
  * @param {string} path - 素材路径
  */
 function showPreview(type, name, size, path) {
-  if (!assetsSidebar.previewPanel || !assetsSidebar.previewContent) return;
-  
+  if (!previewModal.modal || !previewModal.container) return;
+
   let previewHTML = '';
-  
+
   if (type === 'image') {
     previewHTML = `<img src="${path}" alt="${name}" />`;
   } else if (type === 'video') {
     previewHTML = `
-      <video controls>
+      <video controls autoplay>
         <source src="${path}" type="video/mp4">
         您的浏览器不支持视频播放
       </video>
@@ -405,39 +431,36 @@ function showPreview(type, name, size, path) {
     previewHTML = `
       <div class="audio-player">
         <span class="audio-icon">🎵</span>
-        <audio controls>
+        <audio controls autoplay>
           <source src="${path}" type="audio/mpeg">
           您的浏览器不支持音频播放
         </audio>
       </div>
     `;
   }
-  
-  assetsSidebar.previewContent.innerHTML = previewHTML;
-  
-  if (assetsSidebar.previewName) {
-    assetsSidebar.previewName.textContent = name;
+
+  previewModal.container.innerHTML = previewHTML;
+
+  if (previewModal.name) {
+    previewModal.name.textContent = name;
   }
-  if (assetsSidebar.previewSize) {
-    assetsSidebar.previewSize.textContent = size;
+  if (previewModal.size) {
+    previewModal.size.textContent = size;
   }
-  
-  // 显示预览面板
-  assetsSidebar.previewPanel.style.display = 'block';
-  
-  // 滚动到预览面板
-  assetsSidebar.previewPanel.scrollIntoView({ behavior: 'smooth', block: 'start' });
+
+  // 显示模态框
+  previewModal.modal.style.display = 'flex';
 }
 
 /**
  * 隐藏素材预览
  */
 function hidePreview() {
-  if (!assetsSidebar.previewPanel) return;
-  
-  assetsSidebar.previewPanel.style.display = 'none';
-  if (assetsSidebar.previewContent) {
-    assetsSidebar.previewContent.innerHTML = '';
+  if (!previewModal.modal) return;
+
+  previewModal.modal.style.display = 'none';
+  if (previewModal.container) {
+    previewModal.container.innerHTML = '';
   }
 }
 
