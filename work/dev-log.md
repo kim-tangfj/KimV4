@@ -4,6 +4,38 @@
 
 ---
 
+## 2026-03-08 - 项目素材库搜索功能修复
+
+### 问题
+搜索素材后资源统计不正确，会被重置为空，计数为 0。
+
+### 原因
+`filterAssetsByKeyword` 调用 `renderAssetsList` 时没有正确传递 `updateCount` 参数。
+
+### 修复
+```javascript
+// 修改前
+renderAssetsList(filteredAssets);  // 默认 updateCount=true，但可能数据为空
+
+// 修改后
+renderAssetsList(filteredAssets, false, true);  // 明确更新计数
+```
+
+### 调试日志
+添加日志输出帮助排查问题：
+```
+[filterAssetsByKeyword] keyword: 小
+[filterAssetsByKeyword] currentAssetsData: {...}
+[filterAssetsByKeyword] filteredAssets: {...}
+```
+
+### 测试结果
+- ✅ 搜索中文关键词（如 "小"）可以正确过滤
+- ✅ 计数显示过滤后的数量
+- ✅ 清空搜索后显示全部素材和正确计数
+
+---
+
 ## 2026-03-08 - 项目素材库视频缩略图提取功能
 
 ### 问题修复
