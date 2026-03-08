@@ -54,6 +54,16 @@
 
 ---
 
+## 2026-03-08 - 修复 deleteCurrentProject 递归调用导致堆栈溢出
+
+### 问题
+`renderer.js` 中定义了 `deleteCurrentProject` 函数，该函数调用 `window.deleteCurrentProject`，但某个地方又调用了 `renderer.js` 中的 `deleteCurrentProject`，导致无限递归和堆栈溢出
+
+### 修复
+将 `renderer.js` 中的函数重命名为 `handleDeleteCurrentProject`
+
+---
+
 ## 2026-03-08 - 修复项目素材库删除片段素材时确认框仍然弹出的问题
 
 ### 问题

@@ -1035,7 +1035,8 @@ async function removeSceneAsset(ownerType, ownerId, assetId) {
     if (ownerType === 'shot') {
       loadShotAssetsList(ownerId);
     } else {
-      loadSceneAssetsList(ownerId);
+      // 镜头素材库暂未实现
+      console.warn('[sceneAssets] 镜头素材删除后刷新功能暂未实现');
     }
 
     return { success: true };
