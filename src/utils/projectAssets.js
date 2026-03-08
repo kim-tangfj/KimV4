@@ -472,12 +472,12 @@ function initAssetsSidebarEvents() {
 
   // 绑定删除按钮事件
   if (previewModal.deleteBtn) {
-    previewModal.deleteBtn.addEventListener('click', () => {
+    previewModal.deleteBtn.addEventListener('click', async () => {
       const assetType = previewModal.container.dataset.assetType;
       const assetName = previewModal.container.dataset.assetName;
       const assetPath = previewModal.container.dataset.assetPath;
       if (assetPath) {
-        confirmDeleteAsset(assetType, assetName, assetPath);
+        await confirmDeleteAsset(assetType, assetName, assetPath);
       }
     });
   }
@@ -676,7 +676,7 @@ function initContextMenuEvents() {
   if (!contextMenu) return;
 
   // 菜单项点击事件
-  contextMenu.addEventListener('click', (e) => {
+  contextMenu.addEventListener('click', async (e) => {
     const menuItem = e.target.closest('.context-menu-item');
     if (!menuItem) return;
 
@@ -689,7 +689,7 @@ function initContextMenuEvents() {
     if (action === 'view') {
       showPreview(assetType, assetName, assetSize, assetPath);
     } else if (action === 'delete') {
-      confirmDeleteAsset(assetType, assetName, assetPath);
+      await confirmDeleteAsset(assetType, assetName, assetPath);
     }
 
     hideContextMenu();
@@ -1034,7 +1034,7 @@ function hidePreview() {
  * @param {string} assetName - 素材名称
  * @param {string} assetPath - 素材路径
  */
-function confirmDeleteAsset(assetType, assetName, assetPath) {
+async function confirmDeleteAsset(assetType, assetName, assetPath) {
   if (!assetPath) {
     window.showToast('素材路径无效');
     return;
@@ -1047,7 +1047,9 @@ function confirmDeleteAsset(assetType, assetName, assetPath) {
     ? `⚠️ 该素材正被镜头引用，删除后可能导致引用失效。\n\n确定要删除 "${assetName}" 吗？`
     : `确定要删除 "${assetName}" 吗？\n\n此操作将永久删除文件，无法恢复。`;
 
-  if (window.confirm(confirmMsg)) {
+  const confirmed = await window.showConfirm(confirmMsg);
+  
+  if (confirmed) {
     deleteAsset(assetType, assetName, assetPath);
   }
 }
