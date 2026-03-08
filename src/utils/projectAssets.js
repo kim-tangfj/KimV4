@@ -99,7 +99,7 @@ function openAssetsSidebar(projectId, projectName) {
 
   // 显示侧边窗体
   assetsSidebar.sidebar.style.display = 'flex';
-  
+
   // 使用 requestAnimationFrame 确保动画流畅
   requestAnimationFrame(() => {
     assetsSidebar.sidebar.classList.remove('hidden');
