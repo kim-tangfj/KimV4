@@ -292,14 +292,53 @@ function renderAssetsSection(title, items, type) {
  */
 function extractVideoFrame(video) {
   try {
-    video.currentTime = 0; // 跳转到第一帧
+    const canvas = document.createElement('canvas');
+    const ctx = canvas.getContext('2d');
     
-    video.onseeked = function() {
-      const canvas = document.createElement('canvas');
-      canvas.width = video.videoWidth;
-      canvas.height = video.videoHeight;
+    // 等待视频元数据加载完成
+    if (video.readyState < 2) {
+      video.onloadedmetadata = () => extractVideoFrame(video);
+      return;
+    }
+    
+    canvas.width = video.videoWidth;
+    canvas.height = video.videoHeight;
+    
+    // 检测画面是否为全黑
+    function isFrameBlack() {
+      ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
+      const imageData = ctx.getImageData(0, 0, canvas.width, canvas.height);
+      const data = imageData.data;
+      let totalBrightness = 0;
+      const threshold = 30; // 亮度阈值
       
-      const ctx = canvas.getContext('2d');
+      // 采样检测（每隔 4 个像素取一个点，提高性能）
+      for (let i = 0; i < data.length; i += 16) {
+        const r = data[i];
+        const g = data[i + 1];
+        const b = data[i + 2];
+        // 计算亮度
+        const brightness = (r * 0.299 + g * 0.587 + b * 0.114);
+        totalBrightness += brightness;
+      }
+      
+      const avgBrightness = totalBrightness / (data.length / 16);
+      return avgBrightness < threshold;
+    }
+    
+    // 尝试查找有画面的帧
+    function findValidFrame(currentTime, maxAttempts, attempt) {
+      if (attempt >= maxAttempts) {
+        // 超过最大尝试次数，使用当前帧（即使是黑的）
+        useCurrentFrame();
+        return;
+      }
+      
+      video.currentTime = currentTime;
+    }
+    
+    // 使用当前帧
+    function useCurrentFrame() {
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
       
       // 转换为图片并替换 video 元素
@@ -310,7 +349,33 @@ function extractVideoFrame(video) {
       img.style.objectFit = 'cover';
       
       video.parentElement.replaceChild(img, video);
+    }
+    
+    // 从 0.1 秒开始尝试，避免黑场
+    let attemptTime = 0.1;
+    const maxAttempts = 10;
+    let attempt = 0;
+    
+    video.onseeked = function() {
+      if (isFrameBlack()) {
+        // 当前帧是黑的，尝试下一帧
+        attemptTime += 0.5;
+        attempt++;
+        if (attempt < maxAttempts) {
+          video.currentTime = attemptTime;
+        } else {
+          // 超过最大尝试次数，使用当前帧
+          useCurrentFrame();
+        }
+      } else {
+        // 找到有画面的帧
+        useCurrentFrame();
+      }
     };
+    
+    // 开始尝试第一帧
+    video.currentTime = attemptTime;
+    
   } catch (error) {
     console.error('提取视频封面失败:', error);
   }
