@@ -298,62 +298,6 @@ async function loadAssetsList(projectId) {
 }
 
 /**
- * 渲染素材列表
- * @param {Object} assets - 素材对象 { images, videos, audios }
- * @param {boolean} cacheData - 是否缓存数据（默认 true）
- * @param {boolean} updateCount - 是否更新计数（默认 true）
- */
-const renderProjectAssetsList = function(assets, cacheData = true, updateCount = true) {
-  if (!assetsSidebar.list) return;
-
-  assetsSidebar.list.innerHTML = '';
-
-  // 缓存当前素材数据（仅当 cacheData 为 true 时）
-  if (cacheData) {
-    currentAssetsData = {
-      images: assets.images || [],
-      videos: assets.videos || [],
-      audios: assets.audios || []
-    };
-  }
-
-  let totalCount = 0;
-
-  // 渲染图片
-  if (assets.images && assets.images.length > 0) {
-    totalCount += assets.images.length;
-    assetsSidebar.list.innerHTML += renderAssetsSection('图片', assets.images, 'image');
-  }
-
-  // 渲染视频
-  if (assets.videos && assets.videos.length > 0) {
-    totalCount += assets.videos.length;
-    assetsSidebar.list.innerHTML += renderAssetsSection('视频', assets.videos, 'video');
-  }
-
-  // 渲染音频
-  if (assets.audios && assets.audios.length > 0) {
-    totalCount += assets.audios.length;
-    assetsSidebar.list.innerHTML += renderAssetsSection('音频', assets.audios, 'audio');
-  }
-
-  if (totalCount === 0) {
-    assetsSidebar.list.innerHTML = '<div class="placeholder-text">暂无素材，点击"上传素材"添加</div>';
-  }
-
-  // 更新计数（仅当 updateCount 为 true 时）
-  if (updateCount) {
-    updateAssetsCount(assets);
-  }
-
-  // 更新存储使用情况
-  updateAssetsUsage(assets);
-
-  // 绑定缩略图点击事件
-  bindThumbnailClickEvents();
-}
-
-/**
  * 绑定缩略图点击事件
  */
 function bindThumbnailClickEvents() {
