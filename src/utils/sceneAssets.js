@@ -401,6 +401,10 @@ function initSceneContextMenuEvents() {
 
       if (result.success) {
         window.showToast(!fileExists ? '配置记录已删除' : '素材已删除');
+        // 通知项目素材库刷新
+        if (window.refreshProjectAssetsList) {
+          window.refreshProjectAssetsList();
+        }
       } else {
         window.showToast('删除失败：' + result.error);
       }
