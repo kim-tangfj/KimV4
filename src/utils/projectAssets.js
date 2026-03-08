@@ -288,17 +288,19 @@ let currentAssetsData = { images: [], videos: [], audios: [] };
 function renderAssetsListByType(type) {
   if (!currentProjectId) return;
 
+  console.log('[renderAssetsListByType] type:', type, 'currentAssetsData:', currentAssetsData);
+
   // 使用缓存的真实数据
   const assets = currentAssetsData;
 
   if (type === 'all') {
     renderAssetsList(assets);
   } else if (type === 'images') {
-    renderAssetsList({ images: assets.images, videos: [], audios: [] });
+    renderAssetsList({ images: assets.images || [], videos: [], audios: [] });
   } else if (type === 'videos') {
-    renderAssetsList({ images: [], videos: assets.videos, audios: [] });
+    renderAssetsList({ images: [], videos: assets.videos || [], audios: [] });
   } else if (type === 'audios') {
-    renderAssetsList({ images: [], videos: [], audios: assets.audios });
+    renderAssetsList({ images: [], videos: [], audios: assets.audios || [] });
   }
 }
 
