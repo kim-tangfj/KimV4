@@ -43,6 +43,9 @@ function initSceneAssetsPanel() {
 
   // 初始化上传功能
   initSceneAssetUpload();
+
+  // 初始化右键菜单
+  initSceneContextMenuEvents();
 }
 
 /**
@@ -237,6 +240,7 @@ function updateAssetsPanelTitle(ownerType, count) {
 function bindSceneAssetsClickEvents(ownerType, ownerId) {
   const thumbnails = document.querySelectorAll('#shot-assets-list .asset-thumbnail');
   thumbnails.forEach(thumb => {
+    // 左键点击 - 预览
     thumb.addEventListener('click', () => {
       const assetType = thumb.dataset.assetType;
       const assetName = thumb.dataset.assetName;
@@ -255,7 +259,153 @@ function bindSceneAssetsClickEvents(ownerType, ownerId) {
 
       showAssetPreview(currentPreviewAsset);
     });
+
+    // 右键点击 - 上下文菜单
+    thumb.addEventListener('contextmenu', (e) => {
+      e.preventDefault();
+      e.stopPropagation();
+
+      const assetType = thumb.dataset.assetType;
+      const assetName = thumb.dataset.assetName;
+      const assetPath = thumb.dataset.assetPath;
+      const assetId = thumb.dataset.assetId;
+      const assetSource = thumb.dataset.assetSource;
+
+      showSceneContextMenu(e, {
+        type: assetType,
+        name: assetName,
+        path: assetPath,
+        id: assetId,
+        ownerType: ownerType,
+        ownerId: ownerId,
+        source: assetSource || 'shot'
+      });
+    });
   });
+}
+
+/**
+ * 显示片段素材右键菜单
+ * @param {MouseEvent} e - 鼠标事件
+ * @param {Object} asset - 素材信息
+ */
+function showSceneContextMenu(e, asset) {
+  const contextMenu = document.getElementById('asset-context-menu');
+  if (!contextMenu) return;
+
+  // 存储当前选中的素材信息
+  contextMenu.dataset.assetType = asset.type;
+  contextMenu.dataset.assetName = asset.name;
+  contextMenu.dataset.assetPath = asset.path;
+  contextMenu.dataset.assetId = asset.id;
+  contextMenu.dataset.ownerType = asset.ownerType;
+  contextMenu.dataset.ownerId = asset.ownerId;
+  contextMenu.dataset.assetSource = asset.source;
+
+  // 定位菜单
+  contextMenu.style.display = 'block';
+  contextMenu.style.left = `${e.clientX}px`;
+  contextMenu.style.top = `${e.clientY}px`;
+
+  // 确保菜单不超出窗口
+  const rect = contextMenu.getBoundingClientRect();
+  if (rect.right > window.innerWidth) {
+    contextMenu.style.left = `${e.clientX - rect.width}px`;
+  }
+  if (rect.bottom > window.innerHeight) {
+    contextMenu.style.top = `${e.clientY - rect.height}px`;
+  }
+}
+
+/**
+ * 隐藏右键菜单
+ */
+function hideSceneContextMenu() {
+  const contextMenu = document.getElementById('asset-context-menu');
+  if (contextMenu) {
+    contextMenu.style.display = 'none';
+  }
+}
+
+/**
+ * 初始化片段素材右键菜单事件
+ */
+function initSceneContextMenuEvents() {
+  const contextMenu = document.getElementById('asset-context-menu');
+  if (!contextMenu) return;
+
+  // 菜单项点击事件
+  contextMenu.addEventListener('click', async (e) => {
+    const menuItem = e.target.closest('.context-menu-item');
+    if (!menuItem) return;
+
+    const action = menuItem.dataset.action;
+    const assetPath = contextMenu.dataset.assetPath;
+    const assetName = contextMenu.dataset.assetName;
+    const assetId = contextMenu.dataset.assetId;
+    const ownerType = contextMenu.dataset.ownerType;
+    const ownerId = contextMenu.dataset.ownerId;
+
+    if (action === 'view') {
+      // 显示预览
+      currentPreviewAsset = {
+        id: assetId,
+        type: contextMenu.dataset.assetType,
+        name: assetName,
+        path: assetPath,
+        ownerType: ownerType,
+        ownerId: ownerId
+      };
+      showAssetPreview(currentPreviewAsset);
+    } else if (action === 'delete') {
+      // 检查文件是否存在
+      const fileExists = await window.electronAPI.fileExists(assetPath);
+
+      let confirmMsg;
+      if (!fileExists) {
+        confirmMsg = `⚠️ 文件已不存在，仅删除配置记录。\n\n确定要删除 "${assetName}" 吗？`;
+      } else {
+        confirmMsg = `确定要删除素材 "${assetName}" 吗？\n\n此操作将永久删除文件，无法恢复。`;
+      }
+
+      const confirmed = await window.showConfirm(confirmMsg, '删除素材');
+
+      if (!confirmed) {
+        hideSceneContextMenu();
+        return;
+      }
+
+      // 如果文件存在，先删除物理文件
+      if (fileExists) {
+        const state = window.getState();
+        const projectDir = state.projectData?.project?.projectDir || state.currentProject?.projectDir;
+
+        const deleteResult = await window.electronAPI.deleteAsset({
+          projectDir: projectDir,
+          assetPath: assetPath,
+          assetType: contextMenu.dataset.assetType
+        });
+        if (!deleteResult.success) {
+          console.warn('[sceneAssets] 删除物理文件失败:', deleteResult.error);
+        }
+      }
+
+      // 删除配置记录
+      const result = await removeSceneAsset(ownerType, ownerId, assetId);
+
+      if (result.success) {
+        window.showToast(!fileExists ? '配置记录已删除' : '素材已删除');
+      } else {
+        window.showToast('删除失败：' + result.error);
+      }
+    }
+
+    hideSceneContextMenu();
+  });
+
+  // 点击其他地方关闭菜单
+  document.addEventListener('click', hideSceneContextMenu);
+  document.addEventListener('scroll', hideSceneContextMenu);
 }
 
 /**
@@ -803,14 +953,15 @@ async function addSceneAsset(ownerType, ownerId, asset) {
 async function removeSceneAsset(ownerType, ownerId, assetId) {
   try {
     const state = window.getState();
-    const project = state.currentProject;
-    
-    if (!project) return { success: false, error: '项目未加载' };
-    
+    // 使用 projectData 获取最新的项目数据
+    const projectData = state.projectData || state.currentProject;
+
+    if (!projectData) return { success: false, error: '项目未加载' };
+
     if (ownerType === 'shot') {
-      const shot = project.shots?.find(s => s.id === ownerId);
+      const shot = projectData.shots?.find(s => s.id === ownerId);
       if (!shot || !shot.assets) return { success: false, error: '片段不存在' };
-      
+
       // 从所有类型中查找并删除
       for (const type of ['images', 'videos', 'audios']) {
         const index = shot.assets[type].findIndex(a => a.id === assetId);
@@ -819,19 +970,33 @@ async function removeSceneAsset(ownerType, ownerId, assetId) {
           break;
         }
       }
-      
+
+      // 同步更新 currentProject
+      if (state.currentProject && state.currentProject.shots) {
+        const currentShot = state.currentProject.shots?.find(s => s.id === ownerId);
+        if (currentShot && currentShot.assets) {
+          for (const type of ['images', 'videos', 'audios']) {
+            const index = currentShot.assets[type].findIndex(a => a.id === assetId);
+            if (index !== -1) {
+              currentShot.assets[type].splice(index, 1);
+              break;
+            }
+          }
+        }
+      }
+
     } else if (ownerType === 'scene') {
       let targetScene = null;
-      for (const shot of project.shots || []) {
+      for (const shot of projectData.shots || []) {
         const scene = shot.scenes?.find(s => s.id === ownerId);
         if (scene) {
           targetScene = scene;
           break;
         }
       }
-      
+
       if (!targetScene || !targetScene.assets) return { success: false, error: '镜头不存在' };
-      
+
       // 从所有类型中查找并删除
       for (const type of ['images', 'videos', 'audios']) {
         const index = targetScene.assets[type].findIndex(a => a.id === assetId);
@@ -841,17 +1006,22 @@ async function removeSceneAsset(ownerType, ownerId, assetId) {
         }
       }
     }
-    
-    // 保存项目
-    await window.electronAPI.saveProject(project.projectDir, project);
-    
+
+    // 保存项目 - 使用 projectData
+    const project = state.currentProject;
+    if (!project || !project.projectDir) {
+      return { success: false, error: '项目目录不存在' };
+    }
+
+    await window.electronAPI.saveProject(project.projectDir, projectData);
+
     // 刷新素材列表
     if (ownerType === 'shot') {
       loadShotAssetsList(ownerId);
     } else {
       loadSceneAssetsList(ownerId);
     }
-    
+
     return { success: true };
   } catch (error) {
     console.error('[sceneAssets] 删除素材失败:', error);
