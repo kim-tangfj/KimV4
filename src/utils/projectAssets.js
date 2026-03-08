@@ -294,24 +294,19 @@ function extractVideoFrame(video) {
   try {
     // 检查是否已经处理过
     if (video.dataset.frameExtracted === 'true') {
-      console.log('[extractVideoFrame] 已处理过，跳过');
       return;
     }
     
     // 检查是否正在处理中
     if (video.dataset.extracting === 'true') {
-      console.log('[extractVideoFrame] 正在处理中，跳过');
       return;
     }
-    
-    console.log('[extractVideoFrame] 开始提取，视频尺寸:', video.videoWidth, 'x', video.videoHeight);
     
     const canvas = document.createElement('canvas');
     const ctx = canvas.getContext('2d');
 
     // 等待视频元数据加载完成
     if (video.readyState < 2) {
-      console.log('[extractVideoFrame] 视频未就绪，等待 loadedmetadata');
       video.onloadedmetadata = () => extractVideoFrame(video);
       return;
     }
@@ -336,7 +331,6 @@ function extractVideoFrame(video) {
       }
 
       const avgBrightness = totalBrightness / (data.length / 64);
-      console.log('[extractVideoFrame] 亮度检测:', avgBrightness.toFixed(2), threshold < avgBrightness ? '(正常)' : '(黑场)');
       return avgBrightness < threshold;
     }
 
@@ -344,17 +338,14 @@ function extractVideoFrame(video) {
     function useCurrentFrame() {
       // 再次检查是否已经处理过
       if (video.dataset.frameExtracted === 'true') {
-        console.log('[extractVideoFrame] 处理中已被其他任务完成，跳过');
         return;
       }
       
       // 检查视频元素是否还在 DOM 中
       if (!video || !video.parentNode || !document.contains(video)) {
-        console.log('[extractVideoFrame] 视频元素已不在 DOM 中，跳过');
         return;
       }
 
-      console.log('[extractVideoFrame] 生成缩略图...');
       ctx.drawImage(video, 0, 0, canvas.width, canvas.height);
 
       // 转换为图片
@@ -372,9 +363,8 @@ function extractVideoFrame(video) {
       // 替换 video 元素
       try {
         video.parentNode.replaceChild(img, video);
-        console.log('[extractVideoFrame] ✅ 提取完成');
       } catch (error) {
-        console.log('[extractVideoFrame] 替换失败:', error.message);
+        console.error('提取视频封面失败:', error.message);
       }
     }
 
@@ -387,25 +377,19 @@ function extractVideoFrame(video) {
     // 只尝试一次，不循环跳转
     video.onseeked = function() {
       seekCount++;
-      console.log('[extractVideoFrame] onseeked 调用次数:', seekCount);
       
       // 检查元素是否还在 DOM 中
       if (!video || !document.contains(video)) {
-        console.log('[extractVideoFrame] onseeked: 视频元素已不在 DOM 中，跳过');
         return;
       }
       
       // 防止超过最大跳转次数
       if (seekCount > maxSeeks) {
-        console.log('[extractVideoFrame] 超过最大跳转次数，停止处理');
         video.dataset.extracting = 'false';
         return;
       }
 
-      console.log('[extractVideoFrame] onseeked: currentTime =', video.currentTime);
-
       if (isFrameBlack()) {
-        console.log('[extractVideoFrame] 检测到黑场，跳转到 1 秒重试');
         // 是黑场，跳转到 1 秒再试一次
         video.currentTime = 1.0;
         video.onseeked = function() {
@@ -417,25 +401,20 @@ function extractVideoFrame(video) {
             video.dataset.extracting = 'false';
             return;
           }
-          console.log('[extractVideoFrame] onseeked(2): currentTime =', video.currentTime);
           if (isFrameBlack()) {
-            console.log('[extractVideoFrame] 仍然是黑场，使用当前帧');
             // 还是黑场，使用当前帧
             useCurrentFrame();
           } else {
-            console.log('[extractVideoFrame] 找到正常画面');
             useCurrentFrame();
           }
         };
       } else {
-        console.log('[extractVideoFrame] 找到正常画面，直接使用');
         // 不是黑场，直接使用
         useCurrentFrame();
       }
     };
 
     // 开始尝试
-    console.log('[extractVideoFrame] 开始尝试，currentTime = 0.1');
     video.currentTime = 0.1;
 
   } catch (error) {
@@ -452,9 +431,6 @@ let currentAssetsData = { images: [], videos: [], audios: [] };
  */
 function renderAssetsListByType(type) {
   if (!currentProjectId) return;
-
-  console.log('[renderAssetsListByType] type:', type);
-  console.log('[renderAssetsListByType] currentAssetsData:', JSON.stringify(currentAssetsData, null, 2));
 
   // 使用缓存的真实数据
   const assets = currentAssetsData;
@@ -477,15 +453,11 @@ function renderAssetsListByType(type) {
 function filterAssetsByKeyword(keyword) {
   if (!currentProjectId) return;
 
-  console.log('[filterAssetsByKeyword] keyword:', keyword);
-  console.log('[filterAssetsByKeyword] currentAssetsData:', JSON.stringify(currentAssetsData, null, 2));
-  
   // 使用缓存的真实数据
   const assets = currentAssetsData;
 
   if (keyword === '') {
     // 清空搜索，显示全部素材并更新计数
-    console.log('[filterAssetsByKeyword] 清空搜索，显示全部素材');
     renderAssetsList(assets, false, true);
     return;
   }
@@ -495,8 +467,6 @@ function filterAssetsByKeyword(keyword) {
     videos: assets.videos.filter(item => item.name.toLowerCase().includes(keyword)),
     audios: assets.audios.filter(item => item.name.toLowerCase().includes(keyword))
   };
-
-  console.log('[filterAssetsByKeyword] filteredAssets:', JSON.stringify(filteredAssets, null, 2));
 
   // 渲染过滤后的素材列表，并更新计数为过滤后的数量
   renderAssetsList(filteredAssets, false, true);
