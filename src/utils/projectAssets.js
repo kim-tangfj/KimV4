@@ -3,10 +3,6 @@
 // 负责素材库侧边窗体的显示、隐藏、素材列表渲染等功能
 //
 
-// 声明局部变量，覆盖 window 上的同名函数
-var renderAssetsList, renderAssetsSection, renderAssetsListByType, filterAssetsByKeyword;
-var updateAssetsCount, updateAssetsUsage, bindThumbnailClickEvents, showPreview, hidePreview, getMockAssets;
-
 /**
  * 素材库侧边窗体元素
  */
@@ -49,7 +45,7 @@ let currentAssetsData = { images: [], videos: [], audios: [] };
  * @param {Array} items - 素材数组
  * @param {string} type - 素材类型 (image/video/audio)
  */
-function renderAssetsSection(title, items, type) {
+const renderAssetsSection = function(title, items, type) {
   const icons = {
     image: '🖼️',
     video: '🎬',
@@ -83,7 +79,7 @@ function renderAssetsSection(title, items, type) {
  * @param {boolean} cacheData - 是否缓存数据（默认 true）
  * @param {boolean} updateCount - 是否更新计数（默认 true）
  */
-function renderAssetsList(assets, cacheData = true, updateCount = true) {
+const renderAssetsList = function(assets, cacheData = true, updateCount = true) {
   if (!assetsSidebar.list) return;
 
   assetsSidebar.list.innerHTML = '';
@@ -304,7 +300,7 @@ async function loadAssetsList(projectId) {
 /**
  * 绑定缩略图点击事件
  */
-function bindThumbnailClickEvents() {
+const bindThumbnailClickEvents = function() {
   const thumbnails = document.querySelectorAll('.asset-thumbnail');
   thumbnails.forEach(thumb => {
     thumb.addEventListener('click', () => {
@@ -457,7 +453,7 @@ function extractVideoFrame(video) {
  * 根据类型渲染素材列表
  * @param {string} type - 类型 (all/images/videos/audios)
  */
-function renderAssetsListByType(type) {
+const renderAssetsListByType = function(type) {
   if (!currentProjectId) return;
 
   // 使用缓存的真实数据
@@ -478,7 +474,7 @@ function renderAssetsListByType(type) {
  * 根据关键词过滤素材
  * @param {string} keyword - 搜索关键词
  */
-function filterAssetsByKeyword(keyword) {
+const filterAssetsByKeyword = function(keyword) {
   if (!currentProjectId) return;
 
   // 使用缓存的真实数据
@@ -504,7 +500,7 @@ function filterAssetsByKeyword(keyword) {
  * 更新素材计数
  * @param {Object} assets - 素材对象
  */
-function updateAssetsCount(assets) {
+const updateAssetsCount = function(assets) {
   const counts = {
     all: (assets.images?.length || 0) + (assets.videos?.length || 0) + (assets.audios?.length || 0),
     images: assets.images?.length || 0,
@@ -530,7 +526,7 @@ function updateAssetsCount(assets) {
  * 更新存储使用情况
  * @param {Object} assets - 素材对象
  */
-function updateAssetsUsage(assets) {
+const updateAssetsUsage = function(assets) {
   // 计算实际使用量
   let totalBytes = 0;
   
@@ -561,7 +557,7 @@ function updateAssetsUsage(assets) {
  * 获取示例素材数据（临时）
  * @returns {Object} 素材对象
  */
-function getMockAssets() {
+const getMockAssets = function() {
   return {
     images: [
       { id: 'asset_img_001', name: 'img_01.jpg', size: '1.2MB', path: 'assets/images/img_01.jpg' },
@@ -587,7 +583,7 @@ function getMockAssets() {
  * @param {string} size - 素材大小
  * @param {string} path - 素材路径
  */
-function showPreview(type, name, size, path) {
+const showPreview = function(type, name, size, path) {
   if (!previewModal.modal || !previewModal.container) return;
 
   let previewHTML = '';
@@ -633,7 +629,7 @@ function showPreview(type, name, size, path) {
 /**
  * 隐藏素材预览
  */
-function hidePreview() {
+const hidePreview = function() {
   if (!previewModal.modal) return;
 
   previewModal.modal.style.display = 'none';
