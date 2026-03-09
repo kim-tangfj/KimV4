@@ -828,34 +828,38 @@ async function addSceneAssetToShot(shotId, asset) {
 
   console.log('[addSceneAssetToShot] 添加素材:', asset, '到片段:', shotId);
 
-  // 保存项目 - 使用 projectData 或 currentProject
-  const project = state.currentProject;
-  if (!project || !project.projectDir) {
-    console.error('[addSceneAssetToShot] 项目目录不存在');
+  // 保存项目 - 从 projectData 获取项目目录
+  const projectDir = projectData.project?.projectDir || projectData.projectDir || state.currentProject?.project?.projectDir;
+  if (!projectDir) {
+    console.error('[addSceneAssetToShot] 项目目录不存在', { 
+      projectData_projectDir: projectData.projectDir,
+      currentProject_projectDir: state.currentProject?.projectDir,
+      currentProject_project_projectDir: state.currentProject?.project?.projectDir
+    });
     return;
   }
 
   // 构建完整的项目 JSON 对象
   const projectJson = {
-    project: project.project || project,
-    shots: projectData.shots || project.shots,
-    promptTemplates: projectData.promptTemplates || project.promptTemplates || [],
-    selected: projectData.selected || project.selected || {},
-    theme: projectData.theme || project.theme || {}
+    project: projectData.project || state.currentProject?.project || state.currentProject,
+    shots: projectData.shots || state.currentProject?.shots || [],
+    promptTemplates: projectData.promptTemplates || state.currentProject?.promptTemplates || [],
+    selected: projectData.selected || state.currentProject?.selected || {},
+    theme: projectData.theme || state.currentProject?.theme || {}
   };
 
-  console.log('[addSceneAssetToShot] 保存项目，projectDir:', project.projectDir);
+  console.log('[addSceneAssetToShot] 保存项目，projectDir:', projectDir);
 
-  const saveResult = await window.electronAPI.saveProject(project.projectDir, projectJson);
+  const saveResult = await window.electronAPI.saveProject(projectDir, projectJson);
   console.log('[addSceneAssetToShot] 保存结果:', saveResult);
 
   // 重新加载项目数据以确保同步
   if (saveResult.success) {
-    const loadResult = await window.electronAPI.loadProject(project.projectDir);
+    const loadResult = await window.electronAPI.loadProject(projectDir);
     if (loadResult.success && loadResult.projectJson) {
       // 更新 state 中的两个项目对象
       const projects = state.projects || [];
-      const index = projects.findIndex(p => p.projectDir === project.projectDir);
+      const index = projects.findIndex(p => p.projectDir === projectDir);
       if (index !== -1) {
         projects[index] = { ...projects[index], ...loadResult.projectJson.project };
       }
