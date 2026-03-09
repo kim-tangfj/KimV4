@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-03-09 - 片段素材库显示不全修复
+
+### 完成内容
+- 修复片段素材库只显示部分素材的问题
+- 原因：原实现从 `shot.assets` 内存数据读取，该数据可能未包含所有文件
+- 修复：改为从文件系统直接读取 `assets/shots/{shotId}/` 目录下的所有素材文件
+
+### 修改文件
+| 文件 | 变更说明 |
+|------|----------|
+| `src/handlers/project.js` | 新增 `project:getShotAssets` IPC 处理器，从文件系统读取指定片段素材 |
+| `src/preload.js` | 暴露 `getShotAssets` API |
+| `src/utils/sceneAssets.js` | `loadShotAssetsList` 改为调用 `getShotAssets` 从文件系统读取 |
+
+### Git 提交
+- `5cb0cc1` fix: 片段素材库从文件系统读取素材，修复素材显示不全问题
+
+---
+
 ## 2026-03-09 - 分镜图片上传后素材库自动刷新
 
 ### 完成内容
