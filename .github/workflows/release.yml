@@ -8,6 +8,11 @@ on:
     tags:
       - 'v*'  # 匹配 v 开头的标签，如 v1.0.0, v1.0.1, v2.0.0-beta.1 等
 
+# 授予 Actions 写入权限（用于创建 Release）
+permissions:
+  contents: write  # 创建 Release 和上传文件
+  actions: write   # 管理 Actions
+
 jobs:
   build:
     runs-on: windows-latest  # 使用 Windows 最新版本的 runner
