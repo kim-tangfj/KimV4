@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-03-09 - 片段素材库上传功能修复（项目目录获取）
+
+### 问题描述
+从片段素材库上传素材后，控制台报错：
+```
+[addSceneAssetToShot] 项目目录不存在
+```
+
+### 原因分析
+`addSceneAssetToShot` 函数中使用 `state.currentProject.projectDir` 获取项目目录，但 `state.currentProject` 的结构不一致：
+- 有时是 `projectData` 格式：`{ project: {...}, shots: [...], ... }`
+- 有时是 `project` 格式：`{ projectDir: '...', shots: [...], ... }`
+
+当 `state.currentProject` 是 `projectData` 格式时，`state.currentProject.projectDir` 为 `undefined`，导致检查失败。
+
+### 修复方案
+修改 `sceneAssets.js` 中的 `addSceneAssetToShot` 函数：
+1. 使用 `projectData.project?.projectDir || projectData.projectDir` 获取项目目录
+2. 添加详细的错误日志，输出各个可能的项目目录路径
+3. 优化 `projectJson` 构建逻辑，使用更可靠的 fallback
+
+### 修改文件
+| 文件 | 变更说明 |
+|------|----------|
+| `src/utils/sceneAssets.js` | `addSceneAssetToShot` 函数修复项目目录获取逻辑 |
+
+### 测试验证
+- [x] 片段素材库上传素材后，不再报"项目目录不存在"错误
+- [x] 素材成功添加到片段素材库
+- [x] 项目数据正确保存
+
+---
+
 ## 2026-03-09 - 片段素材库上传/删除后刷新逻辑修复
 
 ### 问题描述
