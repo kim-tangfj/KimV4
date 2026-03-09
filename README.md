@@ -368,7 +368,7 @@ A: 当前版本仅支持 Windows。Mac 和 Linux 版本正在开发中。
 
 - **项目地址**: https://github.com/kim-tangfj/KimV4
 - **问题反馈**: https://github.com/kim-tangfj/KimV4/issues
-- **邮箱**: your.email@example.com
+- **邮箱**: tangfangjie@sodao.com
 
 ---
 
