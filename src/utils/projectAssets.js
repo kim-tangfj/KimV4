@@ -1146,6 +1146,10 @@ function checkAssetReference(assetPath) {
         if (scene.content && scene.content.includes(assetPath)) {
           return true;
         }
+        // 检查分镜图片是否引用该路径
+        if (scene.storyboardImage && scene.storyboardImage.path === assetPath) {
+          return true;
+        }
       }
     }
   }
@@ -1169,6 +1173,9 @@ async function deleteAsset(assetType, assetName, assetPath) {
   }
 
   try {
+    // 先清空所有引用该素材的镜头分镜图片
+    await clearStoryboardImageReferences(assetPath);
+
     // 调用 Electron API 删除素材
     const result = await window.electronAPI.deleteAsset({
       projectDir: project.projectDir,
@@ -1188,6 +1195,95 @@ async function deleteAsset(assetType, assetName, assetPath) {
   } catch (error) {
     console.error('[deleteAsset] 删除异常:', error);
     window.showToast('删除失败，请重试');
+  }
+}
+
+/**
+ * 清空所有引用该素材路径的镜头分镜图片
+ * @param {string} assetPath - 素材路径
+ */
+async function clearStoryboardImageReferences(assetPath) {
+  const state = window.getState();
+  const projectData = state.projectData || state.currentProject;
+
+  if (!projectData || !projectData.project?.projectDir) {
+    return;
+  }
+
+  let hasChanges = false;
+  const affectedScenes = [];
+
+  // 遍历所有片段和镜头
+  for (const shot of projectData.shots || []) {
+    for (const scene of shot.scenes || []) {
+      // 检查分镜图片是否引用该路径
+      if (scene.storyboardImage && scene.storyboardImage.path === assetPath) {
+        // 清空分镜图片引用
+        scene.storyboardImage = null;
+        hasChanges = true;
+        affectedScenes.push({ shotId: shot.id, sceneId: scene.id, sceneName: scene.name });
+        console.log('[clearStoryboardImageReferences] 清空分镜图片引用:', shot.name, '-', scene.name);
+      }
+    }
+  }
+
+  // 如果有修改，保存项目
+  if (hasChanges) {
+    try {
+      // 同步更新 currentProject
+      if (state.currentProject && state.currentProject.shots) {
+        for (const shot of state.currentProject.shots || []) {
+          for (const scene of shot.scenes || []) {
+            if (scene.storyboardImage && scene.storyboardImage.path === assetPath) {
+              scene.storyboardImage = null;
+            }
+          }
+        }
+      }
+
+      // 保存项目
+      const projectJson = {
+        project: projectData.project || projectData,
+        shots: projectData.shots || [],
+        promptTemplates: projectData.promptTemplates || [],
+        selected: projectData.selected || {},
+        theme: projectData.theme || {}
+      };
+
+      await window.electronAPI.saveProject(projectData.project.projectDir, projectJson);
+
+      // 重新加载项目数据
+      const loadResult = await window.electronAPI.loadProject(projectData.project.projectDir);
+      if (loadResult.success && loadResult.projectJson) {
+        window.updateState('projectData', loadResult.projectJson);
+        window.updateState('currentProject', loadResult.projectJson);
+
+        // 更新 projects 列表
+        const projects = state.projects || [];
+        const index = projects.findIndex(p => p.projectDir === projectData.project.projectDir);
+        if (index !== -1) {
+          projects[index] = { ...projects[index], ...loadResult.projectJson.project };
+          window.updateState('projects', projects);
+        }
+      }
+
+      // 刷新镜头列表
+      if (window.renderShotList) {
+        window.renderShotList();
+      }
+
+      // 刷新属性面板
+      if (window.renderSceneProperties) {
+        const currentScene = state.currentScene;
+        if (currentScene && affectedScenes.some(s => s.sceneId === currentScene.id)) {
+          window.renderSceneProperties(currentScene);
+        }
+      }
+
+      console.log('[clearStoryboardImageReferences] 已清空', affectedScenes.length, '个镜头的分镜图片引用');
+    } catch (error) {
+      console.error('[clearStoryboardImageReferences] 保存项目失败:', error);
+    }
   }
 }
 

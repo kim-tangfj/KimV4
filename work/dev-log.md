@@ -4,6 +4,39 @@
 
 ---
 
+## 2026-03-09 - 素材删除时检查镜头分镜图片引用
+
+### 问题描述
+从项目素材库或片段素材库删除素材时，如果有镜头的分镜图片（`scene.storyboardImage`）正在使用该素材，删除后会导致镜头分镜图片引用失效，显示破损图片。
+
+### 完成内容
+1. **修改 `projectAssets.js`**:
+   - `checkAssetReference` 函数增加对 `scene.storyboardImage.path` 的检查
+   - `deleteAsset` 函数在删除素材前调用 `clearStoryboardImageReferences` 清空引用
+   - 新增 `clearStoryboardImageReferences` 函数：遍历所有镜头，清空引用该素材路径的分镜图片，保存项目并刷新 UI
+
+2. **修改 `sceneAssets.js`**:
+   - `removeSceneAsset` 函数在删除片段素材前，检查是否被镜头分镜图片引用
+   - 新增 `clearStoryboardImageReferencesForAsset` 函数：清空所有引用该素材路径的镜头分镜图片，同步更新内存和 UI
+
+### 修复逻辑
+- **项目素材库删除**: 检查引用 → 提示用户 → 清空分镜图片引用 → 删除物理文件 → 刷新 UI
+- **片段素材库删除**: 查找素材 → 清空分镜图片引用 → 删除物理文件 → 删除配置记录 → 刷新 UI
+
+### 修改文件
+| 文件 | 变更说明 |
+|------|----------|
+| `src/utils/projectAssets.js` | `checkAssetReference` 增加 storyboardImage 检查；`deleteAsset` 增加清空引用逻辑；新增 `clearStoryboardImageReferences` 函数 |
+| `src/utils/sceneAssets.js` | `removeSceneAsset` 增加清空引用逻辑；新增 `clearStoryboardImageReferencesForAsset` 函数 |
+
+### 测试验证
+- [x] 从项目素材库删除被分镜图片引用的素材，引用自动清空
+- [x] 从片段素材库删除被分镜图片引用的素材，引用自动清空
+- [x] 删除后镜头列表和属性面板同步更新
+- [x] 删除后项目数据正确保存
+
+---
+
 ## 2026-03-09 - 分镜图片拖放复制逻辑优化
 
 ### 完成内容
@@ -1901,7 +1934,7 @@ window.showToast('请先在设置中配置 API Key');
 | 阶段 | 行数 | 减少 |
 |------|------|------|
 | 原始 | 3988 行 | - |
-| 模块拆分前 | 2998 行 | -990 行 (-24.8%) |
+| 模块拆分前 | 2998 行 | -990 ��� (-24.8%) |
 | 提示词模块拆分后 | 2567 行 | -431 行 (-14.4%) |
 | 设置管理模块拆分后 | 2577 行 | -453 行 (-14.9%) |
 | 自定义选项模块拆分后 | ~2600 行 | 添加注释标记 |
