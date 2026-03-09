@@ -226,14 +226,16 @@ body.dark-theme {
 /* 镜头卡片分镜图缩略图 */
 .storyboard-thumbnail {
   position: absolute;
-  top: 8px;
-  right: 70px; /* 状态标签左侧 */
+  top: 50%;
+  right: 8px;
+  transform: translateY(-50%);
   width: 50px;
   height: 50px;
   border-radius: 4px;
   overflow: hidden;
   border: 1px solid var(--border-color);
   background: var(--bg-color);
+  flex-shrink: 0;
 }
 
 .storyboard-thumbnail img {
