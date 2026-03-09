@@ -4,6 +4,34 @@
 
 ---
 
+## 2026-03-09 - 分镜图片上传/删除 3 个问题修复
+
+### 完成内容
+修复分镜图片功能的 3 个关键问题：
+
+**问题 1：第一次上传分镜图片后镜头列表未更新**
+- 原因：`updateSceneStoryboardImage` 只更新了 `projectData`，但 `currentShot.scenes` 没有同步更新
+- 修复：在 `updateSceneStoryboardImage` 中同步更新 `currentShot.scenes` 引用
+
+**问题 2：从项目素材库拖放分镜图片时，文件未复制到片段素材库**
+- 原因：主进程直接使用源文件路径，未强制复制到片段素材库
+- 修复：修改 `uploadStoryboardImage` 处理器，无论素材来源都复制到 `shots/{shotId}/images/storyboard/`
+
+**问题 3：删除后再上传，镜头列表显示旧缩略图**
+- 原因：刷新镜头列表时使用了缓存的 `currentShot.scenes` 引用，未从 `projectData` 获取最新数据
+- 修复：在 `uploadStoryboardImage` 和 `deleteStoryboardImage` 中，从 `projectData` 获取最新的 `scenes` 数据再渲染
+
+### 修改文件
+| 文件 | 变更说明 |
+|------|----------|
+| `src/handlers/project.js` | 修改 `uploadStoryboardImage` 处理器，始终复制文件到片段素材库 |
+| `src/utils/propertyPanel.js` | 修改 `updateSceneStoryboardImage`、`uploadStoryboardImage`、`deleteStoryboardImage` 函数 |
+
+### Git 提交
+- `034ead5` fix: 修复分镜图片上传/删除的 3 个问题（列表未更新/素材未复制/缩略图缓存）
+
+---
+
 ## 2026-03-09 - 分镜图片删除功能修复
 
 ### 完成内容
