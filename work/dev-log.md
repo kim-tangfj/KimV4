@@ -4,6 +4,23 @@
 
 ---
 
+## 2026-03-09 - 分镜图片存储目录修复
+
+### 完成内容
+- 修改分镜图片存储目录，移除多余的 `storyboard` 子目录
+- 修改前：`assets/shots/{shotId}/images/storyboard/`
+- 修改后：`assets/shots/{shotId}/images/`
+
+### 修改文件
+| 文件 | 变更说明 |
+|------|----------|
+| `src/handlers/project.js` | `uploadStoryboardImage` 处理器中移除 `storyboard` 子目录 |
+
+### Git 提交
+- `5cbadcc` fix: 分镜图片存储目录改为 assets/shots/{shotId}/images/
+
+---
+
 ## 2026-03-09 - 分镜图片 shotId 为空修复
 
 ### 完成内容
