@@ -603,25 +603,33 @@ function initProjectIPC(mainWindow) {
         return { success: false, error: '源文件不存在：' + filePath };
       }
 
-      // 分镜图片存储目录：assets/shots/{shotId}/images/
-      const storyboardDir = path.join(projectDir, 'assets', 'shots', shotId, 'images');
-      if (!fs.existsSync(storyboardDir)) {
-        fs.mkdirSync(storyboardDir, { recursive: true });
-        console.log('[uploadStoryboardImage] 创建分镜图片目录:', storyboardDir);
-      }
+      let targetPath = filePath; // 默认使用原路径
 
-      // 目标文件路径（始终添加时间戳避免重名）
-      const ext = path.extname(fileName);
-      const nameWithoutExt = path.basename(fileName, ext);
-      const targetPath = path.join(storyboardDir, `${nameWithoutExt}_${Date.now()}${ext}`);
+      // 从项目素材库拖放时，需要复制到片段素材库
+      if (source === 'project') {
+        // 分镜图片存储目录：assets/shots/{shotId}/images/
+        const storyboardDir = path.join(projectDir, 'assets', 'shots', shotId, 'images');
+        if (!fs.existsSync(storyboardDir)) {
+          fs.mkdirSync(storyboardDir, { recursive: true });
+          console.log('[uploadStoryboardImage] 创建分镜图片目录:', storyboardDir);
+        }
 
-      // 复制文件（无论素材来源，都复制到片段素材库）
-      fs.copyFileSync(filePath, targetPath);
-      console.log('[uploadStoryboardImage] 文件已复制:', filePath, '->', targetPath);
+        // 目标文件路径（添加时间戳避免重名）
+        const ext = path.extname(fileName);
+        const nameWithoutExt = path.basename(fileName, ext);
+        targetPath = path.join(storyboardDir, `${nameWithoutExt}_${Date.now()}${ext}`);
 
-      // 验证文件是否复制成功
-      if (!fs.existsSync(targetPath)) {
-        return { success: false, error: '文件复制失败' };
+        // 复制文件
+        fs.copyFileSync(filePath, targetPath);
+        console.log('[uploadStoryboardImage] 文件已复制:', filePath, '->', targetPath);
+
+        // 验证文件是否复制成功
+        if (!fs.existsSync(targetPath)) {
+          return { success: false, error: '文件复制失败' };
+        }
+      } else if (source === 'shot') {
+        // 从片段素材库拖放，直接使用原文件路径
+        console.log('[uploadStoryboardImage] 使用片段素材库现有文件:', filePath);
       }
 
       // 返回成功
