@@ -4,6 +4,30 @@
 
 ---
 
+## 2026-03-09 - 分镜图片删除功能修复
+
+### 完成内容
+- 修复分镜图片删除功能，删除后镜头列表缩略图同步更新
+- 添加 `deleteFile` IPC API 用于删除文件
+- 删除分镜图片后自动刷新镜头列表和预览区域
+
+### 问题原因
+1. 删除功能只修改了内存中的 `currentScene` 对象，未正确保存到 `project.json`
+2. 删除后未刷新镜头列表，导致缩略图仍然显示
+3. 缺少文件删除的 IPC API
+
+### 修改文件
+| 文件 | 变更说明 |
+|------|----------|
+| `src/preload.js` | 添加 `deleteFile` API 暴露 |
+| `src/handlers/project.js` | 添加 `fs:deleteFile` IPC 处理器 |
+| `src/utils/propertyPanel.js` | 重写 `deleteStoryboardImage` 函数，增加文件删除、数据保存和列表刷新 |
+
+### Git 提交
+- `4172e3c` fix: 修复分镜图片删除功能，删除后同步刷新镜头列表
+
+---
+
 ## 2026-03-09 - 镜头列表分镜图缩略图位置修复
 
 ### 完成内容
