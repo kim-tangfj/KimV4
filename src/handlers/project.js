@@ -478,6 +478,8 @@ function initProjectIPC(mainWindow) {
 
       const { projectDir, filePath, shotId, fileName } = params;
 
+      console.log('[uploadSceneAsset] 开始上传:', { projectDir, filePath, shotId, fileName });
+
       // 检查源文件是否存在
       if (!fs.existsSync(filePath)) {
         return { success: false, error: '源文件不存在' };
@@ -492,10 +494,15 @@ function initProjectIPC(mainWindow) {
         assetType = 'audios';
       }
 
+      console.log('[uploadSceneAsset] 素材类型:', assetType, '扩展名:', ext);
+
       // 片段专属素材目录：assets/shots/{shotId}/{type}
       const shotAssetsDir = path.join(projectDir, 'assets', 'shots', shotId, assetType);
+      console.log('[uploadSceneAsset] 目标目录:', shotAssetsDir);
+      
       if (!fs.existsSync(shotAssetsDir)) {
         fs.mkdirSync(shotAssetsDir, { recursive: true });
+        console.log('[uploadSceneAsset] 创建目录:', shotAssetsDir);
       }
 
       // 目标文件路径
@@ -506,10 +513,18 @@ function initProjectIPC(mainWindow) {
       if (fs.existsSync(targetPath)) {
         const nameWithoutExt = path.basename(originalFileName, ext);
         targetPath = path.join(shotAssetsDir, `${nameWithoutExt}_${Date.now()}${ext}`);
+        console.log('[uploadSceneAsset] 文件已存在，使用时间戳重命名:', targetPath);
       }
 
       // 复制文件
       fs.copyFileSync(filePath, targetPath);
+      console.log('[uploadSceneAsset] 文件已复制:', filePath, '->', targetPath);
+
+      // 验证文件是否存在
+      if (!fs.existsSync(targetPath)) {
+        console.error('[uploadSceneAsset] 文件复制后不存在:', targetPath);
+        return { success: false, error: '文件复制失败' };
+      }
 
       // 返回成功
       const stats = fs.statSync(targetPath);
@@ -604,6 +619,7 @@ function initProjectIPC(mainWindow) {
       }
 
       let targetPath = filePath; // 默认使用原路径
+      let addToShotAssets = false; // 是否添加到片段素材库配置
 
       // 从项目素材库拖放时，需要复制到片段素材库
       if (source === 'project') {
@@ -621,30 +637,77 @@ function initProjectIPC(mainWindow) {
 
         // 复制文件
         fs.copyFileSync(filePath, targetPath);
-        console.log('[uploadStoryboardImage] 文件已复制:', filePath, '->', targetPath);
+        console.log('[uploadStoryboardImage] 文件已复制:', filePath);
+        console.log('[uploadStoryboardImage] 目标路径:', targetPath);
 
         // 验证文件是否复制成功
         if (!fs.existsSync(targetPath)) {
+          console.error('[uploadStoryboardImage] 文件复制后不存在:', targetPath);
           return { success: false, error: '文件复制失败' };
         }
+
+        // 标记需要添加到片段素材库配置
+        addToShotAssets = true;
       } else if (source === 'shot') {
         // 从片段素材库拖放，直接使用原文件路径
         console.log('[uploadStoryboardImage] 使用片段素材库现有文件:', filePath);
       }
 
+      console.log('[uploadStoryboardImage] 返回的 asset path:', targetPath);
+
       // 返回成功
       const stats = fs.statSync(targetPath);
+      const asset = {
+        id: 'asset_storyboard_' + Date.now(),
+        name: path.basename(targetPath),
+        path: targetPath,
+        type: 'image',
+        size: formatFileSize(stats.size),
+        fileSize: stats.size,
+        sceneId: sceneId
+      };
+
+      // 如果需要添加到片段素材库配置
+      if (addToShotAssets) {
+        try {
+          // 读取项目文件
+          const projectJsonPath = path.join(projectDir, 'project.json');
+          const projectData = JSON.parse(fs.readFileSync(projectJsonPath, 'utf8'));
+
+          // 查找片段
+          const shot = projectData.shots?.find(s => s.id === shotId);
+          if (shot) {
+            // 初始化素材库
+            if (!shot.assets) {
+              shot.assets = { images: [], videos: [], audios: [] };
+            }
+
+            // 添加到图片素材列表
+            const shotAsset = {
+              id: 'asset_image_' + shotId + '_' + Date.now(),
+              name: path.basename(targetPath),
+              path: targetPath,
+              type: 'image',
+              size: formatFileSize(stats.size),
+              fileSize: stats.size,
+              source: 'shot',
+              shotId: shotId
+            };
+            shot.assets.images.push(shotAsset);
+            console.log('[uploadStoryboardImage] 已添加到片段素材库:', shotAsset.name);
+
+            // 保存项目
+            fs.writeFileSync(projectJsonPath, JSON.stringify(projectData, null, 2), 'utf8');
+          }
+        } catch (err) {
+          console.error('[uploadStoryboardImage] 添加到片段素材库失败:', err);
+          // 不影响主流程，继续返回成功
+        }
+      }
+
       return {
         success: true,
-        asset: {
-          id: 'asset_storyboard_' + Date.now(),
-          name: path.basename(targetPath),
-          path: targetPath,
-          type: 'image',
-          size: formatFileSize(stats.size),
-          fileSize: stats.size,
-          sceneId: sceneId
-        }
+        asset: asset
       };
     } catch (error) {
       console.error('上传分镜图片失败:', error);
@@ -789,7 +852,10 @@ function initProjectIPC(mainWindow) {
       const { projectDir, shotId } = params;
       const assetsDir = path.join(projectDir, 'assets', 'shots', shotId);
 
+      console.log('[getShotAssets] 读取片段素材目录:', assetsDir);
+
       if (!fs.existsSync(assetsDir)) {
+        console.log('[getShotAssets] 目录不存在，返回空数组');
         return { success: true, assets: { images: [], videos: [], audios: [] } };
       }
 
@@ -799,7 +865,7 @@ function initProjectIPC(mainWindow) {
         audios: []
       };
 
-      // 读取片段素材（images/videos/audios）
+      // 从文件系统读取片段素材（images/videos/audios）
       const typeDirs = {
         images: 'images',
         videos: 'videos',
@@ -808,8 +874,10 @@ function initProjectIPC(mainWindow) {
 
       Object.keys(typeDirs).forEach(key => {
         const dir = path.join(assetsDir, typeDirs[key]);
+        console.log('[getShotAssets] 读取', key, '目录:', dir, '存在:', fs.existsSync(dir));
         if (fs.existsSync(dir)) {
           const files = fs.readdirSync(dir);
+          console.log('[getShotAssets]', key, '文件列表:', files);
           for (const file of files) {
             const ext = path.extname(file).toLowerCase();
             const isImage = key === 'images' && /\.(jpg|jpeg|png|gif|webp|bmp)$/i.test(file);
@@ -832,6 +900,12 @@ function initProjectIPC(mainWindow) {
             }
           }
         }
+      });
+
+      console.log('[getShotAssets] 返回素材:', {
+        images: assets.images.length,
+        videos: assets.videos.length,
+        audios: assets.audios.length
       });
 
       return { success: true, assets: assets };

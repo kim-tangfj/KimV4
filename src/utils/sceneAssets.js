@@ -107,25 +107,42 @@ async function loadShotAssetsList(shotId) {
 
   try {
     const state = window.getState();
-    const project = state.currentProject;
+    // 使用 projectData 或 currentProject 获取项目信息
+    const projectData = state.projectData || state.currentProject;
+    
+    // 获取项目目录（兼容两种数据结构）
+    const projectDir = projectData?.project?.projectDir || projectData?.projectDir || state.currentProject?.project?.projectDir;
 
-    if (!project || !project.projectDir) {
+    if (!projectDir) {
+      console.error('[loadShotAssetsList] 项目目录不存在', { 
+        projectData_projectDir: projectData?.projectDir,
+        currentProject_projectDir: state.currentProject?.projectDir,
+        currentProject_project_projectDir: state.currentProject?.project?.projectDir
+      });
       sceneAssetsPanel.list.innerHTML = '<div class="placeholder-text">请先打开项目</div>';
       return;
     }
 
+    console.log('[loadShotAssetsList] 调用 getShotAssets, projectDir:', projectDir);
+
     // 从文件系统读取片段素材
     const result = await window.electronAPI.getShotAssets({
-      projectDir: project.projectDir,
+      projectDir: projectDir,
       shotId: shotId
     });
 
+    console.log('[loadShotAssetsList] getShotAssets result:', result);
+
     if (!result.success) {
+      console.error('[loadShotAssetsList] 获取素材失败:', result.error);
       sceneAssetsPanel.list.innerHTML = '<div class="placeholder-text">加载失败</div>';
       return;
     }
 
     const assets = result.assets;
+    console.log('[loadShotAssetsList] 获取到的素材:', assets);
+    console.log('[loadShotAssetsList] 图片数量:', assets.images?.length || 0);
+    
     renderSceneAssetsList(assets, 'shot', shotId);
   } catch (error) {
     console.error('[sceneAssets] 加载片段素材失败:', error);
@@ -387,7 +404,20 @@ function initSceneContextMenuEvents() {
       // 如果文件存在，先删除物理文件
       if (fileExists) {
         const state = window.getState();
-        const projectDir = state.projectData?.project?.projectDir || state.currentProject?.projectDir;
+        // 获取项目目录（兼容两种数据结构）
+        const projectData = state.projectData || state.currentProject;
+        const projectDir = projectData?.project?.projectDir || projectData?.projectDir || state.currentProject?.project?.projectDir;
+
+        if (!projectDir) {
+          console.error('[sceneAssets] 删除素材时项目目录不存在', {
+            projectData_projectDir: projectData?.projectDir,
+            currentProject_projectDir: state.currentProject?.projectDir,
+            currentProject_project_projectDir: state.currentProject?.project?.projectDir
+          });
+          window.showToast('删除失败：项目目录不存在');
+          hideSceneContextMenu();
+          return;
+        }
 
         const deleteResult = await window.electronAPI.deleteAsset({
           projectDir: projectDir,
@@ -399,8 +429,8 @@ function initSceneContextMenuEvents() {
         }
       }
 
-      // 删除配置记录
-      const result = await removeSceneAsset(ownerType, ownerId, assetId);
+      // 删除配置记录（传入 assetPath 用于匹配）
+      const result = await removeSceneAsset(ownerType, ownerId, assetId, assetPath);
 
       if (result.success) {
         window.showToast(!fileExists ? '配置记录已删除' : '素材已删除');
@@ -785,6 +815,7 @@ async function handleSceneFilesUpload(files) {
   // 显示结果
   if (successCount > 0) {
     window.showToast(`成功上传 ${successCount}/${files.length} 个素材`);
+    console.log('[handleSceneFilesUpload] 上传完成，开始刷新素材列表，shotId:', shotId);
     loadShotAssetsList(shotId);
   } else {
     window.showToast('上传失败');
@@ -985,8 +1016,9 @@ async function addSceneAsset(ownerType, ownerId, asset) {
  * @param {string} ownerType - 所有者类型
  * @param {string} ownerId - 所有者 ID
  * @param {string} assetId - 素材 ID
+ * @param {string} assetPath - 素材路径（可选，用于匹配）
  */
-async function removeSceneAsset(ownerType, ownerId, assetId) {
+async function removeSceneAsset(ownerType, ownerId, assetId, assetPath) {
   try {
     const state = window.getState();
     // 使用 projectData 获取最新的项目数据
@@ -997,32 +1029,68 @@ async function removeSceneAsset(ownerType, ownerId, assetId) {
     // 如果是删除片段素材，先检查是否被镜头分镜图片引用
     if (ownerType === 'shot') {
       const shot = projectData.shots?.find(s => s.id === ownerId);
-      if (!shot || !shot.assets) return { success: false, error: '片段不存在' };
+      if (!shot || !shot.assets) {
+        console.log('[removeSceneAsset] 片段不存在或没有 assets，但从文件系统删除');
+      }
 
-      // 查找要删除的素材
+      // 查找要删除的素材（优先使用 path 匹配，其次使用 id）
       let assetToDelete = null;
-      for (const type of ['images', 'videos', 'audios']) {
-        const asset = shot.assets[type].find(a => a.id === assetId);
-        if (asset) {
-          assetToDelete = asset;
-          break;
+      if (assetPath) {
+        // 使用 path 匹配
+        if (shot && shot.assets) {
+          for (const type of ['images', 'videos', 'audios']) {
+            const asset = shot.assets[type].find(a => a.path === assetPath);
+            if (asset) {
+              assetToDelete = asset;
+              console.log('[removeSceneAsset] 通过 path 找到要删除的素材:', asset.name);
+              break;
+            }
+          }
+        }
+      }
+      
+      // 如果 path 没找到，使用 id 匹配
+      if (!assetToDelete && shot && shot.assets) {
+        for (const type of ['images', 'videos', 'audios']) {
+          const asset = shot.assets[type].find(a => a.id === assetId);
+          if (asset) {
+            assetToDelete = asset;
+            console.log('[removeSceneAsset] 通过 id 找到要删除的素材:', asset.name);
+            break;
+          }
         }
       }
 
       // 如果找到素材，检查是否被镜头分镜图片引用
       if (assetToDelete) {
+        console.log('[removeSceneAsset] 开始检查分镜图片引用，path:', assetToDelete.path);
         const affectedScenes = clearStoryboardImageReferencesForAsset(projectData, assetToDelete.path);
         if (affectedScenes.length > 0) {
           console.log('[removeSceneAsset] 清空了', affectedScenes.length, '个镜头的分镜图片引用');
+        } else {
+          console.log('[removeSceneAsset] 没有镜头引用该素材');
         }
-      }
-
-      // 从所有类型中查找并删除
-      for (const type of ['images', 'videos', 'audios']) {
-        const index = shot.assets[type].findIndex(a => a.id === assetId);
-        if (index !== -1) {
-          shot.assets[type].splice(index, 1);
-          break;
+        
+        // 从配置中删除
+        if (shot && shot.assets) {
+          for (const type of ['images', 'videos', 'audios']) {
+            const index = shot.assets[type].findIndex(a => a.path === assetToDelete.path);
+            if (index !== -1) {
+              shot.assets[type].splice(index, 1);
+              console.log('[removeSceneAsset] 从配置中删除素材:', assetToDelete.name);
+              break;
+            }
+          }
+        }
+      } else {
+        // 配置中没找到，但从文件系统删除（可能是分镜图片直接复制的文件）
+        console.log('[removeSceneAsset] 配置中未找到素材，但会继续删除文件，assetPath:', assetPath);
+        // 检查分镜图片引用
+        if (assetPath) {
+          const affectedScenes = clearStoryboardImageReferencesForAsset(projectData, assetPath);
+          if (affectedScenes.length > 0) {
+            console.log('[removeSceneAsset] 清空了', affectedScenes.length, '个镜头的分镜图片引用');
+          }
         }
       }
 
@@ -1062,16 +1130,16 @@ async function removeSceneAsset(ownerType, ownerId, assetId) {
       }
     }
 
-    // 保存项目 - 使用 projectData
-    const project = state.currentProject;
-    if (!project || !project.projectDir) {
+    // 保存项目 - 从 projectData 获取项目目录
+    const projectDir = projectData.project?.projectDir || projectData.projectDir || state.currentProject?.project?.projectDir;
+    if (!projectDir) {
       return { success: false, error: '项目目录不存在' };
     }
 
-    await window.electronAPI.saveProject(project.projectDir, projectData);
+    await window.electronAPI.saveProject(projectDir, projectData);
 
     // 重新加载项目数据以确保同步
-    const loadResult = await window.electronAPI.loadProject(project.projectDir);
+    const loadResult = await window.electronAPI.loadProject(projectDir);
     if (loadResult.success && loadResult.projectJson) {
       // 更新 state 中的项目对象
       window.updateState('projectData', loadResult.projectJson);
@@ -1079,7 +1147,7 @@ async function removeSceneAsset(ownerType, ownerId, assetId) {
 
       // 更新 projects 列表
       const projects = state.projects || [];
-      const index = projects.findIndex(p => p.projectDir === project.projectDir);
+      const index = projects.findIndex(p => p.projectDir === projectDir);
       if (index !== -1) {
         projects[index] = { ...projects[index], ...loadResult.projectJson.project };
         window.updateState('projects', projects);
@@ -1105,13 +1173,18 @@ async function removeSceneAsset(ownerType, ownerId, assetId) {
 
       // 刷新当前镜头的属性面板（如果有）
       const currentScene = state.currentScene;
-      if (currentScene && window.showSceneProperties) {
+      if (currentScene) {
         // 重新查找最新的 scene 对象
         const updatedScene = loadResult.projectJson.shots
           .flatMap(s => s.scenes || [])
           .find(s => s.id === currentScene.id);
         if (updatedScene) {
-          window.showSceneProperties(updatedScene);
+          // 先更新 state.currentScene
+          window.updateState('currentScene', updatedScene);
+          // 再刷新属性面板
+          if (window.showSceneProperties) {
+            window.showSceneProperties(updatedScene);
+          }
         }
       }
     }
@@ -1141,9 +1214,13 @@ function clearStoryboardImageReferencesForAsset(projectData, assetPath) {
   const state = window.getState();
   const affectedScenes = [];
 
+  console.log('[clearStoryboardImageReferencesForAsset] 开始检查引用，assetPath:', assetPath);
+  console.log('[clearStoryboardImageReferencesForAsset] projectData.shots:', projectData.shots?.length);
+
   // 遍历所有片段和镜头
   for (const shot of projectData.shots || []) {
     for (const scene of shot.scenes || []) {
+      console.log('[clearStoryboardImageReferencesForAsset] 检查镜头:', scene.name, 'storyboardImage:', scene.storyboardImage?.path);
       // 检查分镜图片是否引用该路径
       if (scene.storyboardImage && scene.storyboardImage.path === assetPath) {
         // 清空分镜图片引用
@@ -1153,6 +1230,8 @@ function clearStoryboardImageReferencesForAsset(projectData, assetPath) {
       }
     }
   }
+
+  console.log('[clearStoryboardImageReferencesForAsset] 受影响的镜头数量:', affectedScenes.length);
 
   // 同步更新 currentProject
   if (state.currentProject && state.currentProject.shots) {

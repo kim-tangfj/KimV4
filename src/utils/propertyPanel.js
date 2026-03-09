@@ -1009,16 +1009,23 @@ async function getFileLocalPath(file) {
  */
 async function uploadStoryboardImage(filePath, fileName, shotId, sceneId, source = 'project') {
   const state = window.getState();
-  const project = state.currentProject;
+  // 获取项目目录（兼容两种数据结构）
+  const projectData = state.projectData || state.currentProject;
+  const projectDir = projectData?.project?.projectDir || projectData?.projectDir || state.currentProject?.project?.projectDir;
 
-  if (!project || !project.projectDir) {
+  if (!projectDir) {
+    console.error('[uploadStoryboardImage] 项目目录不存在', {
+      projectData_projectDir: projectData?.projectDir,
+      currentProject_projectDir: state.currentProject?.projectDir,
+      currentProject_project_projectDir: state.currentProject?.project?.projectDir
+    });
     window.showToast('项目未加载');
     return;
   }
 
   try {
     const result = await window.electronAPI.uploadStoryboardImage({
-      projectDir: project.projectDir,
+      projectDir: projectDir,
       filePath: filePath,
       shotId: shotId,
       sceneId: sceneId,
@@ -1052,10 +1059,9 @@ async function uploadStoryboardImage(filePath, fileName, shotId, sceneId, source
       if (window.loadShotAssetsList && shotId) {
         window.loadShotAssetsList(shotId);
       }
-      // 刷新项目素材库
-      const project = currentState.currentProject;
-      if (window.loadAssetsList && project?.id) {
-        window.loadAssetsList(project.id);
+      // 刷新项目素材库（如果已打开）
+      if (window.refreshProjectAssetsList) {
+        window.refreshProjectAssetsList();
       }
     } else {
       window.showToast('上传失败：' + result.error);
