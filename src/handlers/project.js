@@ -603,8 +603,8 @@ function initProjectIPC(mainWindow) {
         return { success: false, error: '源文件不存在：' + filePath };
       }
 
-      // 分镜图片存储目录：assets/shots/{shotId}/images/storyboard/
-      const storyboardDir = path.join(projectDir, 'assets', 'shots', shotId, 'images', 'storyboard');
+      // 分镜图片存储目录：assets/shots/{shotId}/images/
+      const storyboardDir = path.join(projectDir, 'assets', 'shots', shotId, 'images');
       if (!fs.existsSync(storyboardDir)) {
         fs.mkdirSync(storyboardDir, { recursive: true });
         console.log('[uploadStoryboardImage] 创建分镜图片目录:', storyboardDir);
