@@ -1028,10 +1028,18 @@ async function uploadStoryboardImage(filePath, fileName, shotId, sceneId, source
       updateSceneStoryboardImage(sceneId, result.asset);
       // 刷新预览
       renderStoryboardPreview(result.asset);
-      // 刷新镜头列表缩略图
-      const state = window.getState();
-      if (window.renderSceneList && state.currentShot && state.currentShot.scenes) {
-        window.renderSceneList(state.currentShot.scenes || []);
+      // 刷新镜头列表缩略图，保持选中状态
+      const currentState = window.getState();
+      const currentSceneId = currentState.currentScene?.id;
+      if (window.renderSceneList && currentState.currentShot && currentState.currentShot.scenes) {
+        window.renderSceneList(currentState.currentShot.scenes || []);
+        // 恢复选中状态
+        if (currentSceneId) {
+          const sceneItem = document.querySelector(`#scene-list .list-item[data-id="${currentSceneId}"]`);
+          if (sceneItem) {
+            sceneItem.classList.add('selected');
+          }
+        }
       }
     } else {
       window.showToast('上传失败：' + result.error);
@@ -1166,9 +1174,14 @@ async function deleteStoryboardImage() {
     // 刷新预览
     renderStoryboardPreview(null);
 
-    // 刷新镜头列表
+    // 刷新镜头列表，保持选中状态
     if (window.renderSceneList && targetShot && targetShot.scenes) {
       window.renderSceneList(targetShot.scenes);
+      // 恢复选中状态
+      const sceneItem = document.querySelector(`#scene-list .list-item[data-id="${currentScene.id}"]`);
+      if (sceneItem) {
+        sceneItem.classList.add('selected');
+      }
     }
 
     window.showToast('分镜图片已删除');
