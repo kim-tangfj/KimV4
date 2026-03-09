@@ -4,10 +4,13 @@
 
 **面向视频创作者和 AI 内容生成师的多级分镜管理与提示词自动化生成工具**
 
-[![Version](https://img.shields.io/badge/version-1.0.0-blue.svg)](https://github.com/yourusername/kim-storyboard-assistant/releases)
+[![Version](https://img.shields.io/github/v/release/KimV4/kim-storyboard-assistant)](https://github.com/KimV4/kim-storyboard-assistant/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/KimV4/kim-storyboard-assistant/total)](https://github.com/KimV4/kim-storyboard-assistant/releases)
 [![Electron](https://img.shields.io/badge/electron-40.6.1-blue.svg)](https://www.electronjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/yourusername/kim-storyboard-assistant/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/KimV4/kim-storyboard-assistant/releases)
+
+**📥 [立即下载最新版本](https://github.com/KimV4/kim-storyboard-assistant/releases/latest)**
 
 </div>
 
@@ -48,17 +51,32 @@
 
 ### 方式一：下载安装包（推荐）
 
-1. 访问 [GitHub Releases](https://github.com/yourusername/kim-storyboard-assistant/releases) 页面
-2. 下载最新版本的安装程序 (`Kim 分镜助手-Setup-1.0.0.exe`)
-3. 双击运行安装程序
-4. 按照安装向导完成安装
-5. 从桌面快捷方式或开始菜单启动应用
+**步骤：**
+
+1. **访问 Releases 页面**
+   - 打开 https://github.com/KimV4/kim-storyboard-assistant/releases
+   - 或点击顶部的 "📥 立即下载最新版本" 链接
+
+2. **下载安装程序**
+   - 找到最新版本（如 `v1.0.0`）
+   - 在 "Assets" 区域下载 `Kim 分镜助手 Setup 1.0.0.exe`
+   - 等待下载完成（约 100MB）
+
+3. **运行安装程序**
+   - 双击下载的 `.exe` 文件
+   - 选择安装目录（或使用默认目录）
+   - 点击 "安装" 按钮
+   - 安装完成后点击 "完成"
+
+4. **启动应用**
+   - 从桌面快捷方式启动
+   - 或从开始菜单 → "Kim 分镜助手" 启动
 
 ### 方式二：源码运行（开发者）
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/yourusername/kim-storyboard-assistant.git
+git clone https://github.com/KimV4/kim-storyboard-assistant.git
 cd kim-storyboard-assistant
 
 # 2. 安装依赖
@@ -70,6 +88,51 @@ npm start
 # 开发模式（自动打开 DevTools）
 npm run dev
 ```
+
+---
+
+## 🔄 自动更新
+
+**应用内置自动更新功能！**
+
+### 自动检查更新
+
+1. **启动时自动检查**
+   - 应用启动后 5 秒自动检查最新版本
+   - 如有新版本，弹窗提示
+
+2. **手动检查更新**
+   - 打开应用 → 菜单 → 设置
+   - 滚动到 "应用更新" 区域
+   - 点击 "检查更新" 按钮
+
+### 更新流程
+
+```
+发现新版本 → 弹窗询问 → 确认下载 → 下载完成 → 确认重启安装
+```
+
+**详细步骤：**
+
+1. **发现新版本**
+   - 应用检测到 GitHub 上有新版本
+   - 弹窗显示版本号和更新说明
+
+2. **下载更新**
+   - 点击 "下载更新" 按钮
+   - 后台自动下载安装包
+   - 显示下载进度
+
+3. **安装更新**
+   - 下载完成后弹窗提示
+   - 点击 "立即重启安装"
+   - 应用自动重启并完成更新
+
+### 关闭自动更新
+
+如不需要自动更新：
+- 设置 → 应用更新 → 忽略此版本
+- 或不再点击 "下载更新"
 
 ---
 
