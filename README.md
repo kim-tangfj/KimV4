@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/kim-tangfj/KimV4/releases)
 
-**📥 [立即下载最新版本](https://github.com/KimV4/releases/latest)**
+**📥 [立即下载最新版本](https://github.com/kim-tangfj/KimV4/releases/latest)**
 
 </div>
 
