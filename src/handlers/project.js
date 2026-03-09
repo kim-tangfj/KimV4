@@ -55,6 +55,20 @@ function initProjectIPC(mainWindow) {
     return fs.existsSync(filePath);
   });
 
+  ipcMain.handle('fs:deleteFile', async (event, filePath) => {
+    return withErrorHandler(async () => {
+      validateParams({ filePath }, ['filePath']);
+
+      if (!fs.existsSync(filePath)) {
+        return { success: false, error: '文件不存在' };
+      }
+
+      fs.unlinkSync(filePath);
+      console.log(`[fs:deleteFile] 已删除：${filePath}`);
+      return { success: true };
+    }, '删除文件');
+  });
+
   // 获取文件真实路径（用于 sandbox 模式下的 File 对象）
   ipcMain.handle('fs:getFilePaths', async (event, files) => {
     // 在 sandbox 模式下，File 对象没有 path 属性

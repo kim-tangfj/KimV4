@@ -1121,22 +1121,58 @@ function renderStoryboardPreview(asset) {
 /**
  * 删除分镜图片
  */
-function deleteStoryboardImage() {
+async function deleteStoryboardImage() {
   const state = window.getState();
   const currentScene = state.currentScene;
-  
-  if (!currentScene) return;
-  
-  currentScene.storyboardImage = null;
-  
-  // 保存项目
+  const currentShot = state.currentShot;
+  const project = state.currentProject;
+
+  if (!currentScene || !currentShot || !project) return;
+
+  // 获取旧的分镜图片
+  const oldStoryboardImage = currentScene.storyboardImage;
+
+  // 先删除文件
+  if (oldStoryboardImage && oldStoryboardImage.path) {
+    try {
+      await window.electronAPI.deleteFile(oldStoryboardImage.path);
+    } catch (error) {
+      console.error('[deleteStoryboardImage] 删除文件失败:', error);
+    }
+  }
+
+  // 从项目数据中清除引用
   const projectData = state.projectData;
-  saveProjectData(projectData);
-  
-  // 刷新预览
-  renderStoryboardPreview(null);
-  
-  window.showToast('分镜图片已删除');
+  if (projectData && projectData.shots) {
+    // 查找并更新镜头数据
+    let targetShot = null;
+    for (const shot of projectData.shots) {
+      if (shot.id === currentShot.id) {
+        const scene = shot.scenes?.find(s => s.id === currentScene.id);
+        if (scene) {
+          scene.storyboardImage = null;
+          targetShot = shot;
+          break;
+        }
+      }
+    }
+
+    // 保存项目
+    await saveProjectData(projectData);
+
+    // 同步更新 currentScene
+    currentScene.storyboardImage = null;
+
+    // 刷新预览
+    renderStoryboardPreview(null);
+
+    // 刷新镜头列表
+    if (window.renderSceneList && targetShot && targetShot.scenes) {
+      window.renderSceneList(targetShot.scenes);
+    }
+
+    window.showToast('分镜图片已删除');
+  }
 }
 
 /**
