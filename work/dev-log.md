@@ -4,6 +4,24 @@
 
 ---
 
+## 2026-03-09 - 分镜图片 shotId 为空修复
+
+### 完成内容
+- 修复分镜图片上传时 `shotId` 为空的问题
+- 原因：`scene.shotId` 属性不存在，应从 `state.currentShot.id` 获取
+- 修复后文件正确复制到 `assets/shots/{shotId}/images/storyboard/` 目录
+
+### 修改文件
+| 文件 | 变更说明 |
+|------|----------|
+| `src/utils/propertyPanel.js` | `showSceneProperties` 函数中从 `state.currentShot.id` 获取 `shotId` |
+| `src/handlers/project.js` | 添加调试日志，便于排查问题 |
+
+### Git 提交
+- `116fc53` fix: 修复分镜图片上传时 shotId 为空的问题
+
+---
+
 ## 2026-03-09 - 分镜图片上传/删除 3 个问题修复
 
 ### 完成内容
