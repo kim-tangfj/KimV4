@@ -1167,18 +1167,6 @@ async function deleteStoryboardImage() {
 
   if (!currentScene || !currentShot || !project) return;
 
-  // 获取旧的分镜图片
-  const oldStoryboardImage = currentScene.storyboardImage;
-
-  // 先删除文件
-  if (oldStoryboardImage && oldStoryboardImage.path) {
-    try {
-      await window.electronAPI.deleteFile(oldStoryboardImage.path);
-    } catch (error) {
-      console.error('[deleteStoryboardImage] 删除文件失败:', error);
-    }
-  }
-
   // 从项目数据中清除引用
   const projectData = state.projectData;
   if (projectData && projectData.shots) {
@@ -1188,6 +1176,7 @@ async function deleteStoryboardImage() {
       if (shot.id === currentShot.id) {
         const scene = shot.scenes?.find(s => s.id === currentScene.id);
         if (scene) {
+          // 只清空分镜图片引用，不删除物理文件（文件保留在片段素材库中）
           scene.storyboardImage = null;
           targetShot = shot;
           break;
@@ -1198,7 +1187,7 @@ async function deleteStoryboardImage() {
     // 保存项目
     await saveProjectData(projectData);
 
-    // 同步更新 currentShot.scenes 引用（关键修复：确保引用最新数据）
+    // 同步更新 currentShot.scenes 引用
     if (targetShot && currentShot) {
       currentShot.scenes = targetShot.scenes;
     }
@@ -1219,17 +1208,7 @@ async function deleteStoryboardImage() {
       }
     }
 
-    // 刷新片段素材库
-    if (window.loadShotAssetsList && currentShot.id) {
-      window.loadShotAssetsList(currentShot.id);
-    }
-
-    // 刷新项目素材库
-    if (window.loadAssetsList && project.id) {
-      window.loadAssetsList(project.id);
-    }
-
-    window.showToast('分镜图片已删除');
+    window.showToast('分镜图片已清除');
   }
 }
 
