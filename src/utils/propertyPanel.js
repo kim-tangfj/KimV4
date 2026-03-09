@@ -1048,6 +1048,15 @@ async function uploadStoryboardImage(filePath, fileName, shotId, sceneId, source
           }
         }
       }
+      // 刷新片段素材库
+      if (window.loadShotAssetsList && shotId) {
+        window.loadShotAssetsList(shotId);
+      }
+      // 刷新项目素材库
+      const project = currentState.currentProject;
+      if (window.loadAssetsList && project?.id) {
+        window.loadAssetsList(project.id);
+      }
     } else {
       window.showToast('上传失败：' + result.error);
     }
