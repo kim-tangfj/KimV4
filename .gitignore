@@ -24,3 +24,12 @@ Thumbs.db
 # 临时文件
 *.tmp
 *.bak
+
+# 敏感信息
+.env
+.npmrc
+*.key
+*.pem
+
+# electron-builder 缓存
+.cache/

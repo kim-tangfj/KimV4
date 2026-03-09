@@ -1,0 +1,71 @@
+# Kim 多级分镜提示词助手 - 自动构建和发布工作流
+# 当推送 v 开头的标签时（如 v1.0.0），自动构建 Windows 安装包并发布到 GitHub Releases
+
+name: Build and Release
+
+on:
+  push:
+    tags:
+      - 'v*'  # 匹配 v 开头的标签，如 v1.0.0, v1.0.1, v2.0.0-beta.1 等
+
+jobs:
+  build:
+    runs-on: windows-latest  # 使用 Windows 最新版本的 runner
+    
+    steps:
+      # 步骤 1: 检出代码
+      - name: 检出代码
+        uses: actions/checkout@v4
+      
+      # 步骤 2: 设置 Node.js 环境
+      - name: 设置 Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '18'  # 使用 Node.js 18
+          cache: 'npm'  # 启用 npm 缓存
+      
+      # 步骤 3: 安装依赖
+      - name: 安装依赖
+        run: npm ci  # 使用 ci 确保一致的依赖版本
+      
+      # 步骤 4: 构建 Windows 安装包
+      - name: 构建 Windows 安装包
+        run: npm run dist:win
+        env:
+          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # 使用 GitHub Secret 中的 Token
+      
+      # 步骤 5: 创建 GitHub Release 并上传安装包
+      - name: 创建 GitHub Release
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/*.exe  # 上传所有 .exe 文件
+          draft: true  # 创建草稿发布，可手动审核后发布
+          generate_release_notes: true  # 自动生成发布说明
+          fail_on_unmatched_files: true  # 如果找不到文件则失败
+        env:
+          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}  # 使用 GitHub Secret 中的 Token
+  
+  # 可选：同时构建 macOS 版本（如果你有 Mac 用户）
+  # build-mac:
+  #   runs-on: macos-latest
+  #   steps:
+  #     - uses: actions/checkout@v4
+  #     - name: Setup Node.js
+  #       uses: actions/setup-node@v4
+  #       with:
+  #         node-version: '18'
+  #         cache: 'npm'
+  #     - name: Install dependencies
+  #       run: npm ci
+  #     - name: Build macOS app
+  #       run: npm run dist:mac
+  #       env:
+  #         GH_TOKEN: ${{ secrets.GH_TOKEN }}
+  #     - name: Release
+  #       uses: softprops/action-gh-release@v1
+  #       with:
+  #         files: dist/*.dmg
+  #         draft: true
+  #         generate_release_notes: true
+  #       env:
+  #         GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}
