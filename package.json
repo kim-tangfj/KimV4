@@ -61,8 +61,8 @@
     },
     "publish": {
       "provider": "github",
-      "owner": "KimV4",
-      "repo": "kim-storyboard-assistant",
+      "owner": "kim-tangfj",
+      "repo": "KimV4",
       "releaseType": "draft"
     }
   }
