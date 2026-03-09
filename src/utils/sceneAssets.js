@@ -864,6 +864,9 @@ async function addSceneAssetToShot(shotId, asset) {
       window.updateState('projectData', loadResult.projectJson);
       console.log('[addSceneAssetToShot] 项目数据已同步');
 
+      // 刷新片段素材库
+      loadShotAssetsList(shotId);
+
       // 通知项目素材库刷新（如果已打开）
       if (window.refreshProjectAssetsList) {
         window.refreshProjectAssetsList();

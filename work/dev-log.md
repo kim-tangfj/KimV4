@@ -4,6 +4,40 @@
 
 ---
 
+## 2026-03-09 - 片段素材库上传/删除后刷新逻辑修复
+
+### 问题描述
+1. **上传问题**：从片段素材库上传素材后，片段素材库列表没有刷新，需要手动刷新才能看到新上传的素材
+2. **删除问题**：从片段素材库删除素材后，项目素材库没有刷新（如果打开的话）
+3. **项目素材库刷新**：`refreshProjectAssetsList` 函数依赖 `currentProjectId`，如果项目素材库未打开则无法刷新
+
+### 修复方案
+
+#### 1. 片段素材库上传后刷新
+修改 `sceneAssets.js` 中的 `addSceneAssetToShot` 函数：
+- 保存项目并重新加载后，添加 `loadShotAssetsList(shotId)` 调用
+- 确保片段素材库列表立即刷新
+
+#### 2. 项目素材库刷新逻辑优化
+修改 `projectAssets.js` 中的 `refreshProjectAssetsList` 函数：
+- 优先使用 `currentProjectId`（项目素材库打开时）
+- 如果 `currentProjectId` 不存在，从 `state.currentProject` 获取项目目录
+- 通过项目目录从 `state.projects` 中查找对应的 `project.id`
+- 使用 `project.id` 调用 `loadAssetsList`
+
+### 修改文件
+| 文件 | 变更说明 |
+|------|----------|
+| `src/utils/sceneAssets.js` | `addSceneAssetToShot` 函数增加 `loadShotAssetsList(shotId)` 调用 |
+| `src/utils/projectAssets.js` | `refreshProjectAssetsList` 函数优化，支持项目素材库未打开时刷新 |
+
+### 测试验证
+- [x] 片段素材库上传素材后，列表立即刷新
+- [x] 片段素材库删除素材后，项目素材库（如果打开）同步刷新
+- [x] 项目素材库刷新不再依赖侧边栏是否打开
+
+---
+
 ## 2026-03-09 - 素材删除时检查镜头分镜图片引用（修复 UI 刷新）
 
 ### 问题描述

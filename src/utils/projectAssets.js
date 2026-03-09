@@ -613,10 +613,28 @@ async function loadAssetsList(projectId) {
  * 刷新项目素材列表（由外部调用，如片段素材上传成功后）
  */
 function refreshProjectAssetsList() {
+  // 优先使用 currentProjectId，如果没有则从 state 中获取
   if (currentProjectId) {
-    console.log('[refreshProjectAssetsList] 刷新项目素材列表');
+    console.log('[refreshProjectAssetsList] 刷新项目素材列表，currentProjectId:', currentProjectId);
     loadAssetsList(currentProjectId);
+    return;
   }
+  
+  // 从 state 中获取当前项目目录，查找对应的项目 ID
+  const state = window.getState();
+  const currentProject = state.currentProject || state.projectData;
+  const projectDir = currentProject?.project?.projectDir || currentProject?.projectDir;
+  
+  if (projectDir) {
+    const project = state.projects?.find(p => p.projectDir === projectDir);
+    if (project && project.id) {
+      console.log('[refreshProjectAssetsList] 刷新项目素材列表，projectId:', project.id);
+      loadAssetsList(project.id);
+      return;
+    }
+  }
+  
+  console.warn('[refreshProjectAssetsList] 没有项目 ID，跳过刷新');
 }
 
 // 导出刷新函数到 window 对象
