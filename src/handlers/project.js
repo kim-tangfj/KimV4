@@ -588,7 +588,7 @@ function initProjectIPC(mainWindow) {
     try {
       validateParams(params, ['projectDir', 'filePath', 'shotId', 'sceneId', 'fileName']);
 
-      const { projectDir, filePath, shotId, sceneId, fileName } = params;
+      const { projectDir, filePath, shotId, sceneId, fileName, source } = params;
 
       // 检查源文件是否存在
       if (!fs.existsSync(filePath)) {
@@ -602,16 +602,11 @@ function initProjectIPC(mainWindow) {
       }
 
       // 目标文件路径
-      let targetPath = path.join(storyboardDir, fileName);
+      const ext = path.extname(fileName);
+      const nameWithoutExt = path.basename(fileName, ext);
+      let targetPath = path.join(storyboardDir, `${nameWithoutExt}_${Date.now()}${ext}`);
 
-      // 如果文件已存在，添加时间戳
-      if (fs.existsSync(targetPath)) {
-        const ext = path.extname(fileName);
-        const nameWithoutExt = path.basename(fileName, ext);
-        targetPath = path.join(storyboardDir, `${nameWithoutExt}_${Date.now()}${ext}`);
-      }
-
-      // 复制文件
+      // 复制文件（无论素材来源，都复制到片段素材库）
       fs.copyFileSync(filePath, targetPath);
 
       // 返回成功

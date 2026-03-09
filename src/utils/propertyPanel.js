@@ -1025,14 +1025,17 @@ async function uploadStoryboardImage(filePath, fileName, shotId, sceneId, source
     if (result.success) {
       window.showToast('分镜图片已上传');
       // 更新镜头数据
-      updateSceneStoryboardImage(sceneId, result.asset);
+      await updateSceneStoryboardImage(sceneId, result.asset);
       // 刷新预览
       renderStoryboardPreview(result.asset);
       // 刷新镜头列表缩略图，保持选中状态
       const currentState = window.getState();
       const currentSceneId = currentState.currentScene?.id;
-      if (window.renderSceneList && currentState.currentShot && currentState.currentShot.scenes) {
-        window.renderSceneList(currentState.currentShot.scenes || []);
+      // 关键修复：从 projectData 获取最新的 scenes 数据
+      const latestProjectData = currentState.projectData;
+      const latestShot = latestProjectData?.shots?.find(s => s.id === currentState.currentShot?.id);
+      if (window.renderSceneList && latestShot && latestShot.scenes) {
+        window.renderSceneList(latestShot.scenes);
         // 恢复选中状态
         if (currentSceneId) {
           const sceneItem = document.querySelector(`#scene-list .list-item[data-id="${currentSceneId}"]`);
@@ -1053,23 +1056,37 @@ async function uploadStoryboardImage(filePath, fileName, shotId, sceneId, source
 /**
  * 更新镜头分镜图片数据
  */
-function updateSceneStoryboardImage(sceneId, asset) {
+async function updateSceneStoryboardImage(sceneId, asset) {
   const state = window.getState();
   const projectData = state.projectData;
-  
+  const currentShot = state.currentShot;
+
   if (!projectData || !projectData.shots) return;
-  
-  // 查找镜头
+
+  // 查找并更新镜头
+  let targetShot = null;
   for (const shot of projectData.shots) {
-    const scene = shot.scenes?.find(s => s.id === sceneId);
-    if (scene) {
-      scene.storyboardImage = asset;
-      break;
+    if (shot.id === currentShot?.id) {
+      const scene = shot.scenes?.find(s => s.id === sceneId);
+      if (scene) {
+        scene.storyboardImage = asset;
+        targetShot = shot;
+        break;
+      }
     }
   }
-  
+
   // 保存项目
-  saveProjectData(projectData);
+  await saveProjectData(projectData);
+
+  // 同步更新 currentShot.scenes 引用
+  if (targetShot && currentShot) {
+    currentShot.scenes = targetShot.scenes;
+    // 同步更新 currentScene
+    if (state.currentScene && state.currentScene.id === sceneId) {
+      state.currentScene.storyboardImage = asset;
+    }
+  }
 }
 
 /**
@@ -1168,13 +1185,18 @@ async function deleteStoryboardImage() {
     // 保存项目
     await saveProjectData(projectData);
 
+    // 同步更新 currentShot.scenes 引用（关键修复：确保引用最新数据）
+    if (targetShot && currentShot) {
+      currentShot.scenes = targetShot.scenes;
+    }
+
     // 同步更新 currentScene
     currentScene.storyboardImage = null;
 
     // 刷新预览
     renderStoryboardPreview(null);
 
-    // 刷新镜头列表，保持选中状态
+    // 刷新镜头列表，使用最新的 scenes 数据
     if (window.renderSceneList && targetShot && targetShot.scenes) {
       window.renderSceneList(targetShot.scenes);
       // 恢复选中状态
