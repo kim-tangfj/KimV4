@@ -1063,6 +1063,52 @@ async function removeSceneAsset(ownerType, ownerId, assetId) {
 
     await window.electronAPI.saveProject(project.projectDir, projectData);
 
+    // 重新加载项目数据以确保同步
+    const loadResult = await window.electronAPI.loadProject(project.projectDir);
+    if (loadResult.success && loadResult.projectJson) {
+      // 更新 state 中的项目对象
+      window.updateState('projectData', loadResult.projectJson);
+      window.updateState('currentProject', loadResult.projectJson);
+
+      // 更新 projects 列表
+      const projects = state.projects || [];
+      const index = projects.findIndex(p => p.projectDir === project.projectDir);
+      if (index !== -1) {
+        projects[index] = { ...projects[index], ...loadResult.projectJson.project };
+        window.updateState('projects', projects);
+      }
+
+      // 更新 currentShot（如果已选择片段）
+      const currentShotId = state.currentShot?.id;
+      if (currentShotId) {
+        const updatedShot = loadResult.projectJson.shots?.find(s => s.id === currentShotId);
+        if (updatedShot) {
+          window.updateState('currentShot', updatedShot);
+          // 刷新镜头列表
+          if (window.renderSceneList) {
+            window.renderSceneList(updatedShot.scenes || []);
+          }
+        }
+      }
+
+      // 刷新片段列表
+      if (window.renderShotList) {
+        window.renderShotList(loadResult.projectJson.shots || []);
+      }
+
+      // 刷新当前镜头的属性面板（如果有）
+      const currentScene = state.currentScene;
+      if (currentScene && window.showSceneProperties) {
+        // 重新查找最新的 scene 对象
+        const updatedScene = loadResult.projectJson.shots
+          .flatMap(s => s.scenes || [])
+          .find(s => s.id === currentScene.id);
+        if (updatedScene) {
+          window.showSceneProperties(updatedScene);
+        }
+      }
+    }
+
     // 刷新素材列表
     if (ownerType === 'shot') {
       loadShotAssetsList(ownerId);
@@ -1109,19 +1155,6 @@ function clearStoryboardImageReferencesForAsset(projectData, assetPath) {
           scene.storyboardImage = null;
         }
       }
-    }
-  }
-
-  // 刷新镜头列表
-  if (window.renderShotList && affectedScenes.length > 0) {
-    window.renderShotList();
-  }
-
-  // 刷新属性面板
-  if (window.renderSceneProperties && state.currentScene) {
-    const currentScene = state.currentScene;
-    if (affectedScenes.some(s => s.sceneId === currentScene.id)) {
-      window.renderSceneProperties(currentScene);
     }
   }
 

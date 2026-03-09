@@ -4,6 +4,42 @@
 
 ---
 
+## 2026-03-09 - 素材删除时检查镜头分镜图片引用（修复 UI 刷新）
+
+### 问题描述
+从项目素材库或片段素材库删除素材时，如果有镜头的分镜图片（`scene.storyboardImage`）正在使用该素材，删除后会导致镜头分镜图片引用失效，显示破损图片。
+
+### 第一次修复（不完整）
+- 修改 `projectAssets.js` 和 `sceneAssets.js`，增加检查引用并清空逻辑
+- **问题**：删除素材后，UI 没有正确刷新，镜头列表和属性面板仍显示旧的缩略图
+
+### 根本原因分析
+1. `removeSceneAsset` 函数保存项目后，虽然调用了 `clearStoryboardImageReferencesForAsset` 清空了 `storyboardImage`
+2. 但是**没有更新 `state.currentShot.scenes`**，导致 `renderSceneList` 使用的是旧的 scenes 数据
+3. 镜头列表缩略图和属性面板都没有同步更新
+
+### 最终修复方案
+修改 `sceneAssets.js` 中的 `removeSceneAsset` 函数：
+1. 保存项目后，重新加载项目数据
+2. 更新 `state.currentShot` 为最新的片段对象（包含更新后的 scenes）
+3. 调用 `window.renderSceneList(updatedShot.scenes || [])` 刷新镜头列表
+4. 调用 `window.renderShotList()` 刷新片段列表
+5. 调用 `window.showSceneProperties(updatedScene)` 刷新属性面板
+
+### 修改文件
+| 文件 | 变更说明 |
+|------|----------|
+| `src/utils/sceneAssets.js` | `removeSceneAsset` 函数增加完整的 UI 刷新逻辑：更新 currentShot、渲染镜头列表、渲染属性面板 |
+| `src/utils/projectAssets.js` | `clearStoryboardImageReferences` 函数保持不变 |
+
+### 测试验证
+- [x] 从片段素材库删除被分镜图片引用的素材
+- [x] 删除后镜头列表缩略图立即消失
+- [x] 删除后属性面板分镜图片预览立即清空
+- [x] 项目数据正确保存
+
+---
+
 ## 2026-03-09 - 素材删除时检查镜头分镜图片引用
 
 ### 问题描述
