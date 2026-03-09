@@ -107,29 +107,25 @@ async function loadShotAssetsList(shotId) {
 
   try {
     const state = window.getState();
-    // 从 projectData 读取完整项目数据（包含 shots）
-    const projectData = state.projectData;
+    const project = state.currentProject;
 
-    console.log('[loadShotAssetsList] projectData:', projectData);
-    console.log('[loadShotAssetsList] shots:', projectData?.shots);
-
-    if (!projectData || !projectData.shots) {
+    if (!project || !project.projectDir) {
       sceneAssetsPanel.list.innerHTML = '<div class="placeholder-text">请先打开项目</div>';
       return;
     }
 
-    // 查找片段
-    const shot = projectData.shots.find(s => s.id === shotId);
-    console.log('[loadShotAssetsList] found shot:', shot);
+    // 从文件系统读取片段素材
+    const result = await window.electronAPI.getShotAssets({
+      projectDir: project.projectDir,
+      shotId: shotId
+    });
 
-    if (!shot) {
-      sceneAssetsPanel.list.innerHTML = '<div class="placeholder-text">片段不存在</div>';
+    if (!result.success) {
+      sceneAssetsPanel.list.innerHTML = '<div class="placeholder-text">加载失败</div>';
       return;
     }
 
-    // 获取片段素材
-    const assets = shot.assets || { images: [], videos: [], audios: [] };
-
+    const assets = result.assets;
     renderSceneAssetsList(assets, 'shot', shotId);
   } catch (error) {
     console.error('[sceneAssets] 加载片段素材失败:', error);

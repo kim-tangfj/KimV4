@@ -34,6 +34,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   saveDroppedSceneAsset: (fileName, fileData, projectDir, assetType, shotId) => ipcRenderer.invoke('project:saveDroppedSceneAsset', fileName, fileData, projectDir, assetType, shotId),
   uploadStoryboardImage: (params) => ipcRenderer.invoke('project:uploadStoryboardImage', params),
   deleteAsset: (params) => ipcRenderer.invoke('project:deleteAsset', params),
+  getShotAssets: (params) => ipcRenderer.invoke('project:getShotAssets', params),
   
   // LLM API
   testApiConnection: (provider, apiKey, model) => ipcRenderer.invoke('api:testConnection', provider, apiKey, model),
