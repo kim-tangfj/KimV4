@@ -4,13 +4,13 @@
 
 **面向视频创作者和 AI 内容生成师的多级分镜管理与提示词自动化生成工具**
 
-[![Version](https://img.shields.io/github/v/release/KimV4/kim-storyboard-assistant)](https://github.com/KimV4/kim-storyboard-assistant/releases/latest)
-[![Downloads](https://img.shields.io/github/downloads/KimV4/kim-storyboard-assistant/total)](https://github.com/KimV4/kim-storyboard-assistant/releases)
+[![Version](https://img.shields.io/github/v/release/kim-tangfj/KimV4)](https://github.com/kim-tangfj/KimV4/releases/latest)
+[![Downloads](https://img.shields.io/github/downloads/kim-tangfj/KimV4/total)](https://github.com/kim-tangfj/KimV4/releases)
 [![Electron](https://img.shields.io/badge/electron-40.6.1-blue.svg)](https://www.electronjs.org/)
 [![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/KimV4/kim-storyboard-assistant/releases)
+[![Platform](https://img.shields.io/badge/platform-Windows-lightgrey.svg)](https://github.com/kim-tangfj/KimV4/releases)
 
-**📥 [立即下载最新版本](https://github.com/KimV4/kim-storyboard-assistant/releases/latest)**
+**📥 [立即下载最新版本](https://github.com/KimV4/releases/latest)**
 
 </div>
 
@@ -54,7 +54,7 @@
 **步骤：**
 
 1. **访问 Releases 页面**
-   - 打开 https://github.com/KimV4/kim-storyboard-assistant/releases
+   - 打开 https://github.com/kim-tangfj/KimV4/releases
    - 或点击顶部的 "📥 立即下载最新版本" 链接
 
 2. **下载安装程序**
@@ -76,8 +76,8 @@
 
 ```bash
 # 1. 克隆项目
-git clone https://github.com/KimV4/kim-storyboard-assistant.git
-cd kim-storyboard-assistant
+git clone https://github.com/kim-tangfj/KimV4.git
+cd KimV4
 
 # 2. 安装依赖
 npm install
@@ -366,8 +366,8 @@ A: 当前版本仅支持 Windows。Mac 和 Linux 版本正在开发中。
 
 ## 📬 联系方式
 
-- **项目地址**: https://github.com/yourusername/kim-storyboard-assistant
-- **问题反馈**: https://github.com/yourusername/kim-storyboard-assistant/issues
+- **项目地址**: https://github.com/kim-tangfj/KimV4
+- **问题反馈**: https://github.com/kim-tangfj/KimV4/issues
 - **邮箱**: your.email@example.com
 
 ---
