@@ -388,6 +388,10 @@ async function showSceneProperties(scene) {
     window.elements.bottomPanelTitle.textContent = `${scene.name || '镜头'} 属性`;
   }
 
+  // 获取当前片段 ID（用于分镜图片存储）
+  const state = window.getState();
+  const currentShotId = state.currentShot?.id || '';
+
   // 加载自定义选项
   const shotTypeOptions = await window.loadOptionsByGroup('景别');
   const angleOptions = await window.loadOptionsByGroup('镜头角度');
@@ -465,7 +469,7 @@ async function showSceneProperties(scene) {
         <!-- 分镜图片上传区域 -->
         <div class="form-group">
           <label for="sceneStoryboardImage">分镜图片</label>
-          <div class="storyboard-upload-area" id="storyboard-upload-area" data-shot-id="${scene.shotId || ''}" data-scene-id="${scene.id}">
+          <div class="storyboard-upload-area" id="storyboard-upload-area" data-shot-id="${currentShotId}" data-scene-id="${scene.id}">
             <input type="file" id="storyboard-file-input" accept="image/*" style="display: none;" />
             <div class="upload-area-content">
               <span class="upload-icon">📤</span>
@@ -475,7 +479,7 @@ async function showSceneProperties(scene) {
             <!-- 已上传预览区域 -->
             <div class="storyboard-preview" id="storyboard-preview"></div>
           </div>
-          <small class="setting-hint">支持上传和从素材库拖放（📋片段素材不可用）</small>
+          <small class="setting-hint">支持上传和从素材库拖放</small>
         </div>
         
         <div class="form-group">

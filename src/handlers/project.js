@@ -590,24 +590,39 @@ function initProjectIPC(mainWindow) {
 
       const { projectDir, filePath, shotId, sceneId, fileName, source } = params;
 
+      console.log('[uploadStoryboardImage] 开始上传:', {
+        source,
+        filePath,
+        shotId,
+        sceneId,
+        fileName
+      });
+
       // 检查源文件是否存在
       if (!fs.existsSync(filePath)) {
-        return { success: false, error: '源文件不存在' };
+        return { success: false, error: '源文件不存在：' + filePath };
       }
 
       // 分镜图片存储目录：assets/shots/{shotId}/images/storyboard/
       const storyboardDir = path.join(projectDir, 'assets', 'shots', shotId, 'images', 'storyboard');
       if (!fs.existsSync(storyboardDir)) {
         fs.mkdirSync(storyboardDir, { recursive: true });
+        console.log('[uploadStoryboardImage] 创建分镜图片目录:', storyboardDir);
       }
 
-      // 目标文件路径
+      // 目标文件路径（始终添加时间戳避免重名）
       const ext = path.extname(fileName);
       const nameWithoutExt = path.basename(fileName, ext);
-      let targetPath = path.join(storyboardDir, `${nameWithoutExt}_${Date.now()}${ext}`);
+      const targetPath = path.join(storyboardDir, `${nameWithoutExt}_${Date.now()}${ext}`);
 
       // 复制文件（无论素材来源，都复制到片段素材库）
       fs.copyFileSync(filePath, targetPath);
+      console.log('[uploadStoryboardImage] 文件已复制:', filePath, '->', targetPath);
+
+      // 验证文件是否复制成功
+      if (!fs.existsSync(targetPath)) {
+        return { success: false, error: '文件复制失败' };
+      }
 
       // 返回成功
       const stats = fs.statSync(targetPath);
