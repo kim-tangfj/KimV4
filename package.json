@@ -1,14 +1,20 @@
 {
   "name": "kim-storyboard-assistant",
   "version": "1.0.0",
-  "description": "Kim 多级分镜提示词助手 - 面向视频创作者、AI内容生成师的多级分镜管理与提示词自动化生成工具",
+  "description": "Kim 多级分镜提示词助手 - 面向视频创作者、AI 内容生成师的多级分镜管理与提示词自动化生成工具",
   "main": "src/main.js",
   "scripts": {
     "start": "electron .",
-    "dev": "electron . --dev"
+    "dev": "electron . --dev",
+    "pack": "electron-builder --dir",
+    "dist": "electron-builder",
+    "dist:win": "electron-builder --win",
+    "postinstall": "electron-builder install-app-deps"
   },
   "devDependencies": {
-    "electron": "^40.6.1"
+    "electron": "^40.6.1",
+    "electron-builder": "^26.8.1",
+    "electron-updater": "^6.8.3"
   },
   "keywords": [
     "electron",
@@ -17,5 +23,47 @@
     "ai-prompts"
   ],
   "author": "KimV4",
-  "license": "MIT"
+  "license": "MIT",
+  "build": {
+    "appId": "com.kimv4.storyboard",
+    "productName": "Kim 分镜助手",
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "assets/**/*",
+      "index.html",
+      "styles.css",
+      "package.json"
+    ],
+    "extraResources": [
+      {
+        "from": "assets/default",
+        "to": "default"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "nsis",
+          "arch": ["x64"]
+        }
+      ],
+      "icon": "assets/icon.png"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "createStartMenuShortcut": true,
+      "shortcutName": "Kim 分镜助手"
+    },
+    "publish": {
+      "provider": "github",
+      "owner": "KimV4",
+      "repo": "kim-storyboard-assistant",
+      "releaseType": "draft"
+    }
+  }
 }

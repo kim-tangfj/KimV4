@@ -2,7 +2,7 @@
 // Kim 多级分镜提示词助手 - 主进程
 //
 
-const { app, BrowserWindow } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog } = require('electron');
 const path = require('path');
 const { logError, logInfo, cleanupOldLogs } = require('./utils/errorLogger');
 
@@ -16,8 +16,65 @@ const { initOptionsIPC, initializeCustomOptions } = require('./handlers/options'
 const { setMainMenu, initializeLogFiles } = require('./utils/menu');
 const { initializeDefaultTemplates } = require('./handlers/template');
 
+// 自动更新
+const { autoUpdater } = require('electron-updater');
+
 // 主窗口对象
 let mainWindow;
+
+// ========== 自动更新配置 ==========
+
+// 配置更新源
+autoUpdater.autoDownload = false; // 不自动下载
+autoUpdater.autoInstallOnAppQuit = true; // 退出时自动安装
+
+// 开发环境禁用自动更新
+if (!app.isPackaged) {
+  console.log('[主进程] 开发环境，禁用自动更新');
+  autoUpdater.autoDownload = false;
+  autoUpdater.allowPrerelease = true; // 允许预发布版本
+}
+
+// 检查更新
+function checkForUpdates() {
+  if (!app.isPackaged) {
+    console.log('[主进程] 开发环境，跳过更新检查');
+    return;
+  }
+  console.log('[主进程] 开始检查更新...');
+  autoUpdater.checkForUpdates();
+}
+
+// 监听更新事件
+autoUpdater.on('checking-for-update', () => {
+  console.log('正在检查更新...');
+  mainWindow?.webContents?.send('update-checking');
+});
+
+autoUpdater.on('update-available', (info) => {
+  console.log('发现新版本:', info.version);
+  mainWindow?.webContents?.send('update-available', info);
+});
+
+autoUpdater.on('update-not-available', () => {
+  console.log('已是最新版本');
+  mainWindow?.webContents?.send('update-not-available');
+});
+
+autoUpdater.on('download-progress', (progressObj) => {
+  console.log('下载进度:', progressObj.percent);
+  mainWindow?.webContents?.send('update-download-progress', progressObj);
+});
+
+autoUpdater.on('update-downloaded', (info) => {
+  console.log('更新已下载，准备安装');
+  mainWindow?.webContents?.send('update-downloaded', info);
+});
+
+autoUpdater.on('error', (err) => {
+  console.error('更新失败:', err);
+  mainWindow?.webContents?.send('update-error', err);
+});
 
 // ========== 全局错误处理 开始 ==========
 
@@ -83,7 +140,7 @@ app.whenReady().then(() => {
 
   // 初始化默认模板
   initializeDefaultTemplates();
-  
+
   // 初始化自定义选项
   initializeCustomOptions();
 
@@ -93,7 +150,13 @@ app.whenReady().then(() => {
   initTemplateIPC();
   initOptionsIPC();
 
+  // 初始化更新 IPC 处理器
+  initUpdateIPC();
+
   createWindow();
+
+  // 延迟检查更新（5 秒后）
+  setTimeout(checkForUpdates, 5000);
 
   app.on('activate', function () {
     if (BrowserWindow.getAllWindows().length === 0) createWindow();
@@ -113,3 +176,23 @@ ipcMain.handle('log:error', async (event, logEntry) => {
   logError('renderer', logEntry.message, logEntry.errorDetails ? new Error(logEntry.errorDetails) : null, 'renderer');
   return { success: true };
 });
+
+// ========== 自动更新 IPC 处理器 ==========
+function initUpdateIPC() {
+  // 检查更新
+  ipcMain.handle('update:check', () => {
+    checkForUpdates();
+  });
+
+  // 开始下载更新
+  ipcMain.handle('update:start-download', () => {
+    console.log('[更新] 开始下载更新');
+    autoUpdater.downloadUpdate();
+  });
+
+  // 安装并重启
+  ipcMain.handle('update:install-and-restart', () => {
+    console.log('[更新] 安装并重启');
+    autoUpdater.quitAndInstall(false, true);
+  });
+}

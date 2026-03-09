@@ -5,6 +5,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   // 对话框 API
   openProjectDialog: () => ipcRenderer.invoke('dialog:openProject'),
   showOpenDialog: (options) => ipcRenderer.invoke('dialog:showOpenDialog', options),
+  showSaveDialog: (options) => ipcRenderer.invoke('dialog:showSaveDialog', options),
 
   // 文件系统 API
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
@@ -35,6 +36,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   uploadStoryboardImage: (params) => ipcRenderer.invoke('project:uploadStoryboardImage', params),
   deleteAsset: (params) => ipcRenderer.invoke('project:deleteAsset', params),
   getShotAssets: (params) => ipcRenderer.invoke('project:getShotAssets', params),
+  exportShotMaterials: (params) => ipcRenderer.invoke('project:exportShotMaterials', params),
   
   // LLM API
   testApiConnection: (provider, apiKey, model) => ipcRenderer.invoke('api:testConnection', provider, apiKey, model),
@@ -81,5 +83,30 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
 
   // 日志记录 API
-  logError: (logEntry) => ipcRenderer.invoke('log:error', logEntry)
+  logError: (logEntry) => ipcRenderer.invoke('log:error', logEntry),
+
+  // 自动更新 API
+  checkForUpdates: () => ipcRenderer.invoke('update:check'),
+  startUpdateDownload: () => ipcRenderer.invoke('update:start-download'),
+  installAndUpdate: () => ipcRenderer.invoke('update:install-and-restart'),
+
+  // 更新事件监听
+  onUpdateChecking: (callback) => {
+    ipcRenderer.on('update-checking', (event, info) => callback(info));
+  },
+  onUpdateAvailable: (callback) => {
+    ipcRenderer.on('update-available', (event, info) => callback(info));
+  },
+  onUpdateNotAvailable: (callback) => {
+    ipcRenderer.on('update-not-available', (event) => callback());
+  },
+  onUpdateDownloadProgress: (callback) => {
+    ipcRenderer.on('update-download-progress', (event, progress) => callback(progress));
+  },
+  onUpdateDownloaded: (callback) => {
+    ipcRenderer.on('update-downloaded', (event, info) => callback(info));
+  },
+  onUpdateError: (callback) => {
+    ipcRenderer.on('update-error', (event, error) => callback(error));
+  }
 });

@@ -10,6 +10,7 @@ const sceneAssetsPanel = {
   panel: null,
   header: null,
   toggleBtn: null,
+  exportBtn: null,
   list: null,
   uploadArea: null,
   fileInput: null,
@@ -35,6 +36,7 @@ function initSceneAssetsPanel() {
   sceneAssetsPanel.panel = document.getElementById('assets-panel');
   sceneAssetsPanel.header = document.getElementById('assets-panel-toggle-header');
   sceneAssetsPanel.toggleBtn = document.getElementById('assets-panel-toggle-btn');
+  sceneAssetsPanel.exportBtn = document.getElementById('assets-panel-export-btn');
   sceneAssetsPanel.list = document.getElementById('shot-assets-list');
   sceneAssetsPanel.uploadArea = document.getElementById('scene-assets-upload-area');
   sceneAssetsPanel.fileInput = document.getElementById('scene-assets-file-input');
@@ -43,6 +45,9 @@ function initSceneAssetsPanel() {
 
   // 初始化上传功能
   initSceneAssetUpload();
+
+  // 初始化导出功能
+  initExportFunctionality();
 
   // 初始化右键菜单
   initSceneContextMenuEvents();
@@ -70,10 +75,123 @@ function openSceneAssetsPanel() {
  */
 function closeSceneAssetsPanel() {
   if (!sceneAssetsPanel.panel) return;
-  
+
   sceneAssetsPanel.panel.classList.add('collapsed');
   if (sceneAssetsPanel.toggleBtn) {
     sceneAssetsPanel.toggleBtn.textContent = '▲';
+  }
+}
+
+/**
+ * 初始化导出功能
+ */
+function initExportFunctionality() {
+  if (!sceneAssetsPanel.exportBtn) return;
+
+  sceneAssetsPanel.exportBtn.addEventListener('click', async () => {
+    const shotId = sceneAssetsPanel.currentShotId;
+    if (!shotId) {
+      window.showToast('请先选择一个片段');
+      return;
+    }
+
+    await exportShotMaterials(shotId);
+  });
+}
+
+/**
+ * 导出片段素材（分镜图和提示词）
+ * @param {string} shotId - 片段 ID
+ */
+async function exportShotMaterials(shotId) {
+  try {
+    const state = window.getState();
+    const projectData = state.projectData || state.currentProject;
+
+    if (!projectData || !projectData.shots) {
+      window.showToast('项目数据未加载');
+      return;
+    }
+
+    // 查找片段
+    const shot = projectData.shots.find(s => s.id === shotId);
+    if (!shot) {
+      window.showToast('片段不存在');
+      return;
+    }
+
+    // 获取当前提示词栏的内容
+    const promptContent = window.elements?.promptPreview?.textContent || '';
+
+    // 选择导出目录
+    const selectDirResult = await window.electronAPI.showOpenDialog({
+      title: '选择导出目录',
+      properties: ['openDirectory']
+    });
+
+    if (selectDirResult.canceled || !selectDirResult.filePaths || selectDirResult.filePaths.length === 0) {
+      window.showToast('已取消导出');
+      return;
+    }
+
+    const exportDir = selectDirResult.filePaths[0];
+    const timestamp = new Date().toISOString().replace(/[:.]/g, '-');
+    const shotNameSafe = (shot.name || '片段').replace(/[\\/:*?"<>|]/g, '_');
+    const exportFolderName = `${shotNameSafe}_${timestamp}`;
+    const targetDir = `${exportDir}\\${exportFolderName}`;
+
+    // 收集所有镜头的分镜图信息
+    const exportedImages = [];
+    let successCount = 0;
+    let failCount = 0;
+
+    if (shot.scenes && shot.scenes.length > 0) {
+      for (const scene of shot.scenes) {
+        if (scene.storyboardImage && scene.storyboardImage.path) {
+          exportedImages.push({
+            sceneName: scene.name || '未命名镜头',
+            originalName: scene.storyboardImage.name,
+            srcPath: scene.storyboardImage.path
+          });
+        }
+      }
+    }
+
+    // 调用 Electron API 导出文件
+    const exportResult = await window.electronAPI.exportShotMaterials({
+      targetDir: targetDir,
+      images: exportedImages,
+      promptContent: promptContent,
+      shotName: shot.name || '未命名片段',
+      shotDescription: shot.description || '',
+      timestamp: timestamp
+    });
+
+    if (exportResult.success) {
+      successCount = exportResult.successCount || 0;
+      failCount = exportResult.failCount || 0;
+
+      // 显示结果
+      let message = `导出完成！\n\n目录：${targetDir}\n成功：${successCount} 张图片\n失败：${failCount} 张`;
+      if (failCount > 0) {
+        message += '\n\n部分图片文件不存在，已跳过。';
+      }
+
+      window.showToast(message);
+      console.log('[exportShotMaterials] 导出成功:', targetDir);
+
+      // 打开导出目录
+      const openResult = await window.electronAPI.openPath(targetDir);
+      if (!openResult) {
+        console.warn('[exportShotMaterials] 打开目录失败');
+      }
+    } else {
+      window.showToast('导出失败：' + exportResult.error);
+    }
+
+  } catch (error) {
+    console.error('[exportShotMaterials] 导出失败:', error);
+    window.showToast('导出失败：' + error.message);
   }
 }
 

@@ -507,3 +507,21 @@ window.showLoading = showLoading;
 window.hideLoading = hideLoading;
 window.getDefaultTemplate = getDefaultTemplate;
 window.showTemplateStoragePath = showTemplateStoragePath;
+
+// 初始化更新检查按钮
+function initUpdateButton() {
+  const checkUpdateBtn = document.getElementById('check-update-btn');
+  if (checkUpdateBtn) {
+    checkUpdateBtn.addEventListener('click', () => {
+      window.showToast('正在检查更新...', 'info');
+      window.electronAPI.checkForUpdates();
+    });
+  }
+}
+
+// 在 DOM 加载完成后初始化按钮
+if (document.readyState === 'loading') {
+  document.addEventListener('DOMContentLoaded', initUpdateButton);
+} else {
+  initUpdateButton();
+}

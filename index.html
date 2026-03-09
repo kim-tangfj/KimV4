@@ -97,6 +97,7 @@
       <div class="panel-header" id="assets-panel-toggle-header">
         <h3>片段素材库</h3>
         <div class="header-actions">
+          <button id="assets-panel-export-btn" class="icon-btn small" title="导出片段素材（分镜图和提示词）" style="margin-right: 8px;">📥</button>
           <button id="assets-panel-toggle-btn" class="icon-btn" style="visibility: hidden;">▲</button>
         </div>
       </div>
@@ -154,6 +155,19 @@
               <button id="change-path-btn" class="form-btn">浏览</button>
             </div>
             <small class="setting-hint">默认：文档/KimStoryboard</small>
+          </div>
+        </div>
+
+        <!-- 应用更新 -->
+        <div class="settings-section">
+          <h4>应用更新</h4>
+          <div class="setting-item">
+            <label>当前版本</label>
+            <div class="version-info">
+              <span>v1.0.0</span>
+              <button id="check-update-btn" class="form-btn" style="margin-left: 10px;">检查更新</button>
+            </div>
+            <small class="setting-hint">自动检查 GitHub Releases 上的最新版本</small>
           </div>
         </div>
 

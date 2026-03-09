@@ -33,6 +33,12 @@ function initProjectIPC(mainWindow) {
     return result;
   });
 
+  // 通用文件保存对话框
+  ipcMain.handle('dialog:showSaveDialog', async (event, options) => {
+    const result = await dialog.showSaveDialog(mainWindow, options);
+    return result;
+  });
+
   // 文件系统 API
   ipcMain.handle('fs:readFile', async (event, filePath) => {
     return withFileSafety(async () => {
@@ -910,6 +916,90 @@ function initProjectIPC(mainWindow) {
 
       return { success: true, assets: assets };
     }, '获取片段素材列表');
+  });
+
+  // 导出片段素材（分镜图和提示词）
+  ipcMain.handle('project:exportShotMaterials', async (event, params) => {
+    return withErrorHandler(async () => {
+      validateParams(params, ['targetDir', 'images', 'promptContent']);
+
+      const { targetDir, images, promptContent, shotName, shotDescription, timestamp } = params;
+
+      // 创建导出目录
+      if (!fs.existsSync(targetDir)) {
+        fs.mkdirSync(targetDir, { recursive: true });
+      }
+
+      // 创建图片目录
+      const imagesDir = path.join(targetDir, '分镜图片');
+      fs.mkdirSync(imagesDir, { recursive: true });
+
+      // 复制图片文件
+      const exportedImages = [];
+      let successCount = 0;
+      let failCount = 0;
+
+      for (const img of images) {
+        const destFileName = `${img.sceneName || '镜头'}_${img.originalName}`.replace(/[\\/:*?"<>|]/g, '_');
+        const destPath = path.join(imagesDir, destFileName);
+
+        try {
+          if (fs.existsSync(img.srcPath)) {
+            fs.copyFileSync(img.srcPath, destPath);
+            exportedImages.push({
+              sceneName: img.sceneName,
+              originalName: img.originalName,
+              savedName: destFileName,
+              path: destPath
+            });
+            successCount++;
+          } else {
+            exportedImages.push({
+              sceneName: img.sceneName,
+              originalName: img.originalName,
+              error: '文件不存在'
+            });
+            failCount++;
+          }
+        } catch (error) {
+          console.error('[exportShotMaterials] 复制图片失败:', error);
+          failCount++;
+        }
+      }
+
+      // 创建说明文件
+      const readmeContent = `=== ${shotName} - 分镜图片导出 ===
+导出时间：${timestamp}
+片段描述：${shotDescription || ''}
+
+【导出的分镜图片】(${exportedImages.length} 张)
+${exportedImages.map((img, i) => 
+  `${i + 1}. ${img.sceneName}
+   原文件名：${img.originalName}
+   保存为：${img.savedName || 'N/A'}
+   ${img.error ? '状态：' + img.error : '状态：成功'}
+`
+).join('\n')}
+
+【提示词内容】
+${promptContent}
+`;
+
+      // 写入说明文件
+      const readmePath = path.join(targetDir, '导出说明.txt');
+      fs.writeFileSync(readmePath, readmeContent, 'utf8');
+
+      // 写入提示词文件
+      const promptPath = path.join(targetDir, '提示词.txt');
+      fs.writeFileSync(promptPath, promptContent, 'utf8');
+
+      return {
+        success: true,
+        successCount,
+        failCount,
+        targetDir
+      };
+    }, '导出片段素材');
   });
 
   // 删除素材

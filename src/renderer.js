@@ -498,8 +498,48 @@ const originalInitializeApp = initializeApp;
 initializeApp = async function() {
   await originalInitializeApp();
   exposeGlobals();
+  
+  // 初始化自动更新监听
+  initUpdateListeners();
 };
 // ======= 全局变量导出 结束 ========
+
+// ======= 自动更新监听 开始 ========
+function initUpdateListeners() {
+  if (!window.electronAPI) return;
+
+  window.electronAPI.onUpdateChecking(() => {
+    console.log('[更新] 正在检查更新...');
+  });
+
+  window.electronAPI.onUpdateAvailable((info) => {
+    const confirmed = window.showConfirm(`发现新版本 ${info.version}，是否立即下载更新？`, '版本更新');
+    if (confirmed) {
+      window.electronAPI.startUpdateDownload();
+    }
+  });
+
+  window.electronAPI.onUpdateNotAvailable(() => {
+    console.log('[更新] 已是最新版本');
+  });
+
+  window.electronAPI.onUpdateDownloadProgress((progress) => {
+    console.log('[更新] 下载进度:', progress.percent.toFixed(1) + '%');
+  });
+
+  window.electronAPI.onUpdateDownloaded((info) => {
+    const confirmed = window.showConfirm(`更新已下载完成（版本 ${info.version}），是否立即重启安装？`, '版本更新');
+    if (confirmed) {
+      window.electronAPI.installAndUpdate();
+    }
+  });
+
+  window.electronAPI.onUpdateError((error) => {
+    console.error('[更新] 错误:', error);
+    window.showToast('更新失败：' + (error.message || '未知错误'), 'error');
+  });
+}
+// ======= 自动更新监听 结束 ========
 
 
 // ======= 素材库 开始 ========
