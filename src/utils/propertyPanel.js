@@ -1219,6 +1219,16 @@ async function deleteStoryboardImage() {
       }
     }
 
+    // 刷新片段素材库
+    if (window.loadShotAssetsList && currentShot.id) {
+      window.loadShotAssetsList(currentShot.id);
+    }
+
+    // 刷新项目素材库
+    if (window.loadAssetsList && project.id) {
+      window.loadAssetsList(project.id);
+    }
+
     window.showToast('分镜图片已删除');
   }
 }
