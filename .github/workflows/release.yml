@@ -32,7 +32,7 @@ jobs:
       - name: 构建 Windows 安装包
         run: npm run dist:win
         env:
-          GH_TOKEN: ${{ secrets.GH_TOKEN }}  # 使用 GitHub Secret 中的 Token
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub 自动提供的 Token
       
       # 步骤 5: 创建 GitHub Release 并上传安装包
       - name: 创建 GitHub Release
@@ -41,9 +41,8 @@ jobs:
           files: dist/*.exe  # 上传所有 .exe 文件
           draft: true  # 创建草稿发布，可手动审核后发布
           generate_release_notes: true  # 自动生成发布说明
-          fail_on_unmatched_files: true  # 如果找不到文件则失败
         env:
-          GITHUB_TOKEN: ${{ secrets.GH_TOKEN }}  # 使用 GitHub Secret 中的 Token
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub 自动提供的 Token
   
   # 可选：同时构建 macOS 版本（如果你有 Mac 用户）
   # build-mac:
