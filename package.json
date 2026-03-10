@@ -40,6 +40,7 @@
       "!**/*.md"
     ],
     "asar": true,
+    "asarUnpack": ["**/*.node"],
     "extraResources": [
       {
         "from": "assets/default",
@@ -53,20 +54,24 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "requestedExecutionLevel": "asInvoker"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "Kim 分镜助手"
+      "shortcutName": "Kim 分镜助手",
+      "runAfterFinish": true,
+      "deleteAppDataOnUninstall": true
     },
     "publish": {
       "provider": "github",
       "owner": "kim-tangfj",
       "repo": "KimV4",
       "releaseType": "draft"
-    }
+    },
+    "forceCodeSigning": false
   }
 }
