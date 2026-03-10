@@ -100,7 +100,7 @@ module.exports = {
         fs.mkdirSync(_configDir, { recursive: true });
       }
 
-      // 迁移模板配置：对比旧模板与默认模板，如果不同则使用新的默认模板
+      // 迁移模板配置：对比旧模板与默认模板的内容，如果不同则使用新的默认模板
       const oldTemplates = path.join(oldConfigDir, 'templates.json');
       const newTemplates = path.join(_configDir, 'templates.json');
       
@@ -112,20 +112,22 @@ module.exports = {
         try {
           if (fs.existsSync(defaultTemplatesPath)) {
             const defaultTemplatesContent = fs.readFileSync(defaultTemplatesPath, 'utf8');
+            
+            // 对比模板内容（使用 JSON 序列化后对比）
             const oldTemplatesData = JSON.parse(oldTemplatesContent);
             const defaultTemplatesData = JSON.parse(defaultTemplatesContent);
             
-            // 对比模板 ID 列表（判断模板是否有更新）
-            const oldTemplateIds = oldTemplatesData.templates.map(t => t.id).sort().join(',');
-            const defaultTemplateIds = defaultTemplatesData.templates.map(t => t.id).sort().join(',');
+            // 序列化模板数组内容进行对比（忽略格式差异）
+            const oldTemplatesStr = JSON.stringify(oldTemplatesData.templates.sort((a, b) => a.id.localeCompare(b.id)));
+            const defaultTemplatesStr = JSON.stringify(defaultTemplatesData.templates.sort((a, b) => a.id.localeCompare(b.id)));
             
-            // 如果模板 ID 不同，说明默认模板有更新，使用新的默认模板
-            if (oldTemplateIds !== defaultTemplateIds) {
+            // 如果模板内容不同，说明默认模板有更新，使用新的默认模板
+            if (oldTemplatesStr !== defaultTemplatesStr) {
               shouldUseDefault = true;
-              console.log('[userDataManager] 检测到默认模板有更新，使用新版本模板');
+              console.log('[userDataManager] 检测到默认模板内容有更新，使用新版本模板');
             } else {
-              // 模板 ID 相同，迁移旧模板（保留用户可能的自定义修改）
-              console.log('[userDataManager] 模板版本一致，迁移旧模板');
+              // 模板内容相同，迁移旧模板（保留用户可能的自定义修改）
+              console.log('[userDataManager] 模板内容一致，迁移旧模板');
             }
           } else {
             // 默认模板文件不存在，迁移旧模板
