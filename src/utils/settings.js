@@ -520,7 +520,7 @@ function initUpdateButton() {
       updateModal.innerHTML = `
         <div class="update-modal-content">
           <div class="update-modal-header">
-            <h3 style="color: #ffffff !important;">🔄 检查更新</h3>
+            <h3>🔄 检查更新</h3>
           </div>
           <div class="update-modal-body">
             <div class="update-status">正在检查更新...</div>

@@ -2683,14 +2683,14 @@ body.dark-theme .context-menu-item:hover {
 .update-modal-header {
   padding: 20px 24px;
   border-bottom: 1px solid var(--border-color);
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  background-color: var(--panel-bg);
 }
 
 .update-modal-header h3 {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #ffffff !important;
+  color: var(--text-color);
 }
 
 /* 更新模态框主体 */
@@ -2727,7 +2727,7 @@ body.dark-theme .update-progress-bar {
 
 .update-progress-fill {
   height: 100%;
-  background: linear-gradient(90deg, #667eea 0%, #764ba2 100%);
+  background-color: var(--text-color);
   border-radius: 6px;
   transition: width 0.3s ease;
   width: 0%;
@@ -2780,7 +2780,8 @@ body.dark-theme .update-modal-btn:disabled {
 
 .update-modal-btn:not(:disabled):hover {
   transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+  background-color: var(--text-color);
+  color: var(--panel-bg);
 }
 
 .update-modal-btn:not(:disabled):active {
@@ -2801,20 +2802,12 @@ body.update-lock .update-modal-btn:not(:disabled) {
   pointer-events: auto;
 }
 
-/* 深色主题适配 */
-body.dark-theme .update-modal-header {
-  background: linear-gradient(135deg, #5a67d8 0%, #6b4c9a 100%);
+/* 深色主题适配 - 更新模态框 */
+body.dark-theme .update-progress-bar {
+  background-color: #404040;
 }
 
-body.dark-theme .update-progress-fill {
-  background: linear-gradient(90deg, #5a67d8 0%, #6b4c9a 100%);
-}
-
-body.dark-theme .update-modal-btn:not(:disabled) {
-  background: linear-gradient(135deg, #5a67d8 0%, #6b4c9a 100%);
-  color: #ffffff;
-}
-
-body.dark-theme .update-modal-btn:not(:disabled):hover {
-  box-shadow: 0 4px 12px rgba(90, 103, 216, 0.4);
+body.dark-theme .update-modal-btn:disabled {
+  background-color: #404040;
+  color: #666;
 }
