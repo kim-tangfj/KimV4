@@ -54,11 +54,38 @@ async function loadSettings() {
         hasValidStoragePath = true;
       }
       settings.apiProvider = parsed.apiProvider || settings.apiProvider;
-      settings.apiKeys = parsed.apiKeys || settings.apiKeys;
       settings.models = parsed.models || settings.models;
       settings.theme = parsed.theme || 'light';
       settings.autoSaveInterval = parsed.autoSaveInterval || 5;
       currentTheme = settings.theme;
+
+      // 加载加密的 API Keys（兼容旧版本的明文存储）
+      if (parsed.apiKeys) {
+        // 检查是否是加密格式（Base64）
+        const isEncrypted = typeof parsed.apiKeys.deepseek === 'string' &&
+          parsed.apiKeys.deepseek.length > 0 &&
+          /^[A-Za-z0-9+/=]+$/.test(parsed.apiKeys.deepseek);
+
+        if (isEncrypted && useElectronAPI) {
+          // 解密所有 API Keys
+          for (const provider of ['deepseek', 'doubao', 'qianwen', 'ailian']) {
+            if (parsed.apiKeys[provider]) {
+              try {
+                const result = await window.electronAPI.decryptApiKey(parsed.apiKeys[provider]);
+                if (result.success) {
+                  settings.apiKeys[provider] = result.decrypted;
+                }
+              } catch (e) {
+                console.error(`解密 ${provider} API Key 失败:`, e);
+                settings.apiKeys[provider] = '';
+              }
+            }
+          }
+        } else {
+          // 旧版本明文存储，直接使用
+          settings.apiKeys = parsed.apiKeys;
+        }
+      }
     } catch (e) {
       console.error('加载设置失败:', e);
     }
@@ -148,21 +175,52 @@ async function loadSettings() {
 }
 
 /**
- * 保存当前设置到 localStorage
+ * 保存当前设置到 localStorage（异步，加密 API Keys）
  */
-function saveSettings() {
+async function saveSettings() {
   const settings = window.settings;
   const elements = window.elements;
   const currentTheme = window.currentTheme;
+  const useElectronAPI = !!(window.electronAPI);
 
   // 从表单获取值，如果为空则使用当前设置中的值（避免保存空值）
   const newStoragePath = elements.storagePathInput?.value?.trim();
   settings.storagePath = newStoragePath || settings.storagePath;
   settings.apiProvider = elements.apiProviderSelect?.value || 'deepseek';
-  settings.apiKeys.deepseek = elements.deepseekApiKey?.value || '';
-  settings.apiKeys.doubao = elements.doubaoApiKey?.value || '';
-  settings.apiKeys.qianwen = elements.qianwenApiKey?.value || '';
-  settings.apiKeys.ailian = elements.ailianApiKey?.value || '';
+
+  // 加密 API Keys（如果支持加密）
+  const apiKeysToSave = {
+    deepseek: elements.deepseekApiKey?.value || '',
+    doubao: elements.doubaoApiKey?.value || '',
+    qianwen: elements.qianwenApiKey?.value || '',
+    ailian: elements.ailianApiKey?.value || ''
+  };
+
+  if (useElectronAPI) {
+    // 异步加密所有 API Keys
+    for (const provider of ['deepseek', 'doubao', 'qianwen', 'ailian']) {
+      if (apiKeysToSave[provider]) {
+        try {
+          const result = await window.electronAPI.encryptApiKey(apiKeysToSave[provider]);
+          if (result.success) {
+            settings.apiKeys[provider] = result.encrypted;
+          } else {
+            console.error(`加密 ${provider} API Key 失败：`, result.error);
+            settings.apiKeys[provider] = '';
+          }
+        } catch (e) {
+          console.error(`加密 ${provider} API Key 异常:`, e);
+          settings.apiKeys[provider] = '';
+        }
+      } else {
+        settings.apiKeys[provider] = '';
+      }
+    }
+  } else {
+    // 浏览器环境或不支持加密，明文存储（仅开发调试用）
+    settings.apiKeys = apiKeysToSave;
+  }
+
   settings.models.deepseek = elements.deepseekModel?.value || 'deepseek-chat';
   settings.models.doubao = elements.doubaoModel?.value || 'doubao-pro-4k';
   settings.models.qianwen = elements.qianwenModel?.value || 'qwen3.5-plus';

@@ -2,7 +2,7 @@
 // Kim 多级分镜提示词助手 - 主进程
 //
 
-const { app, BrowserWindow, ipcMain, dialog } = require('electron');
+const { app, BrowserWindow, ipcMain, dialog, safeStorage } = require('electron');
 const path = require('path');
 const { logError, logInfo, cleanupOldLogs } = require('./utils/errorLogger');
 
@@ -194,6 +194,37 @@ ipcMain.handle('app:getDefaultStoragePath', async () => {
     return { success: true, path: defaultPath };
   } catch (error) {
     console.error('获取文档目录失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// ========== 加密存储 IPC 处理器 ==========
+// 加密 API Key（使用系统级加密存储）
+ipcMain.handle('crypto:encrypt', async (event, plainText) => {
+  try {
+    if (!plainText) {
+      return { success: true, encrypted: '' };
+    }
+    const encrypted = safeStorage.encryptString(plainText);
+    // 将 Buffer 转换为 Base64 字符串以便存储
+    return { success: true, encrypted: encrypted.toString('base64') };
+  } catch (error) {
+    console.error('加密失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
+// 解密 API Key
+ipcMain.handle('crypto:decrypt', async (event, encryptedBase64) => {
+  try {
+    if (!encryptedBase64) {
+      return { success: true, decrypted: '' };
+    }
+    const encryptedBuffer = Buffer.from(encryptedBase64, 'base64');
+    const decrypted = safeStorage.decryptString(encryptedBuffer);
+    return { success: true, decrypted: decrypted };
+  } catch (error) {
+    console.error('解密失败:', error);
     return { success: false, error: error.message };
   }
 });

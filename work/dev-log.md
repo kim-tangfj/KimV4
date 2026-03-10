@@ -4,6 +4,105 @@
 
 ---
 
+## 2026-03-10 - 修复 API Key 每次重启需重新输入并实现加密存储
+
+### 问题描述
+1. **API Key 未保存**: 用户输入 API Key 后，如果直接点"×"关闭设置面板（不点保存），API Key 不会保存
+2. **明文存储风险**: API Key 以明文形式存储在 localStorage，任何能访问开发者工具的人都可以查看
+
+### 修复方案
+
+#### 1. 关闭设置面板前自动保存
+**文件**: `src/utils/eventListeners.js`
+
+```javascript
+// 关闭按钮也保存设置
+if (window.elements.closeSettingsBtn) {
+  window.elements.closeSettingsBtn.addEventListener('click', async () => {
+    await window.saveSettings();  // 异步保存
+    window.saveSettingsToStorage();
+    window.hideSettingsModal();
+  });
+}
+```
+
+#### 2. 使用 Electron safeStorage API 加密
+**文件**: `src/main.js`
+```javascript
+const { app, BrowserWindow, ipcMain, dialog, safeStorage } = require('electron');
+
+// 加密 API Key
+ipcMain.handle('crypto:encrypt', async (event, plainText) => {
+  const encrypted = safeStorage.encryptString(plainText);
+  return { success: true, encrypted: encrypted.toString('base64') };
+});
+
+// 解密 API Key
+ipcMain.handle('crypto:decrypt', async (event, encryptedBase64) => {
+  const encryptedBuffer = Buffer.from(encryptedBase64, 'base64');
+  const decrypted = safeStorage.decryptString(encryptedBuffer);
+  return { success: true, decrypted };
+});
+```
+
+**文件**: `src/preload.js`
+```javascript
+encryptApiKey: (apiKey) => ipcRenderer.invoke('crypto:encrypt', apiKey),
+decryptApiKey: (encrypted) => ipcRenderer.invoke('crypto:decrypt', encrypted),
+```
+
+#### 3. 更新 settings.js 加密/解密逻辑
+**文件**: `src/utils/settings.js`
+
+**saveSettings()** - 异步加密:
+```javascript
+async function saveSettings() {
+  // ...
+  if (useElectronAPI) {
+    for (const provider of ['deepseek', 'doubao', 'qianwen', 'ailian']) {
+      const result = await window.electronAPI.encryptApiKey(apiKeysToSave[provider]);
+      settings.apiKeys[provider] = result.encrypted;  // Base64 字符串
+    }
+  }
+}
+```
+
+**loadSettings()** - 解密加载:
+```javascript
+// 检查是否是加密格式（Base64）
+const isEncrypted = /^[A-Za-z0-9+/=]+$/.test(parsed.apiKeys.deepseek);
+if (isEncrypted && useElectronAPI) {
+  for (const provider of ['deepseek', 'doubao', 'qianwen', 'ailian']) {
+    const result = await window.electronAPI.decryptApiKey(parsed.apiKeys[provider]);
+    settings.apiKeys[provider] = result.decrypted;
+  }
+}
+```
+
+#### 4. 兼容旧版本明文存储
+- 加载时检测 API Key 格式
+- 如果是明文（旧版本），直接使用
+- 如果是 Base64（加密版本），解密后使用
+
+### 安全性说明
+- **加密方式**: Electron `safeStorage` API（系统级加密）
+  - Windows: 使用 DPAPI（Data Protection API）
+  - macOS: 使用 Keychain
+  - Linux: 使用 libsecret（GNOME Keyring 或 KWallet）
+- **存储位置**: localStorage（加密后的 Base64 字符串）
+- **解密时机**: 应用启动时自动解密，无需用户输入密码
+- **安全边界**: 加密密钥由操作系统管理，应用无法直接访问
+
+### 修改文件统计
+| 文件 | 修改内容 |
+|------|----------|
+| `src/main.js` | 导入 `safeStorage`，添加加密/解密 IPC 处理器 |
+| `src/preload.js` | 暴露 `encryptApiKey` / `decryptApiKey` 接口 |
+| `src/utils/settings.js` | `saveSettings()` 改为异步并加密，`loadSettings()` 支持解密 |
+| `src/utils/eventListeners.js` | 关闭按钮也调用异步 `saveSettings()` |
+
+---
+
 ## 2026-03-10 - 修复设置存储路径浏览按钮路径污染问题
 
 ### 问题描述

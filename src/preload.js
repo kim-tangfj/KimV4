@@ -8,6 +8,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   showSaveDialog: (options) => ipcRenderer.invoke('dialog:showSaveDialog', options),
   getDefaultStoragePath: () => ipcRenderer.invoke('app:getDefaultStoragePath'),
 
+  // 加密 API
+  encryptApiKey: (apiKey) => ipcRenderer.invoke('crypto:encrypt', apiKey),
+  decryptApiKey: (encrypted) => ipcRenderer.invoke('crypto:decrypt', encrypted),
+
   // 文件系统 API
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),
   writeFile: (filePath, data) => ipcRenderer.invoke('fs:writeFile', filePath, data),

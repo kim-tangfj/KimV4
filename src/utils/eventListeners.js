@@ -75,14 +75,19 @@ function setupEventListeners() {
 
   // 模态框按钮
   if (window.elements.closeSettingsBtn) {
-    window.elements.closeSettingsBtn.addEventListener('click', window.hideSettingsModal);
+    window.elements.closeSettingsBtn.addEventListener('click', async () => {
+      // 关闭前自动保存设置（包括 API Key）
+      await window.saveSettings();
+      window.saveSettingsToStorage();
+      window.hideSettingsModal();
+    });
   }
   if (window.elements.closeNewProjectBtn) {
     window.elements.closeNewProjectBtn.addEventListener('click', hideNewProjectModal);
   }
   if (window.elements.saveSettingsBtn) {
-    window.elements.saveSettingsBtn.addEventListener('click', () => {
-      window.saveSettings();
+    window.elements.saveSettingsBtn.addEventListener('click', async () => {
+      await window.saveSettings();
       window.saveSettingsToStorage();
       window.hideSettingsModal();
       // 刷新项目列表（存储路径可能已更改）
