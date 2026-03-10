@@ -93,18 +93,59 @@ module.exports = {
     ensureInitialized();
     const oldConfigDir = path.join(_oldUserDataPath, 'config');
     const migrated = [];
+    const defaultTemplatesPath = path.join(__dirname, '../../assets/default/default-templates.json');
 
     try {
       if (!fs.existsSync(_configDir)) {
         fs.mkdirSync(_configDir, { recursive: true });
       }
 
-      // 迁移模板配置
+      // 迁移模板配置：对比旧模板与默认模板，如果不同则使用新的默认模板
       const oldTemplates = path.join(oldConfigDir, 'templates.json');
       const newTemplates = path.join(_configDir, 'templates.json');
+      
       if (fs.existsSync(oldTemplates) && !fs.existsSync(newTemplates)) {
-        fs.copyFileSync(oldTemplates, newTemplates);
-        migrated.push('templates.json');
+        // 读取旧模板和默认模板进行对比
+        const oldTemplatesContent = fs.readFileSync(oldTemplates, 'utf8');
+        let shouldUseDefault = false;
+        
+        try {
+          if (fs.existsSync(defaultTemplatesPath)) {
+            const defaultTemplatesContent = fs.readFileSync(defaultTemplatesPath, 'utf8');
+            const oldTemplatesData = JSON.parse(oldTemplatesContent);
+            const defaultTemplatesData = JSON.parse(defaultTemplatesContent);
+            
+            // 对比模板 ID 列表（判断模板是否有更新）
+            const oldTemplateIds = oldTemplatesData.templates.map(t => t.id).sort().join(',');
+            const defaultTemplateIds = defaultTemplatesData.templates.map(t => t.id).sort().join(',');
+            
+            // 如果模板 ID 不同，说明默认模板有更新，使用新的默认模板
+            if (oldTemplateIds !== defaultTemplateIds) {
+              shouldUseDefault = true;
+              console.log('[userDataManager] 检测到默认模板有更新，使用新版本模板');
+            } else {
+              // 模板 ID 相同，迁移旧模板（保留用户可能的自定义修改）
+              console.log('[userDataManager] 模板版本一致，迁移旧模板');
+            }
+          } else {
+            // 默认模板文件不存在，迁移旧模板
+            console.warn('[userDataManager] 默认模板文件不存在，迁移旧模板');
+          }
+        } catch (e) {
+          // 解析失败时使用默认模板
+          console.warn('[userDataManager] 模板对比失败，使用默认模板:', e.message);
+          shouldUseDefault = true;
+        }
+        
+        if (shouldUseDefault && fs.existsSync(defaultTemplatesPath)) {
+          // 使用新的默认模板
+          fs.copyFileSync(defaultTemplatesPath, newTemplates);
+          migrated.push('templates.json (default)');
+        } else {
+          // 迁移旧模板
+          fs.copyFileSync(oldTemplates, newTemplates);
+          migrated.push('templates.json');
+        }
       }
 
       // 迁移内置选项
