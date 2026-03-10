@@ -5,17 +5,64 @@
 // @ts-nocheck - 纯 JavaScript 项目，禁用 TypeScript 类型检查
 
 /**
- * AI 创建项目（使用预览的数据）
+ * 从模板构建提示词
  * 
+ * 替换模板中的所有变量占位符
+ * 
+ * @param {Object} template - 模板对象
+ * @param {Object} variables - 变量值对象
+ * @returns {string} 替换后的提示词
+ */
+function buildPromptFromTemplate(template, variables) {
+  if (!template || !template.content) {
+    return variables.script || '';
+  }
+  
+  let prompt = template.content;
+  
+  // 替换基础变量
+  const replacements = {
+    '{剧本内容}': variables.script || '',
+    '{角色}': variables.character || '',
+    '{场景}': variables.scene || '',
+    '{风格}': variables.style || '',
+    '{情绪氛围}': variables.mood || '',
+    '{情绪}': variables.mood || '',
+    '{时长}': variables.duration || '15',
+    '{视频时长（秒）}': variables.duration || '15',
+    '{画幅}': variables.aspectRatio || '16:9',
+    '{画幅比例}': variables.aspectRatio || '16:9',
+    '{对白}': variables.dialogue || '',
+    '{配乐风格}': variables.musicStyle || '',
+    '{音效}': variables.soundEffect || '',
+    '{备注}': variables.notes || '',
+    '{图片参考}': variables.imageRef || '',
+    '{视频参考}': variables.videoRef || '',
+    '{音频参考}': variables.audioRef || '',
+    '{自定义提示词部分}': variables.customPrompt || ''
+  };
+  
+  // 执行替换
+  for (const [key, value] of Object.entries(replacements)) {
+    // 使用全局替换
+    prompt = prompt.split(key).join(value);
+  }
+  
+  return prompt;
+}
+
+/**
+ * AI 创建项目（使用预览的数据）
+ *
  * 流程：
  * 1. 获取表单数据（名称、描述、画幅比例）
  * 2. 检查预览数据是否存在
  * 3. 解析预览数据为 JSON
  * 4. 调用 Electron API 创建项目
- * 
+ *
  * @async
  * @returns {Promise<void>}
- * 
+ *
  * @example
  * // 在 AI 模式按钮点击时调用
  * elements.generatePromptBtn.addEventListener('click', createProjectAI);
@@ -55,6 +102,20 @@ async function createProjectAI() {
 
   if (window.useElectronAPI) {
     try {
+      // 确保 AI 生成的数据中包含画幅信息
+      if (jsonData.project) {
+        jsonData.project.aspectRatio = ratio;
+      }
+      
+      // 确保所有片段都使用设置的画幅
+      if (jsonData.shots && Array.isArray(jsonData.shots)) {
+        jsonData.shots.forEach(shot => {
+          if (!shot.aspectRatio) {
+            shot.aspectRatio = ratio;
+          }
+        });
+      }
+      
       // 组合项目数据
       const projectData = {
         project: {
@@ -270,12 +331,28 @@ async function createProjectManual() {
         return;
       }
 
-      // 使用激活的模板而不是硬编码的提示词
+      // 使用激活的模板
       const activeTemplate = window.settings.templates.find(t => t.id === window.settings.activeTemplateId);
       const template = activeTemplate || (window.getDefaultTemplate ? window.getDefaultTemplate() : null);
 
-      // 替换 {剧本内容} 占位符
-      const prompt = template.content.replace('{剧本内容}', script);
+      // 使用新的变量替换函数
+      const prompt = buildPromptFromTemplate(template, {
+        script: script,
+        duration: ratio === '9:16' ? '8' : '15',  // 竖屏默认 8 秒，横屏默认 15 秒
+        aspectRatio: ratio,
+        character: '',  // 这些变量当前由 AI 理解，用户无需填写
+        scene: '',
+        style: '',
+        mood: '',
+        dialogue: '',
+        musicStyle: '',
+        soundEffect: '',
+        notes: '',
+        imageRef: '',
+        videoRef: '',
+        audioRef: '',
+        customPrompt: ''
+      });
 
       const result = await window.electronAPI.callLlmApi(provider, apiKey, model, prompt);
 
@@ -289,6 +366,7 @@ async function createProjectManual() {
             jsonData = JSON.parse(result.content);
           }
 
+          // 确保画幅信息被设置
           const projectData = {
             id: `proj_${Date.now()}_${Math.floor(Math.random() * 10000)}`,
             name: name,
@@ -296,6 +374,20 @@ async function createProjectManual() {
             aspectRatio: ratio,
             ...jsonData
           };
+          
+          // 确保 project 对象包含画幅
+          if (projectData.project) {
+            projectData.project.aspectRatio = ratio;
+          }
+          
+          // 确保所有片段都使用设置的画幅
+          if (projectData.shots && Array.isArray(projectData.shots)) {
+            projectData.shots.forEach(shot => {
+              if (!shot.aspectRatio) {
+                shot.aspectRatio = ratio;
+              }
+            });
+          }
 
           const createResult = await window.electronAPI.createProject(projectData);
           if (createResult.success) {
