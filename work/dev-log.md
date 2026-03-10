@@ -4,6 +4,36 @@
 
 ---
 
+## 2026-03-10 - 修复设置保存后项目列表不刷新的问题
+
+### 问题描述
+- **问题**: 用户修改存储路径并点击保存后，项目列表、片段、镜头没有刷新
+- **影响**: 用户需要手动刷新或重启应用才能看到新路径下的项目
+
+### 修复方案
+**文件**: `src/utils/eventListeners.js`
+
+在保存设置按钮的点击事件中，添加刷新项目列表的逻辑：
+
+```javascript
+if (window.elements.saveSettingsBtn) {
+  window.elements.saveSettingsBtn.addEventListener('click', () => {
+    window.saveSettings();
+    window.saveSettingsToStorage();  // 确保模板配置也被保存
+    window.hideSettingsModal();
+    window.loadProjects();  // 刷新项目列表（存储路径可能已更改）
+    window.showToast('设置已保存');  // 用户反馈
+  });
+}
+```
+
+### 修改文件
+| 文件 | 修改内容 |
+|------|----------|
+| `src/utils/eventListeners.js` | 保存设置后调用 `loadProjects()` 刷新项目列表 |
+
+---
+
 ## 2026-03-10 - 修复新设备默认存储路径硬编码问题
 
 ### 问题描述

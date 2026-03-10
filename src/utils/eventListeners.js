@@ -83,7 +83,11 @@ function setupEventListeners() {
   if (window.elements.saveSettingsBtn) {
     window.elements.saveSettingsBtn.addEventListener('click', () => {
       window.saveSettings();
+      window.saveSettingsToStorage();
       window.hideSettingsModal();
+      // 刷新项目列表（存储路径可能已更改）
+      window.loadProjects();
+      window.showToast('设置已保存');
     });
   }
   if (window.elements.cancelSettingsBtn) {
