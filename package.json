@@ -46,6 +46,7 @@
         "to": "default"
       }
     ],
+    "forceCodeSigning": false,
     "win": {
       "target": [
         {
@@ -53,7 +54,9 @@
           "arch": ["x64"]
         }
       ],
-      "icon": "assets/icon.png"
+      "icon": "assets/icon.png",
+      "signAndEditExecutable": false,
+      "verifyUpdateCodeSignature": false
     },
     "nsis": {
       "oneClick": false,
