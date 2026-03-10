@@ -117,9 +117,14 @@ function setupEventListeners() {
   if (window.elements.changePathBtn) {
     window.elements.changePathBtn.addEventListener('click', async () => {
       if (window.useElectronAPI) {
-        const path = await window.electronAPI.openProjectDialog();
-        if (path) {
-          window.elements.storagePathInput.value = path;
+        // 使用 showOpenDialog 并指定默认路径为当前存储路径
+        const result = await window.electronAPI.showOpenDialog({
+          title: '选择项目存储文件夹',
+          properties: ['openDirectory'],
+          defaultPath: window.settings?.storagePath || undefined
+        });
+        if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+          window.elements.storagePathInput.value = result.filePaths[0];
         }
       }
     });

@@ -4,6 +4,44 @@
 
 ---
 
+## 2026-03-10 - 修复设置存储路径浏览按钮路径污染问题
+
+### 问题描述
+- **问题**: 上传素材后，点击设置中的"浏览"按钮选择存储路径时，打开的目录是上次上传素材时的路径
+- **原因**: `changePathBtn` 使用 `openProjectDialog()` 没有指定 `defaultPath`，Electron 记住了上次使用的路径
+- **影响**: 用户需要手动导航到正确的存储路径，体验不佳
+
+### 修复方案
+**文件**: `src/utils/eventListeners.js`
+
+改用 `showOpenDialog` 并指定 `defaultPath` 为当前存储路径：
+
+```javascript
+// 更改存储路径
+if (window.elements.changePathBtn) {
+  window.elements.changePathBtn.addEventListener('click', async () => {
+    if (window.useElectronAPI) {
+      // 使用 showOpenDialog 并指定默认路径为当前存储路径
+      const result = await window.electronAPI.showOpenDialog({
+        title: '选择项目存储文件夹',
+        properties: ['openDirectory'],
+        defaultPath: window.settings?.storagePath || undefined
+      });
+      if (!result.canceled && result.filePaths && result.filePaths.length > 0) {
+        window.elements.storagePathInput.value = result.filePaths[0];
+      }
+    }
+  });
+}
+```
+
+### 修改文件
+| 文件 | 修改内容 |
+|------|----------|
+| `src/utils/eventListeners.js` | 更改存储路径按钮使用 `showOpenDialog` 并指定 `defaultPath` |
+
+---
+
 ## 2026-03-10 - 修复设置保存后项目列表不刷新的问题
 
 ### 问题描述
