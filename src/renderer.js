@@ -614,11 +614,19 @@ function initUpdateListeners() {
 
   window.electronAPI.onUpdateAvailable((info) => {
     console.log('[更新] 发现新版本:', info.version);
-    // 新版本发现时，显示确认对话框
-    const confirmed = window.showConfirm(`发现新版本 ${info.version}，是否立即下载更新？`, '版本更新');
-    if (confirmed) {
-      window.electronAPI.startUpdateDownload();
+    // 更新模态框状态
+    const updateModal = document.getElementById('update-modal');
+    if (updateModal) {
+      const statusEl = document.getElementById('update-status');
+      const infoEl = document.getElementById('update-info');
+      if (statusEl) statusEl.textContent = `发现新版本 ${info.version}`;
+      if (infoEl) infoEl.textContent = '准备下载...';
     }
+    
+    // 短暂延迟后自动开始下载（不需要确认）
+    setTimeout(() => {
+      window.electronAPI.startUpdateDownload();
+    }, 500);
   });
 
   window.electronAPI.onUpdateNotAvailable(() => {
