@@ -4,6 +4,124 @@
 
 ---
 
+## 2026-03-10 - 添加单实例锁防止重复启动
+
+### 需求
+防止用户多次启动应用导致资源浪费和数据冲突。
+
+### 实现
+使用 Electron `app.requestSingleInstanceLock()` API 实现单实例锁。
+
+### 代码逻辑
+```javascript
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // 当前不是第一个实例，退出
+  dialog.showErrorBox('Kim 分镜助手', '程序已经在运行中，请勿重复启动！');
+  app.exit(0);
+} else {
+  // 监听其他实例的启动请求
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // 聚焦到主窗口
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      mainWindow.show();
+    }
+  });
+}
+```
+
+### 行为
+| 场景 | 行为 |
+|------|------|
+| 首次启动 | 正常启动，获取锁 |
+| 再次启动 | 显示错误对话框 → 退出 |
+| 最小化时再次启动 | 恢复窗口 → 聚焦 → 显示 |
+
+### 修改文件
+| 文件 | 变更 |
+|------|------|
+| `src/main.js` | +22 行，添加单实例锁逻辑 |
+
+### Git 提交
+- 提交：`7c95d9d` - feat: add single instance lock to prevent multiple launches
+
+---
+
+## 2026-03-10 - 模板迁移对比功能
+
+### 需求
+数据迁移时，对比旧模板与新模板内容，决定是否使用新模板。
+
+### 实现
+在 `userDataManager.js` 的 `migrateData()` 函数中添加模板内容对比逻辑。
+
+### 对比逻辑
+```javascript
+// 序列化模板数组内容进行对比
+const oldTemplatesStr = JSON.stringify(
+  oldTemplatesData.templates.sort((a, b) => a.id.localeCompare(b.id))
+);
+const defaultTemplatesStr = JSON.stringify(
+  defaultTemplatesData.templates.sort((a, b) => a.id.localeCompare(b.id))
+);
+
+// 内容不同则使用新模板
+if (oldTemplatesStr !== defaultTemplatesStr) {
+  shouldUseDefault = true;
+  console.log('[userDataManager] 检测到默认模板内容有更新，使用新版本模板');
+} else {
+  console.log('[userDataManager] 模板内容一致，迁移旧模板');
+}
+```
+
+### 行为
+| 场景 | 行为 |
+|------|------|
+| 模板内容不同 | 使用新的默认模板 |
+| 模板内容相同 | 迁移旧模板（保留用户自定义） |
+| 解析失败 | 使用默认模板 |
+
+### 修改文件
+| 文件 | 变更 |
+|------|------|
+| `src/utils/userDataManager.js` | +44 行 -3 行，添加模板内容对比逻辑 |
+
+### Git 提交
+- `4812d73` - feat: compare template content instead of IDs
+- `a07f7c3` - feat: add template comparison during migration
+
+---
+
+## 2026-03-10 - 更新默认模板画幅变量
+
+### 问题
+默认模板中的画幅比例是硬编码的 `"16:9"`，用户选择 9:16 时生成的提示词仍然是 16:9。
+
+### 修复
+将模板中的 `"aspectRatio": "16:9"` 改为 `"aspectRatio": "{画幅比例}"` 变量。
+
+### 修改的模板
+| 模板 ID | 名称 | 修改 |
+|---------|------|------|
+| `default_storyboard_15` | 默认分镜模板（15s） | ✅ |
+| `product_ad_template` | 商品广告模板 | ✅ |
+| `tutorial_template` | 教程教学模板 | ✅ |
+| `default_storyboard_8` | 默认分镜模板（8s） | ✅ |
+| `hand_drawn_animation_template` | 手绘动画模板 | ✅ |
+
+### 修改文件
+| 文件 | 变更 |
+|------|------|
+| `assets/default/default-templates.json` | 5 处修改，`"16:9"` → `"{画幅比例}"` |
+
+### Git 提交
+- 提交：`bdd395a` - fix: update default templates with aspectRatio variable
+
+---
+
 ## 2026-03-10 - 模板变量替换逻辑实现
 
 ### 需求
@@ -42,7 +160,7 @@
 
 **修改点**:
 1. `createProjectAI()`: 确保 AI 返回的 JSON 中 project 和所有 shots 都包含 `aspectRatio`
-2. `createProjectManual()`: 
+2. `createProjectManual()`:
    - 使用 `buildPromptFromTemplate()` 替换变量
    - 根据画幅自动设置时长（9:16=8 秒，其他=15 秒）
    - 确保生成的项目数据包含画幅信息
