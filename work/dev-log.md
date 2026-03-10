@@ -4,6 +4,26 @@
 
 ---
 
+## 2026-03-10 - 打包错误修复
+
+### 完成内容
+
+#### 1. 修复 main.js 重复声明错误
+- **问题**: 打包后启动报错 `SyntaxError: Identifier 'ipcMain' has already been declared`
+- **原因**: 第 1 行已导入 `ipcMain`，第 172 行又重复声明 `const { ipcMain } = require('electron')`
+- **修复**: 删除第 172 行的重复声明
+- **提交**: `140343a`
+
+#### 2. 修复 GitHub Release 上传失败
+- **问题**: `Validation Failed: already_exists` - 同名文件已存在
+- **修复**: 
+  - 升级 `softprops/action-gh-release@v1` → `v2`
+  - 添加 `overwrite: true` 覆盖同名文件
+  - 设置 `draft: false` 直接发布
+- **提交**: `cdc1b8a`
+
+---
+
 ## 2026-03-09 - Electron 打包和自动更新功能实现
 
 ### 完成内容
@@ -1849,7 +1869,7 @@ class AppStateManager {
 - ✅ 保持向后兼容（window 对象仍然可用）
 - ✅ 便于调试和状态追踪
 
-### 使用示例
+### 使���示例
 
 ```javascript
 // 之前（可能导致不同步）
