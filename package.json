@@ -28,15 +28,18 @@
     "appId": "com.kimv4.storyboard",
     "productName": "Kim 分镜助手",
     "directories": {
-      "output": "dist"
+      "output": "release"
     },
     "files": [
       "src/**/*",
       "assets/**/*",
       "index.html",
       "styles.css",
-      "package.json"
+      "package.json",
+      "!**/node_modules/.bin/**",
+      "!**/*.md"
     ],
+    "asar": true,
     "extraResources": [
       {
         "from": "assets/default",
