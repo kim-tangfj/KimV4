@@ -4,6 +4,31 @@
 
 ---
 
+## 2026-03-10 - 自动更新模态框 UI
+
+### 完成内容
+
+#### 1. 自动更新 UI 优化
+- **需求**: 将控制台输出的更新进度改为模态框进度条，更新过程中禁用所有操作
+- **修改文件**:
+  - `src/main.js` - 添加模态框事件发送
+  - `src/preload.js` - 添加模态框 IPC 接口
+  - `src/renderer.js` - 创建模态框 UI 和事件处理
+  - `src/utils/settings.js` - 更新检查按钮点击逻辑
+  - `styles.css` - 添加模态框样式（200+ 行）
+
+**功能特性**:
+- ✅ 模态框显示更新状态（检查中/下载中/已完成）
+- ✅ 实时进度条显示下载百分比
+- ✅ 显示下载速度信息
+- ✅ 更新过程中禁用所有操作（body.update-lock）
+- ✅ 下载完成后显示"立即安装并重启"按钮
+- ✅ 支持浅色/深色主题
+
+- **提交**: `64a90a4`
+
+---
+
 ## 2026-03-10 - 打包错误修复
 
 ### 完成内容
@@ -1841,7 +1866,7 @@ function bindThumbnailClickEvents()  // 绑定缩略图点击事件
 
 ```javascript
 class AppStateManager {
-  // 统一管理状态
+  // 统一管��状态
   state = { projects, currentProject, currentShot, currentScene, projectData }
   settings = { storagePath, apiProvider, apiKeys, models, templates, activeTemplateId }
   currentTheme = 'light'
