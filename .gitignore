@@ -33,3 +33,4 @@ Thumbs.db
 
 # electron-builder 缓存
 .cache/
+/release
