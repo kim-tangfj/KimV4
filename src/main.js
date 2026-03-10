@@ -169,7 +169,6 @@ app.on('window-all-closed', function () {
 });
 
 // ========== 日志记录 IPC 处理器 ==========
-const { ipcMain } = require('electron');
 
 // 渲染进程错误日志记录
 ipcMain.handle('log:error', async (event, logEntry) => {
