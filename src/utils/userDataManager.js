@@ -11,35 +11,51 @@ let _userBasePath;
 let _configDir;
 let _logsDir;
 let _oldUserDataPath;
+let _initialized = false;
 
 function initializePaths() {
-  _documentsPath = app.getPath('documents');
-  _userBasePath = path.join(_documentsPath, 'KimStoryboard');
-  _configDir = path.join(_userBasePath, '.config');
-  _logsDir = path.join(_userBasePath, 'logs');
-  _oldUserDataPath = app.getPath('userData');
+  if (_initialized) return;
+  
+  try {
+    _documentsPath = app.getPath('documents');
+    _userBasePath = path.join(_documentsPath, 'KimStoryboard');
+    _configDir = path.join(_userBasePath, '.config');
+    _logsDir = path.join(_userBasePath, 'logs');
+    _oldUserDataPath = app.getPath('userData');
 
-  if (!fs.existsSync(_configDir)) {
-    fs.mkdirSync(_configDir, { recursive: true });
-  }
-  if (!fs.existsSync(_logsDir)) {
-    fs.mkdirSync(_logsDir, { recursive: true });
+    if (!fs.existsSync(_configDir)) {
+      fs.mkdirSync(_configDir, { recursive: true });
+    }
+    if (!fs.existsSync(_logsDir)) {
+      fs.mkdirSync(_logsDir, { recursive: true });
+    }
+    
+    _initialized = true;
+    console.log('[userDataManager] 路径初始化完成:', _configDir);
+  } catch (error) {
+    console.error('[userDataManager] 路径初始化失败:', error);
   }
 }
 
-initializePaths();
+// 确保路径已初始化（懒加载）
+function ensureInitialized() {
+  if (!_initialized) {
+    initializePaths();
+  }
+}
 
 module.exports = {
-  getUserBasePath: () => _userBasePath,
-  getConfigDir: () => _configDir,
-  getLogsDir: () => _logsDir,
-  getTemplatesConfigPath: () => path.join(_configDir, 'templates.json'),
-  getOptionsConfigPath: () => path.join(_configDir, 'options.json'),
-  getCustomOptionsConfigPath: () => path.join(_configDir, 'options-custom.json'),
-  getOldUserDataPath: () => _oldUserDataPath,
-  getOldConfigDir: () => path.join(_oldUserDataPath, 'config'),
+  getUserBasePath: () => { ensureInitialized(); return _userBasePath; },
+  getConfigDir: () => { ensureInitialized(); return _configDir; },
+  getLogsDir: () => { ensureInitialized(); return _logsDir; },
+  getTemplatesConfigPath: () => { ensureInitialized(); return path.join(_configDir, 'templates.json'); },
+  getOptionsConfigPath: () => { ensureInitialized(); return path.join(_configDir, 'options.json'); },
+  getCustomOptionsConfigPath: () => { ensureInitialized(); return path.join(_configDir, 'options-custom.json'); },
+  getOldUserDataPath: () => { ensureInitialized(); return _oldUserDataPath; },
+  getOldConfigDir: () => { ensureInitialized(); return path.join(_oldUserDataPath, 'config'); },
 
   checkMigrationNeeded: () => {
+    ensureInitialized();
     const oldConfigDir = path.join(_oldUserDataPath, 'config');
     const filesToMigrate = [];
 
@@ -74,6 +90,7 @@ module.exports = {
   },
 
   migrateData: () => {
+    ensureInitialized();
     const oldConfigDir = path.join(_oldUserDataPath, 'config');
     const migrated = [];
 
@@ -113,6 +130,7 @@ module.exports = {
   },
 
   clearAllConfig: () => {
+    ensureInitialized();
     try {
       const templatesConfig = path.join(_configDir, 'templates.json');
       const optionsConfig = path.join(_configDir, 'options.json');
