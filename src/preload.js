@@ -137,5 +137,10 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onFactoryResetExecute: (callback) => {
     ipcRenderer.on('factory-reset-execute', (event) => callback(event));
+  },
+
+  // 数据迁移事件监听
+  onDataMigrationComplete: (callback) => {
+    ipcRenderer.on('data-migration-complete', (event, data) => callback(data));
   }
 });

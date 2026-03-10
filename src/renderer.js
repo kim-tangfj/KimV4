@@ -685,6 +685,142 @@ window.electronAPI.onFactoryResetExecute(() => {
 // ======= 恢复出厂设置监听 结束 ========
 
 
+// ======= 数据迁移监听 开始 ========
+// 监听数据迁移完成（从主进程发送）
+window.electronAPI.onDataMigrationComplete((data) => {
+  if (data.success && data.migrated && data.migrated.length > 0) {
+    // 显示迁移成功提示
+    const migratedFiles = data.migrated.join('、');
+    window.showToast(`数据已迁移：${migratedFiles}`);
+
+    // 显示迁移详情对话框
+    showMigrationDialog(data.migrated);
+  } else if (!data.success) {
+    window.showToast('数据迁移失败：' + (data.error || '未知错误'), 'error');
+  }
+});
+
+// 显示迁移详情对话框
+function showMigrationDialog(migratedFiles) {
+  const dialog = document.createElement('div');
+  dialog.className = 'migration-dialog';
+  dialog.innerHTML = `
+    <div class="migration-dialog-content">
+      <div class="migration-dialog-header">
+        <h3>📦 数据迁移完成</h3>
+      </div>
+      <div class="migration-dialog-body">
+        <p>欢迎使用 Kim 分镜助手！</p>
+        <p>检测到您是首次使用新版本，我们已将旧版本的配置数据迁移到新的存储位置：</p>
+        <ul class="migration-list">
+          ${migratedFiles.map(f => `<li>✅ ${f}</li>`).join('')}
+        </ul>
+        <p class="migration-hint">
+          💡 新的配置文件存储在：<br>
+          <code>文档/KimStoryboard/.config/</code>
+        </p>
+        <p class="migration-hint">
+          这样即使将来更新应用版本，您的配置数据也不会丢失。
+        </p>
+      </div>
+      <div class="migration-dialog-footer">
+        <button class="btn btn-primary" onclick="this.closest('.migration-dialog').remove()">知道了</button>
+      </div>
+    </div>
+  `;
+  document.body.appendChild(dialog);
+
+  // 添加样式
+  const style = document.createElement('style');
+  style.textContent = `
+    .migration-dialog {
+      position: fixed;
+      top: 0;
+      left: 0;
+      right: 0;
+      bottom: 0;
+      background: rgba(0, 0, 0, 0.6);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      z-index: 9999;
+    }
+    .migration-dialog-content {
+      background: var(--panel-bg);
+      border-radius: 8px;
+      padding: 0;
+      max-width: 500px;
+      width: 90%;
+      box-shadow: 0 4px 20px rgba(0, 0, 0, 0.3);
+    }
+    .migration-dialog-header {
+      padding: 20px;
+      border-bottom: 1px solid var(--border-color);
+      background: var(--border-color);
+      border-radius: 8px 8px 0 0;
+    }
+    .migration-dialog-header h3 {
+      margin: 0;
+      color: var(--text-color);
+      font-size: 18px;
+    }
+    .migration-dialog-body {
+      padding: 20px;
+      color: var(--text-color);
+      line-height: 1.8;
+    }
+    .migration-dialog-body p {
+      margin-bottom: 12px;
+    }
+    .migration-list {
+      background: var(--border-color);
+      padding: 15px 20px;
+      border-radius: 4px;
+      margin: 10px 0;
+      list-style: none;
+    }
+    .migration-list li {
+      padding: 5px 0;
+      color: var(--text-color);
+    }
+    .migration-hint {
+      font-size: 12px;
+      color: #888 !important;
+      margin-top: 15px !important;
+    }
+    .migration-hint code {
+      background: var(--border-color);
+      padding: 2px 6px;
+      border-radius: 3px;
+      font-family: monospace;
+      font-size: 11px;
+    }
+    .migration-dialog-footer {
+      padding: 15px 20px;
+      border-top: 1px solid var(--border-color);
+      display: flex;
+      justify-content: flex-end;
+    }
+    .btn {
+      padding: 8px 20px;
+      border: none;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 14px;
+    }
+    .btn-primary {
+      background: #4a9eff;
+      color: white;
+    }
+    .btn-primary:hover {
+      background: #3a8eef;
+    }
+  `;
+  document.head.appendChild(style);
+}
+// ======= 数据迁移监听 结束 ========
+
+
 // ======= 素材库 开始 ========
 
 // 渲染素材库列表（占位符）

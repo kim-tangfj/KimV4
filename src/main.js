@@ -145,6 +145,9 @@ function createWindow() {
 
 // 应用准备就绪时创建窗口
 app.whenReady().then(() => {
+  // 检查并迁移旧数据（在初始化模板和选项之前）
+  const migrationResult = migrateOldData();
+
   // 初始化日志文件
   initializeLogFiles();
 
@@ -153,6 +156,13 @@ app.whenReady().then(() => {
 
   // 初始化自定义选项
   initializeCustomOptions();
+
+  // 如果有迁移数据，通知渲染进程
+  if (migrationResult.needMigrate) {
+    setTimeout(() => {
+      mainWindow?.webContents?.send('data-migration-complete', migrationResult);
+    }, 1000);
+  }
 
   // 初始化 IPC 处理器
   initProjectIPC(mainWindow);
@@ -229,11 +239,33 @@ ipcMain.handle('crypto:decrypt', async (event, encryptedBase64) => {
   }
 });
 
+// ========== 数据迁移 ==========
+// 迁移旧版本数据到新路径
+function migrateOldData() {
+  const userDataManager = require('./utils/userDataManager');
+  
+  const migrationCheck = userDataManager.checkMigrationNeeded();
+  
+  if (migrationCheck.needMigrate) {
+    console.log('[数据迁移] 发现旧数据，开始迁移...');
+    const result = userDataManager.migrateData();
+    if (result.success) {
+      console.log('[数据迁移] 完成，迁移了:', result.migrated);
+      return { needMigrate: true, migrated: result.migrated, success: true };
+    } else {
+      console.error('[数据迁移] 失败:', result.error);
+      return { needMigrate: true, success: false, error: result.error };
+    }
+  }
+  
+  return { needMigrate: false };
+}
+
 // ========== 恢复出厂设置 IPC 处理器 ==========
 ipcMain.handle('app:factoryReset', async (event) => {
   const { app, dialog } = require('electron');
-  const fs = require('fs');
-  
+  const userDataManager = require('./utils/userDataManager');
+
   try {
     // 显示确认对话框
     const { response } = await dialog.showMessageBox(mainWindow, {
@@ -253,29 +285,11 @@ ipcMain.handle('app:factoryReset', async (event) => {
     // 清除 localStorage（通过渲染进程）
     mainWindow?.webContents?.send('factory-reset-execute');
 
-    // 删除配置文件
-    const userDataPath = app.getPath('userData');
-    const configDir = path.join(userDataPath, 'config');
+    // 使用 userDataManager 清除配置文件
+    const result = userDataManager.clearAllConfig();
     
-    // 删除模板配置
-    const templatesConfigPath = path.join(configDir, 'templates.json');
-    if (fs.existsSync(templatesConfigPath)) {
-      fs.unlinkSync(templatesConfigPath);
-      console.log('[恢复出厂设置] 已删除模板配置:', templatesConfigPath);
-    }
-
-    // 删除自定义选项配置
-    const optionsConfigPath = path.join(configDir, 'options.json');
-    if (fs.existsSync(optionsConfigPath)) {
-      fs.unlinkSync(optionsConfigPath);
-      console.log('[恢复出厂设置] 已删除自定义选项配置:', optionsConfigPath);
-    }
-
-    // 删除日志目录
-    const logsDir = path.join(userDataPath, 'logs');
-    if (fs.existsSync(logsDir)) {
-      fs.rmSync(logsDir, { recursive: true, force: true });
-      console.log('[恢复出厂设置] 已删除日志目录:', logsDir);
+    if (!result.success) {
+      return { success: false, error: result.error };
     }
 
     console.log('[恢复出厂设置] 完成，准备重启应用');

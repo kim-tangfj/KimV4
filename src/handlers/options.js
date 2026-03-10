@@ -6,10 +6,10 @@ const { ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { withErrorHandler, validateParams } = require('../utils/ipcErrorHandler');
+const userDataManager = require('../utils/userDataManager');
 
-// 用户数据目录
-const userDataPath = require('electron').app.getPath('userData');
-const configDir = path.join(userDataPath, 'config');
+// 用户数据目录（使用新的持久化路径）
+const configDir = userDataManager.getConfigDir();
 const customOptionsPath = path.join(configDir, 'options-custom.json');
 
 // 内置选项文件路径

@@ -4,6 +4,130 @@
 
 ---
 
+## 2026-03-10 - 用户数据持久化方案 - 解决更新后数据丢失问题
+
+### 问题根因
+- **NSIS 覆盖安装可能导致 `app.getPath('userData')` 路径变化**
+- 用户配置文件存储在 `%APPDATA%\com.kimv4.storyboard\config\`
+- 更新版本时，旧的用户数据可能被清理或路径变化
+
+### 解决方案：用户数据目录迁移到 Documents
+
+将配置文件存储到 `文档/KimStoryboard/.config/`，与应用安装完全解耦。
+
+#### 优点
+- ✅ 永久解决更新丢失数据问题
+- ✅ 用户备份方便（整个 `KimStoryboard` 目录）
+- ✅ 符合 Windows 应用最佳实践（用户数据与程序分离）
+- ✅ 卸载应用不会删除用户数据
+
+### 实施步骤
+
+#### 1. 创建用户数据管理模块
+**文件**: `src/utils/userDataManager.js`
+
+功能：
+- 路径管理（`文档/KimStoryboard/.config/`、`文档/KimStoryboard/logs/`）
+- 旧数据迁移（从 `userData/config/` 到新路径）
+- 配置清除（恢复出厂设置）
+
+```javascript
+// 路径定义
+const _userBasePath = path.join(app.getPath('documents'), 'KimStoryboard');
+const _configDir = path.join(_userBasePath, '.config');
+const _logsDir = path.join(_userBasePath, 'logs');
+```
+
+#### 2. 修改模板管理模块
+**文件**: `src/handlers/template.js`
+```javascript
+const userDataManager = require('../utils/userDataManager');
+const templatesConfigPath = userDataManager.getTemplatesConfigPath();
+```
+
+#### 3. 修改自定义选项模块
+**文件**: `src/handlers/options.js`
+```javascript
+const userDataManager = require('../utils/userDataManager');
+const customOptionsPath = path.join(configDir, 'options-custom.json');
+```
+
+#### 4. 添加数据迁移逻辑
+**文件**: `src/main.js`
+```javascript
+// 应用启动时检查并迁移旧数据
+function migrateOldData() {
+  const userDataManager = require('./utils/userDataManager');
+  const migrationCheck = userDataManager.checkMigrationNeeded();
+  
+  if (migrationCheck.needMigrate) {
+    const result = userDataManager.migrateData();
+    return { needMigrate: true, migrated: result.migrated, success: true };
+  }
+  return { needMigrate: false };
+}
+```
+
+#### 5. 更新恢复出厂设置
+**文件**: `src/main.js`
+```javascript
+ipcMain.handle('app:factoryReset', async () => {
+  const userDataManager = require('./utils/userDataManager');
+  const result = userDataManager.clearAllConfig();
+  // ...
+});
+```
+
+#### 6. 添加迁移提示 UI
+**文件**: `src/renderer.js`
+- 监听 `data-migration-complete` 事件
+- 显示迁移详情对话框
+- 告知用户新的配置文件位置
+
+### 用户数据目录结构
+
+```
+文档/KimStoryboard/
+├── .config/                   ← 配置文件（模板、选项）
+│   ├── templates.json
+│   └── options-custom.json
+├── project-1/                 ← 项目文件
+├── project-2/
+└── logs/                      ← 日志文件
+```
+
+### 修改文件统计
+| 文件 | 修改内容 |
+|------|----------|
+| `src/utils/userDataManager.js` | **新增** 用户数据路径管理、迁移、清除功能 |
+| `src/handlers/template.js` | 使用新的配置路径 |
+| `src/handlers/options.js` | 使用新的配置路径 |
+| `src/main.js` | 添加 `migrateOldData()` 函数，更新恢复出厂设置 |
+| `src/preload.js` | 暴露 `onDataMigrationComplete` 事件监听 |
+| `src/renderer.js` | 添加迁移完成监听和提示 UI |
+
+### 迁移流程
+
+```
+应用启动
+  ↓
+检查旧数据是否存在 (userData/config/)
+  ↓
+需要迁移？
+  ├─ 是 → 复制到新路径 (文档/KimStoryboard/.config/)
+  │       ↓
+  │     显示迁移完成对话框
+  │
+  └─ 否 → 直接使用新路径
+```
+
+### 兼容性保证
+- ✅ 首次安装：直接使用新路径
+- ✅ 旧版本升级：自动迁移旧数据
+- ✅ 未来更新：数据永久保留在 `文档/KimStoryboard/`
+
+---
+
 ## 2026-03-10 - 添加恢复出厂设置功能
 
 ### 需求

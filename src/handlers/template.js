@@ -6,16 +6,16 @@ const { ipcMain, dialog } = require('electron');
 const path = require('path');
 const fs = require('fs');
 const { withErrorHandler } = require('../utils/ipcErrorHandler');
+const userDataManager = require('../utils/userDataManager');
 
-// 模板配置文件路径
-const userDataPath = require('electron').app.getPath('userData');
-const configDir = path.join(userDataPath, 'config');
-const templatesConfigPath = path.join(configDir, 'templates.json');
+// 模板配置文件路径（使用新的持久化路径）
+const templatesConfigPath = userDataManager.getTemplatesConfigPath();
 
 // 默认模板文件路径
 const defaultTemplatesPath = path.join(__dirname, '../../assets/default/default-templates.json');
 
 // 确保配置目录存在
+const configDir = userDataManager.getConfigDir();
 if (!fs.existsSync(configDir)) {
   fs.mkdirSync(configDir, { recursive: true });
 }
