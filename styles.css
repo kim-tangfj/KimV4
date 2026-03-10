@@ -2690,7 +2690,7 @@ body.dark-theme .context-menu-item:hover {
   margin: 0;
   font-size: 18px;
   font-weight: 600;
-  color: #ffffff;
+  color: #ffffff !important;
 }
 
 /* 更新模态框主体 */

@@ -515,12 +515,12 @@ function initUpdateButton() {
     checkUpdateBtn.addEventListener('click', () => {
       // 显示模态框
       const updateModal = document.createElement('div');
-      updateModal.id = 'update-modal';
+      updateModal.id = 'update-modal-manual';
       updateModal.className = 'update-modal active';
       updateModal.innerHTML = `
         <div class="update-modal-content">
           <div class="update-modal-header">
-            <h3>🔄 检查更新</h3>
+            <h3 style="color: #ffffff !important;">🔄 检查更新</h3>
           </div>
           <div class="update-modal-body">
             <div class="update-status">正在检查更新...</div>
@@ -536,26 +536,42 @@ function initUpdateButton() {
       `;
       document.body.appendChild(updateModal);
       document.body.classList.add('update-lock');
-      
+
       // 开始检查更新
       window.electronAPI.checkForUpdates();
-      
+
       // 监听更新检查结果
       const hideModal = () => {
         updateModal.classList.remove('active');
         document.body.classList.remove('update-lock');
         setTimeout(() => updateModal.remove(), 300);
       };
-      
-      // 监听各种更新事件
-      const cleanup = () => {
-        hideModal();
+
+      // 监听更新事件
+      const onNotAvailable = () => {
+        const statusEl = updateModal.querySelector('.update-status');
+        const infoEl = updateModal.querySelector('.update-info');
+        if (statusEl) statusEl.textContent = '已是最新版本';
+        if (infoEl) infoEl.textContent = '无需更新';
+        setTimeout(hideModal, 1500);
       };
-      
-      // 3 秒后如果没有结果，自动隐藏
+
+      const onError = (error) => {
+        const statusEl = updateModal.querySelector('.update-status');
+        const infoEl = updateModal.querySelector('.update-info');
+        if (statusEl) statusEl.textContent = '检查失败';
+        if (infoEl) infoEl.textContent = error?.message || '未知错误';
+        setTimeout(hideModal, 2000);
+      };
+
+      // 临时监听（仅用于手动检查）
+      window.electronAPI.onUpdateNotAvailable(onNotAvailable);
+      window.electronAPI.onUpdateError(onError);
+
+      // 10 秒后如果没有结果，自动隐藏
       setTimeout(() => {
         if (updateModal.parentNode) {
-          cleanup();
+          hideModal();
         }
       }, 10000);
     });
