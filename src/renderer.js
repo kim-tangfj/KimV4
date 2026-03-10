@@ -508,11 +508,113 @@ initializeApp = async function() {
 function initUpdateListeners() {
   if (!window.electronAPI) return;
 
+  // 更新模态框元素
+  let updateModal = null;
+
+  window.electronAPI.onUpdateModalShow((data) => {
+    // 创建模态框
+    if (!updateModal) {
+      updateModal = document.createElement('div');
+      updateModal.id = 'update-modal';
+      updateModal.className = 'update-modal';
+      updateModal.innerHTML = `
+        <div class="update-modal-content">
+          <div class="update-modal-header">
+            <h3>🔄 自动更新</h3>
+          </div>
+          <div class="update-modal-body">
+            <div class="update-status" id="update-status">正在检查更新...</div>
+            <div class="update-progress-container">
+              <div class="update-progress-bar">
+                <div class="update-progress-fill" id="update-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="update-progress-text" id="update-progress-text">0%</div>
+            </div>
+            <div class="update-info" id="update-info"></div>
+          </div>
+          <div class="update-modal-footer">
+            <button class="update-modal-btn" id="update-cancel-btn" disabled>取消</button>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(updateModal);
+    }
+
+    // 根据类型显示不同状态
+    const statusEl = document.getElementById('update-status');
+    const infoEl = document.getElementById('update-info');
+    
+    if (data.type === 'checking') {
+      statusEl.textContent = '正在检查更新...';
+      infoEl.textContent = '请稍候';
+      document.getElementById('update-progress-fill').style.width = '0%';
+      document.getElementById('update-progress-text').textContent = '0%';
+    }
+
+    // 显示模态框（添加激活类）
+    updateModal.classList.add('active');
+    // 禁用所有操作
+    document.body.classList.add('update-lock');
+  });
+
+  window.electronAPI.onUpdateModalProgress((progress) => {
+    if (!updateModal) return;
+    
+    const percent = Math.round(progress.percent);
+    const statusEl = document.getElementById('update-status');
+    const infoEl = document.getElementById('update-info');
+    
+    statusEl.textContent = '正在下载更新...';
+    infoEl.textContent = `${(progress.bytesPerSecond / 1024 / 1024).toFixed(2)} MB/s`;
+    document.getElementById('update-progress-fill').style.width = `${percent}%`;
+    document.getElementById('update-progress-text').textContent = `${percent}%`;
+  });
+
+  window.electronAPI.onUpdateModalDownloaded((info) => {
+    if (!updateModal) return;
+    
+    const statusEl = document.getElementById('update-status');
+    const infoEl = document.getElementById('update-info');
+    
+    statusEl.textContent = '更新已下载完成！';
+    infoEl.textContent = `版本 ${info.version}`;
+    document.getElementById('update-progress-fill').style.width = '100%';
+    document.getElementById('update-progress-text').textContent = '100%';
+    
+    // 启用安装按钮
+    const cancelBtn = document.getElementById('update-cancel-btn');
+    cancelBtn.textContent = '立即安装并重启';
+    cancelBtn.disabled = false;
+    cancelBtn.onclick = () => {
+      window.electronAPI.installAndUpdate();
+    };
+  });
+
+  window.electronAPI.onUpdateModalHide(() => {
+    if (!updateModal) return;
+    
+    // 隐藏模态框
+    updateModal.classList.remove('active');
+    // 恢复操作
+    document.body.classList.remove('update-lock');
+    
+    // 延迟移除 DOM（等待动画完成）
+    setTimeout(() => {
+      if (updateModal) {
+        updateModal.remove();
+        updateModal = null;
+      }
+    }, 300);
+  });
+
+  // 原有的监听器（保留用于兼容）
   window.electronAPI.onUpdateChecking(() => {
     console.log('[更新] 正在检查更新...');
   });
 
   window.electronAPI.onUpdateAvailable((info) => {
+    console.log('[更新] 发现新版本:', info.version);
+    // 新版本发现时，显示确认对话框
     const confirmed = window.showConfirm(`发现新版本 ${info.version}，是否立即下载更新？`, '版本更新');
     if (confirmed) {
       window.electronAPI.startUpdateDownload();
@@ -521,6 +623,7 @@ function initUpdateListeners() {
 
   window.electronAPI.onUpdateNotAvailable(() => {
     console.log('[更新] 已是最新版本');
+    window.showToast('已是最新版本', 'success');
   });
 
   window.electronAPI.onUpdateDownloadProgress((progress) => {
@@ -528,10 +631,7 @@ function initUpdateListeners() {
   });
 
   window.electronAPI.onUpdateDownloaded((info) => {
-    const confirmed = window.showConfirm(`更新已下载完成（版本 ${info.version}），是否立即重启安装？`, '版本更新');
-    if (confirmed) {
-      window.electronAPI.installAndUpdate();
-    }
+    console.log('[更新] 更新已下载完成，版本:', info.version);
   });
 
   window.electronAPI.onUpdateError((error) => {

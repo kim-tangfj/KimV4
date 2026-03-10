@@ -513,8 +513,51 @@ function initUpdateButton() {
   const checkUpdateBtn = document.getElementById('check-update-btn');
   if (checkUpdateBtn) {
     checkUpdateBtn.addEventListener('click', () => {
-      window.showToast('正在检查更新...', 'info');
+      // 显示模态框
+      const updateModal = document.createElement('div');
+      updateModal.id = 'update-modal';
+      updateModal.className = 'update-modal active';
+      updateModal.innerHTML = `
+        <div class="update-modal-content">
+          <div class="update-modal-header">
+            <h3>🔄 检查更新</h3>
+          </div>
+          <div class="update-modal-body">
+            <div class="update-status">正在检查更新...</div>
+            <div class="update-progress-container">
+              <div class="update-progress-bar">
+                <div class="update-progress-fill" style="width: 0%"></div>
+              </div>
+              <div class="update-progress-text">0%</div>
+            </div>
+            <div class="update-info">请稍候</div>
+          </div>
+        </div>
+      `;
+      document.body.appendChild(updateModal);
+      document.body.classList.add('update-lock');
+      
+      // 开始检查更新
       window.electronAPI.checkForUpdates();
+      
+      // 监听更新检查结果
+      const hideModal = () => {
+        updateModal.classList.remove('active');
+        document.body.classList.remove('update-lock');
+        setTimeout(() => updateModal.remove(), 300);
+      };
+      
+      // 监听各种更新事件
+      const cleanup = () => {
+        hideModal();
+      };
+      
+      // 3 秒后如果没有结果，自动隐藏
+      setTimeout(() => {
+        if (updateModal.parentNode) {
+          cleanup();
+        }
+      }, 10000);
     });
   }
 }

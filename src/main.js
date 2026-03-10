@@ -49,6 +49,8 @@ function checkForUpdates() {
 autoUpdater.on('checking-for-update', () => {
   console.log('正在检查更新...');
   mainWindow?.webContents?.send('update-checking');
+  // 显示模态框，禁用操作
+  mainWindow?.webContents?.send('update-modal-show', { type: 'checking' });
 });
 
 autoUpdater.on('update-available', (info) => {
@@ -59,21 +61,29 @@ autoUpdater.on('update-available', (info) => {
 autoUpdater.on('update-not-available', () => {
   console.log('已是最新版本');
   mainWindow?.webContents?.send('update-not-available');
+  // 隐藏模态框
+  mainWindow?.webContents?.send('update-modal-hide');
 });
 
 autoUpdater.on('download-progress', (progressObj) => {
   console.log('下载进度:', progressObj.percent);
   mainWindow?.webContents?.send('update-download-progress', progressObj);
+  // 更新模态框进度
+  mainWindow?.webContents?.send('update-modal-progress', progressObj);
 });
 
 autoUpdater.on('update-downloaded', (info) => {
   console.log('更新已下载，准备安装');
   mainWindow?.webContents?.send('update-downloaded', info);
+  // 更新模态框状态
+  mainWindow?.webContents?.send('update-modal-downloaded', info);
 });
 
 autoUpdater.on('error', (err) => {
   console.error('更新失败:', err);
   mainWindow?.webContents?.send('update-error', err);
+  // 隐藏模态框
+  mainWindow?.webContents?.send('update-modal-hide');
 });
 
 // ========== 全局错误处理 开始 ==========

@@ -108,5 +108,18 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onUpdateError: (callback) => {
     ipcRenderer.on('update-error', (event, error) => callback(error));
+  },
+  // 更新模态框事件
+  onUpdateModalShow: (callback) => {
+    ipcRenderer.on('update-modal-show', (event, data) => callback(data));
+  },
+  onUpdateModalHide: (callback) => {
+    ipcRenderer.on('update-modal-hide', () => callback());
+  },
+  onUpdateModalProgress: (callback) => {
+    ipcRenderer.on('update-modal-progress', (event, progress) => callback(progress));
+  },
+  onUpdateModalDownloaded: (callback) => {
+    ipcRenderer.on('update-modal-downloaded', (event, info) => callback(info));
   }
 });
