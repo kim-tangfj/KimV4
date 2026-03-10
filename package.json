@@ -55,7 +55,8 @@
         }
       ],
       "icon": "assets/icon.png",
-      "requestedExecutionLevel": "asInvoker"
+      "requestedExecutionLevel": "asInvoker",
+      "sign": null
     },
     "nsis": {
       "oneClick": false,
