@@ -650,6 +650,41 @@ function initUpdateListeners() {
 // ======= 自动更新监听 结束 ========
 
 
+// ======= 恢复出厂设置监听 开始 ========
+// 监听菜单中的恢复出厂设置
+window.electronAPI.onFactoryReset(async () => {
+  const confirmed = await window.showConfirm(
+    '恢复出厂设置',
+    '确定要恢复出厂设置吗？\n\n此操作将清空：\n• 存储路径设置\n• API Keys\n• 模板配置\n• 自定义选项\n\n此操作不可撤销！',
+    '确认重置',
+    '取消'
+  );
+
+  if (!confirmed) return;
+
+  try {
+    const result = await window.electronAPI.factoryReset();
+    if (result.success) {
+      window.showToast('正在重置并重启应用...');
+    } else if (result.canceled) {
+      window.showToast('已取消重置');
+    } else {
+      window.showToast('重置失败：' + (result.error || '未知错误'));
+    }
+  } catch (error) {
+    window.showToast('重置失败：' + error.message);
+  }
+});
+
+// 监听执行重置（从主进程发送）
+window.electronAPI.onFactoryResetExecute(() => {
+  // 清空 localStorage
+  localStorage.clear();
+  console.log('[恢复出厂设置] localStorage 已清空');
+});
+// ======= 恢复出厂设置监听 结束 ========
+
+
 // ======= 素材库 开始 ========
 
 // 渲染素材库列表（占位符）

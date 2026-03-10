@@ -4,6 +4,114 @@
 
 ---
 
+## 2026-03-10 - 添加恢复出厂设置功能
+
+### 需求
+- 在系统菜单中添加"恢复出厂设置"选项
+- 清空所有用户设置（存储路径、API Keys、模板配置、自定义选项等）
+- 重置前需要用户确认
+- 重置后自动重启应用
+
+### 实现方案
+
+#### 1. 菜单项添加
+**文件**: `src/utils/menu.js`
+```javascript
+{
+  label: '恢复出厂设置',
+  click: () => {
+    mainWindow.webContents.send('factory-reset');
+  }
+}
+```
+
+#### 2. 主进程 IPC 处理器
+**文件**: `src/main.js`
+- 显示确认对话框（警告级别，需用户确认）
+- 清空 localStorage（通过渲染进程）
+- 删除配置文件：
+  - `userData/config/templates.json` - 模板配置
+  - `userData/config/options.json` - 自定义选项
+  - `userData/logs/` - 日志目录
+- 重启应用
+
+```javascript
+ipcMain.handle('app:factoryReset', async () => {
+  // 显示确认对话框
+  const { response } = await dialog.showMessageBox(mainWindow, {
+    type: 'warning',
+    buttons: ['确认重置', '取消'],
+    defaultId: 1,
+    title: '恢复出厂设置',
+    message: '确定要恢复出厂设置吗？',
+    detail: '此操作将清空所有用户设置...',
+    cancelId: 1
+  });
+
+  if (response !== 0) return { success: false, canceled: true };
+
+  // 清空 localStorage
+  mainWindow?.webContents?.send('factory-reset-execute');
+
+  // 删除配置文件
+  fs.unlinkSync(templatesConfigPath);
+  fs.unlinkSync(optionsConfigPath);
+  fs.rmSync(logsDir, { recursive: true, force: true });
+
+  // 重启应用
+  app.relaunch();
+  app.exit(0);
+});
+```
+
+#### 3. Preload IPC 接口
+**文件**: `src/preload.js`
+```javascript
+factoryReset: () => ipcRenderer.invoke('app:factoryReset'),
+onFactoryReset: (callback) => ipcRenderer.on('factory-reset', callback),
+onFactoryResetExecute: (callback) => ipcRenderer.on('factory-reset-execute', callback)
+```
+
+#### 4. 渲染进程处理
+**文件**: `src/renderer.js`
+```javascript
+// 监听菜单中的恢复出厂设置
+window.electronAPI.onFactoryReset(async () => {
+  const confirmed = await window.showConfirm('恢复出厂设置', '确定要...');
+  if (!confirmed) return;
+
+  const result = await window.electronAPI.factoryReset();
+  // 处理结果
+});
+
+// 监听执行重置（从主进程）
+window.electronAPI.onFactoryResetExecute(() => {
+  localStorage.clear();
+  console.log('[恢复出厂设置] localStorage 已清空');
+});
+```
+
+### 修改文件统计
+| 文件 | 修改内容 |
+|------|----------|
+| `src/utils/menu.js` | 添加"恢复出厂设置"菜单项 |
+| `src/main.js` | 添加 `app:factoryReset` IPC 处理器 |
+| `src/preload.js` | 暴露 `factoryReset` 和事件监听接口 |
+| `src/renderer.js` | 添加恢复出厂设置监听和处理 |
+
+### 使用说明
+1. 点击菜单：系统 → 恢复出厂设置
+2. 确认对话框提示风险
+3. 用户确认后：
+   - 清空 localStorage（API Keys、存储路径等）
+   - 删除模板配置文件
+   - 删除自定义选项配置
+   - 删除日志目录
+   - 自动重启应用
+4. 重启后应用状态与首次安装相同
+
+---
+
 ## 2026-03-10 - 修复 API Key 每次重启需重新输入并实现加密存储
 
 ### 问题描述

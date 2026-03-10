@@ -126,5 +126,16 @@ contextBridge.exposeInMainWorld('electronAPI', {
   },
   onUpdateModalDownloaded: (callback) => {
     ipcRenderer.on('update-modal-downloaded', (event, info) => callback(info));
+  },
+
+  // 恢复出厂设置
+  factoryReset: () => ipcRenderer.invoke('app:factoryReset'),
+
+  // 恢复出厂设置事件监听
+  onFactoryReset: (callback) => {
+    ipcRenderer.on('factory-reset', (event) => callback(event));
+  },
+  onFactoryResetExecute: (callback) => {
+    ipcRenderer.on('factory-reset-execute', (event) => callback(event));
   }
 });

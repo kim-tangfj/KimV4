@@ -229,6 +229,70 @@ ipcMain.handle('crypto:decrypt', async (event, encryptedBase64) => {
   }
 });
 
+// ========== 恢复出厂设置 IPC 处理器 ==========
+ipcMain.handle('app:factoryReset', async (event) => {
+  const { app, dialog } = require('electron');
+  const fs = require('fs');
+  
+  try {
+    // 显示确认对话框
+    const { response } = await dialog.showMessageBox(mainWindow, {
+      type: 'warning',
+      buttons: ['确认重置', '取消'],
+      defaultId: 1,
+      title: '恢复出厂设置',
+      message: '确定要恢复出厂设置吗？',
+      detail: '此操作将清空所有用户设置（包括存储路径、API Keys、模板配置、自定义选项等），应用将重启。此操作不可撤销！',
+      cancelId: 1
+    });
+
+    if (response !== 0) {
+      return { success: false, canceled: true };
+    }
+
+    // 清除 localStorage（通过渲染进程）
+    mainWindow?.webContents?.send('factory-reset-execute');
+
+    // 删除配置文件
+    const userDataPath = app.getPath('userData');
+    const configDir = path.join(userDataPath, 'config');
+    
+    // 删除模板配置
+    const templatesConfigPath = path.join(configDir, 'templates.json');
+    if (fs.existsSync(templatesConfigPath)) {
+      fs.unlinkSync(templatesConfigPath);
+      console.log('[恢复出厂设置] 已删除模板配置:', templatesConfigPath);
+    }
+
+    // 删除自定义选项配置
+    const optionsConfigPath = path.join(configDir, 'options.json');
+    if (fs.existsSync(optionsConfigPath)) {
+      fs.unlinkSync(optionsConfigPath);
+      console.log('[恢复出厂设置] 已删除自定义选项配置:', optionsConfigPath);
+    }
+
+    // 删除日志目录
+    const logsDir = path.join(userDataPath, 'logs');
+    if (fs.existsSync(logsDir)) {
+      fs.rmSync(logsDir, { recursive: true, force: true });
+      console.log('[恢复出厂设置] 已删除日志目录:', logsDir);
+    }
+
+    console.log('[恢复出厂设置] 完成，准备重启应用');
+
+    // 延迟重启应用
+    setTimeout(() => {
+      app.relaunch();
+      app.exit(0);
+    }, 1000);
+
+    return { success: true };
+  } catch (error) {
+    console.error('[恢复出厂设置] 失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 // ========== 自动更新 IPC 处理器 ==========
 function initUpdateIPC() {
   // 检查更新

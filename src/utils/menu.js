@@ -77,6 +77,13 @@ function setMainMenu(mainWindow) {
         },
         { type: 'separator' },
         {
+          label: '恢复出厂设置',
+          click: () => {
+            mainWindow.webContents.send('factory-reset');
+          }
+        },
+        { type: 'separator' },
+        {
           label: '日志',
           submenu: [
             {
