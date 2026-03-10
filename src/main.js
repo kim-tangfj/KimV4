@@ -22,6 +22,28 @@ const { autoUpdater } = require('electron-updater');
 // 主窗口对象
 let mainWindow;
 
+// ========== 单实例锁（防止多次启动）==========
+// 请求单实例锁，如果返回 false 说明已经有实例在运行
+const gotTheLock = app.requestSingleInstanceLock();
+
+if (!gotTheLock) {
+  // 当前不是第一个实例，退出
+  console.log('[主进程] 检测到已有实例在运行，退出当前进程');
+  dialog.showErrorBox('Kim 分镜助手', '程序已经在运行中，请勿重复启动！\n\n如果需要在多个窗口中使用，请使用"文件 → 新建窗口"菜单。');
+  app.exit(0);
+} else {
+  // 当前是第一个实例，监听其他实例的启动请求
+  app.on('second-instance', (event, commandLine, workingDirectory) => {
+    // 当有其他实例尝试启动时，聚焦到主窗口
+    console.log('[主进程] 检测到第二个实例尝试启动，聚焦到主窗口');
+    if (mainWindow) {
+      if (mainWindow.isMinimized()) mainWindow.restore();
+      mainWindow.focus();
+      mainWindow.show();
+    }
+  });
+}
+
 // ========== 自动更新配置 ==========
 
 // 配置更新源
