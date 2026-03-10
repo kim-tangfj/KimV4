@@ -28,7 +28,8 @@
   "license": "MIT",
   "build": {
     "appId": "com.kimv4.storyboard",
-    "productName": "Kim 分镜助手",
+    "productName": "KimStoryboard",
+    "artifactName": "Kim-Setup-${version}.exe",
     "directories": {
       "output": "release"
     },
