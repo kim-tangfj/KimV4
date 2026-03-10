@@ -334,52 +334,255 @@ function hideCustomOptionEditModal() {
 async function saveCustomOptionEdit() {
   const useElectronAPI = window.useElectronAPI;
   const elements = window.elements;
+  const appState = window.appState;
+
+  console.log('[DEBUG] saveCustomOptionEdit 开始执行');
+  console.log('[DEBUG] useElectronAPI:', useElectronAPI);
+  console.log('[DEBUG] appState.currentProject:', appState.currentProject?.name || '无');
+  console.log('[DEBUG] appState.currentShot:', appState.currentShot?.name || '无');
 
   if (!useElectronAPI) {
+    console.error('[DEBUG] 错误：不在 Electron 环境中');
     window.showToast('请在 Electron 环境中使用此功能');
     return;
   }
 
   const optionId = elements.editCustomOptionId?.value;
+  console.log('[DEBUG] optionId:', optionId);
 
   // 获取组别值（下拉框或输入框）
   let group = elements.editCustomOptionGroup?.value;
-  if (elements.editCustomOptionGroupInput && elements.editCustomOptionGroupInput.style.display !== 'none') {
+  const isUsingGroupInput = elements.editCustomOptionGroupInput &&
+                             elements.editCustomOptionGroupInput.style.display !== 'none';
+
+  if (isUsingGroupInput) {
     group = elements.editCustomOptionGroupInput.value.trim();
+    console.log('[DEBUG] 使用输入框组别:', group);
+  } else {
+    console.log('[DEBUG] 使用下拉框组别:', group);
   }
 
   const type = elements.editCustomOptionType?.value;
   const style = elements.editCustomOptionStyle?.value;
   const description = elements.editCustomOptionDescription?.value;
 
-  if (!group || !type || !style || !description) {
-    window.showToast('请填写所有必填字段');
+  console.log('[DEBUG] 表单数据:', { group, type, style, description });
+
+  // 分别验证每个字段，提供更明确的错误提示
+  if (!group) {
+    console.error('[DEBUG] 验证失败：组别为空');
+    window.showToast('请选择或输入组别');
+    return;
+  }
+  if (!type) {
+    console.error('[DEBUG] 验证失败：类型为空');
+    window.showToast('请输入类型');
+    return;
+  }
+  if (!style) {
+    console.error('[DEBUG] 验证失败：风格名称为空');
+    window.showToast('请输入风格名称');
+    return;
+  }
+  if (!description) {
+    console.error('[DEBUG] 验证失败：描述为空');
+    window.showToast('请输入描述');
+    return;
+  }
+
+  // 如果是新建组别，验证输入不为空
+  if (isUsingGroupInput && !elements.editCustomOptionGroupInput.value.trim()) {
+    console.error('[DEBUG] 验证失败：新建组别输入为空');
+    window.showToast('请输入新组别名称');
+    elements.editCustomOptionGroupInput.focus();
     return;
   }
 
   try {
+    // 在更新选项前，先保存当前片段的最新数据（从 DOM 读取）
+    // 这样可以确保用户手动选择的选项被保存到项目数据中
+    if (appState.currentShot && window.saveShotProperties) {
+      const shotStyleEl = document.getElementById('shotStyle');
+      if (shotStyleEl) {
+        // 有片段属性表单在编辑，先立即保存（不等待 blur）
+        await window.saveShotProperties(false, true); // 静默保存
+        
+        // 保存后，重新加载项目数据确保同步
+        if (appState.currentProject?.projectDir) {
+          const loadResult = await window.electronAPI.loadProject(appState.currentProject.projectDir);
+          if (loadResult.success) {
+            window.updateState('projectData', loadResult.projectJson);
+          }
+        }
+      }
+    }
+
+    // 如果是更新操作，先获取旧选项名称（必须在更新前获取！）
+    let oldStyle = null;
+    if (optionId) {
+      const allOptions = await window.electronAPI.getAllOptions();
+      if (allOptions.success) {
+        const oldOption = allOptions.options.find(opt => opt.id === optionId);
+        if (oldOption) {
+          oldStyle = oldOption.style;
+        }
+      }
+    }
+
     const optionData = { group, type, style, description };
 
     let result;
     if (optionId) {
-      // 更新
       result = await window.electronAPI.updateCustomOption(optionId, optionData);
     } else {
-      // 新增
       result = await window.electronAPI.addCustomOption(optionData);
     }
 
     if (result.success) {
+      // 如果选项名称已更改，同步更新当前项目中的数据
+      const targetProject = appState.projectData || appState.currentProject;
+
+      if (oldStyle && style !== oldStyle && targetProject && targetProject.shots) {
+        await syncOptionUsageInProject(targetProject, group, oldStyle, style);
+      }
+
       hideCustomOptionEditModal();
       await loadCustomOptionsList();
       await loadGroupFilter();
+
+      // 刷新当前片段/镜头属性表单
+      // 从 projectData 中获取最新的片段数据
+      let currentShot = appState.currentShot;
+      if (targetProject && currentShot) {
+        const latestShot = targetProject.shots?.find(s => s.id === currentShot.id);
+        if (latestShot) {
+          currentShot = latestShot;
+          // 更新 appState.currentShot 为最新数据
+          window.updateState('currentShot', currentShot);
+        }
+      }
+
+      if (currentShot && window.showShotProperties) {
+        await window.showShotProperties(currentShot);
+      } else if (appState.currentScene && window.showSceneProperties) {
+        await window.showSceneProperties(appState.currentScene);
+      }
+
+      // 更新提示词预览（使用最新的 appState.currentShot）
+      if (window.updatePromptPreview) {
+        window.updatePromptPreview();
+      }
+
       window.showUpdateNotification();
     } else {
       window.showToast('保存失败：' + result.error);
     }
   } catch (error) {
-    console.error('保存选项失败:', error);
+    console.error('[DEBUG] saveCustomOptionEdit 异常:', error);
     window.showToast('保存失败：' + error.message);
+  }
+}
+
+/**
+ * 同步更新项目中所有使用该选项的地方
+ * @param {Object} project - 项目对象
+ * @param {string} group - 选项组别
+ * @param {string} oldStyle - 旧的风格名称
+ * @param {string} newStyle - 新的风格名称
+ */
+async function syncOptionUsageInProject(project, group, oldStyle, newStyle) {
+  // 使用 appState 中的项目数据
+  const appState = window.appState;
+  
+  // 合并项目数据：使用传入的 project（有 shots）和 currentProject（有 name 和 projectDir）
+  let targetProject = project;
+  
+  // 如果传入的 project 没有 name 或 projectDir，从 currentProject 补充
+  if (appState.currentProject) {
+    targetProject = {
+      ...project,
+      name: project.name || appState.currentProject.name,
+      projectDir: project.projectDir || appState.currentProject.projectDir,
+      project: project.project || appState.currentProject.project
+    };
+  }
+
+  if (!targetProject || !targetProject.shots) {
+    console.warn('[同步选项] 项目或片段数据为空，跳过同步');
+    return;
+  }
+
+  let modified = false;
+  let updateCount = 0;
+
+  // 遍历所有片段和镜头
+  for (const shot of targetProject.shots) {
+    // 根据组别更新对应的字段
+    if (group === '风格' && shot.style === oldStyle) {
+      shot.style = newStyle;
+      modified = true;
+      updateCount++;
+    } else if (group === '情绪氛围' && shot.mood === oldStyle) {
+      shot.mood = newStyle;
+      modified = true;
+      updateCount++;
+    } else if (group === '配乐风格' && shot.musicStyle === oldStyle) {
+      shot.musicStyle = newStyle;
+      modified = true;
+      updateCount++;
+    } else if (group === '音效' && shot.soundEffect === oldStyle) {
+      shot.soundEffect = newStyle;
+      modified = true;
+      updateCount++;
+    }
+
+    // 更新镜头中的选项
+    if (shot.scenes) {
+      for (let i = 0; i < shot.scenes.length; i++) {
+        const scene = shot.scenes[i];
+        if (group === '风格' && scene.style === oldStyle) {
+          scene.style = newStyle;
+          modified = true;
+          updateCount++;
+        } else if (group === '情绪氛围' && scene.mood === oldStyle) {
+          scene.mood = newStyle;
+          modified = true;
+          updateCount++;
+        } else if (group === '镜头类型' && scene.shotType === oldStyle) {
+          scene.shotType = newStyle;
+          modified = true;
+          updateCount++;
+        } else if (group === '拍摄角度' && scene.angle === oldStyle) {
+          scene.angle = newStyle;
+          modified = true;
+          updateCount++;
+        } else if (group === '运镜方式' && scene.camera === oldStyle) {
+          scene.camera = newStyle;
+          modified = true;
+          updateCount++;
+        }
+      }
+    }
+  }
+
+  // 如果有修改，保存项目
+  if (modified) {
+    try {
+      const projectData = {
+        project: targetProject.project,
+        shots: targetProject.shots
+      };
+      const saveResult = await window.electronAPI.saveProject(targetProject.projectDir, projectData);
+      if (saveResult.success) {
+        console.log(`[同步选项] 已更新项目中 "${oldStyle}" → "${newStyle}", 共 ${updateCount} 处`);
+      } else {
+        console.error('[同步选项] 保存项目失败:', saveResult.error);
+        window.showToast('选项已更新，但同步项目数据失败');
+      }
+    } catch (error) {
+      console.error('[同步选项] 保存项目异常:', error);
+      window.showToast('选项已更新，但同步项目数据失败');
+    }
   }
 }
 
@@ -389,6 +592,7 @@ async function saveCustomOptionEdit() {
 async function saveCustomOption() {
   const useElectronAPI = window.useElectronAPI;
   const elements = window.elements;
+  const appState = window.appState;
 
   if (!useElectronAPI) {
     window.showToast('请在 Electron 环境中使用此功能');
@@ -407,6 +611,18 @@ async function saveCustomOption() {
   }
 
   try {
+    // 如果是更新操作，先获取旧选项名称（必须在更新前获取！）
+    let oldStyle = null;
+    if (optionId) {
+      const allOptions = await window.electronAPI.getAllOptions();
+      if (allOptions.success) {
+        const oldOption = allOptions.options.find(opt => opt.id === optionId);
+        if (oldOption) {
+          oldStyle = oldOption.style;
+        }
+      }
+    }
+
     const optionData = { group, type, style, description };
 
     let result;
@@ -419,8 +635,41 @@ async function saveCustomOption() {
     }
 
     if (result.success) {
+      // 如果选项名称已更改，同步更新当前项目中的数据
+      const appState = window.appState;
+      // 使用 projectData（包含完整 shots）或 currentProject
+      let targetProject = appState.projectData || appState.currentProject;
+
+      if (oldStyle && style !== oldStyle && targetProject && targetProject.shots) {
+        await syncOptionUsageInProject(targetProject, group, oldStyle, style);
+      }
+
       hideCustomOptionForm();
       await loadCustomOptionsList();
+
+      // 刷新当前片段/镜头属性表单
+      // 从 projectData 中获取最新的片段数据
+      let currentShot = appState.currentShot;
+      if (targetProject && currentShot) {
+        const latestShot = targetProject.shots?.find(s => s.id === currentShot.id);
+        if (latestShot) {
+          currentShot = latestShot;
+          // 更新 appState.currentShot 为最新数据
+          window.updateState('currentShot', currentShot);
+        }
+      }
+
+      if (currentShot && window.showShotProperties) {
+        await window.showShotProperties(currentShot);
+      } else if (appState.currentScene && window.showSceneProperties) {
+        await window.showSceneProperties(appState.currentScene);
+      }
+
+      // 更新提示词预览（使用最新的 appState.currentShot）
+      if (window.updatePromptPreview) {
+        window.updatePromptPreview();
+      }
+
       window.showUpdateNotification();
     } else {
       window.showToast('保存失败：' + result.error);
@@ -447,7 +696,15 @@ async function deleteCustomOption(optionId) {
 
   try {
     // 先检查使用情况
-    const usageResult = await window.electronAPI.checkOptionUsage(optionId);
+    let usageResult;
+    try {
+      usageResult = await window.electronAPI.checkOptionUsage(optionId);
+    } catch (checkError) {
+      console.error('检查选项使用情况失败:', checkError);
+      window.showToast('检查失败，请稍后重试');
+      return;
+    }
+
     if (!usageResult.success) {
       window.showToast('检查失败：' + usageResult.error);
       return;
@@ -468,7 +725,16 @@ async function deleteCustomOption(optionId) {
       return;
     }
 
-    const result = await window.electronAPI.deleteCustomOption(optionId);
+    // 执行删除
+    let result;
+    try {
+      result = await window.electronAPI.deleteCustomOption(optionId);
+    } catch (deleteError) {
+      console.error('删除选项失败:', deleteError);
+      window.showToast('删除失败：' + deleteError.message);
+      return;
+    }
+
     if (result.success) {
       await loadCustomOptionsList();
       await loadGroupFilter();
@@ -483,8 +749,8 @@ async function deleteCustomOption(optionId) {
       window.showToast('删除失败：' + result.error);
     }
   } catch (error) {
-    console.error('删除选项失败:', error);
-    window.showToast('删除失败：' + error.message);
+    console.error('删除操作异常:', error);
+    window.showToast('删除失败，请稍后重试');
   }
 }
 
@@ -552,54 +818,10 @@ function initCustomOptionEditModal() {
     });
   }
 
-  // 保存按钮
+  // 保存按钮 - 直接调用统一的保存函数
   if (elements.saveBtn) {
     elements.saveBtn.addEventListener('click', async () => {
-      const groupId = document.getElementById('edit-custom-option-group')?.value;
-      const groupInput = document.getElementById('edit-custom-option-group-input');
-      const type = document.getElementById('edit-custom-option-type')?.value;
-      const style = document.getElementById('edit-custom-option-style')?.value;
-      const description = document.getElementById('edit-custom-option-description')?.value;
-      const optionId = document.getElementById('edit-custom-option-id')?.value;
-
-      // 验证必填字段
-      if (!groupId && !groupInput?.value) {
-        window.showToast('请选择或输入组别');
-        return;
-      }
-      if (!type) {
-        window.showToast('请输入类型');
-        return;
-      }
-      if (!style) {
-        window.showToast('请输入风格名称');
-        return;
-      }
-      if (!description) {
-        window.showToast('请输入描述');
-        return;
-      }
-
-      const finalGroup = groupInput?.style.display !== 'none' && groupInput?.value ? groupInput.value : groupId;
-
-      // 保存选项
-      const result = await window.electronAPI.updateCustomOption(optionId, {
-        group: finalGroup,
-        type: type,
-        style: style,
-        description: description
-      });
-
-      if (result.success) {
-        window.showToast('保存成功');
-        if (elements.modal) elements.modal.style.display = 'none';
-        // 重新加载列表
-        if (window.loadCustomOptionsList) {
-          window.loadCustomOptionsList();
-        }
-      } else {
-        window.showToast('保存失败：' + result.error);
-      }
+      await window.saveCustomOptionEdit();
     });
   }
 

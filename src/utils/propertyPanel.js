@@ -36,6 +36,7 @@ async function showShotProperties(shot) {
 
   // 加载自定义选项
   const styleOptions = await window.loadOptionsByGroup('风格');
+
   const moodOptions = await window.loadOptionsByGroup('情绪氛围');
   const ratioOptions = [
     { style: '16:9', description: '横屏视频，适合 YouTube、B 站等平台' },
@@ -46,6 +47,15 @@ async function showShotProperties(shot) {
   ];
   const musicOptions = await window.loadOptionsByGroup('配乐风格');
   const soundOptions = await window.loadOptionsByGroup('音效');
+
+  // 生成风格选项 HTML
+  const styleOptionsHtml = styleOptions.map((opt) => {
+    const isSelected = shot.style === opt.style;
+    return `<option value="${opt.style}" ${isSelected ? 'selected' : ''}
+      data-description="${opt.description || ''}">
+      ${opt.style} - ${opt.type}
+    </option>`;
+  }).join('');
 
   window.elements.propertyForm.innerHTML = `
     <div class="shot-properties-grid shot-properties-2cols">
@@ -97,12 +107,14 @@ async function showShotProperties(shot) {
           </label>
           <select id="shotStyle" data-autosave="true">
             <option value="">请选择风格</option>
-            ${styleOptions.map(opt => `
-              <option value="${opt.style}" ${shot.style === opt.style ? 'selected' : ''}
+            ${styleOptions.map((opt, index) => {
+              const isSelected = shot.style === opt.style;
+              console.log('[DEBUG] 渲染风格选项 [', index, ']:', opt.style, 'isSelected:', isSelected, 'shot.style=', shot.style);
+              return `<option value="${opt.style}" ${isSelected ? 'selected' : ''}
                 data-description="${opt.description || ''}">
                 ${opt.style} - ${opt.type}
-              </option>
-            `).join('')}
+              </option>`;
+            }).join('')}
           </select>
           <small class="setting-hint" id="shotStyleHint">${styleOptions.find(o => o.style === shot.style)?.description || '选择风格'}</small>
         </div>
@@ -215,8 +227,9 @@ function autoSaveShotProperties() {
 /**
  * 保存片段属性
  * @param {boolean} isAutoSave - 是否为自动保存
+ * @param {boolean} isSilent - 是否静默保存（不显示提示）
  */
-async function saveShotProperties(isAutoSave = false) {
+async function saveShotProperties(isAutoSave = false, isSilent = false) {
   const state = window.getState();
   const shot = state.currentShot;
   if (!shot) {
