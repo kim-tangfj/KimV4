@@ -56,7 +56,7 @@
       ],
       "icon": "assets/icon.png",
       "requestedExecutionLevel": "asInvoker",
-      "sign": null
+      "signAndEditExecutable": false
     },
     "nsis": {
       "oneClick": false,
