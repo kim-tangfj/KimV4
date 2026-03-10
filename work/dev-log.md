@@ -4,6 +4,25 @@
 
 ---
 
+## 2026-03-10 - 修复文件名拼写错误 (defualt-prompt.md → default-prompt.md)
+
+### 问题
+文件名拼写错误：`defualt-prompt.md` → 应为 `default-prompt.md`
+
+### 修复
+- 重命名文件：`assets/default/defualt-prompt.md` → `assets/default/default-prompt.md`
+- 代码中无直接引用，无需更新
+
+### 修改文件
+| 文件 | 变更 |
+|------|------|
+| `assets/default/defualt-prompt.md` | 重命名 → `default-prompt.md` |
+
+### Git 提交
+- 提交：`e17bf5c` - fix: rename defualt-prompt.md to default-prompt.md
+
+---
+
 ## 2026-03-10 - 项目代码分析与 TODO 更新（基于实际代码）
 
 ### 工作内容
@@ -76,7 +95,7 @@
 
 | 优先级 | 问题 | 位置 | 影响 |
 |--------|------|------|------|
-| **P0** | 文件名拼写错误 | `assets/default/defualt-prompt.md` | 可能加载失败 |
+| ~~**P0**~~ | ~~文件名拼写错误~~ | ~~`assets/default/defualt-prompt.md`~~ | ~~已修复~~ |
 | **P1** | 镜头级别选项同步未验证 | 自定义选项修改 | 数据一致性风险 |
 | **P2** | 大文件上传无进度提示 | 素材管理 | 用户体验差 |
 | **P2** | 片段素材库缺少镜头引用检查 | 素材删除 | 可能误删引用素材 |
