@@ -4,6 +4,91 @@
 
 ---
 
+## 2026-03-10 - 修复新设备默认存储路径硬编码问题
+
+### 问题描述
+- **问题**: 新设备安装后，每次打开存储路径都显示开发时期的硬编码值 `文档/KimStoryboard`
+- **根本原因**: 
+  1. `loadSettings()` 中使用 `parsed.storagePath || settings.storagePath`，空字符串会被视为有效值
+  2. `saveSettings()` 中 `elements.storagePathInput?.value || ''` 会保存空字符串到 localStorage
+  3. 下次加载时，空字符串被认为是"已保存的值"，不会使用系统默认路径
+
+### 修复方案
+
+#### 1. 添加 IPC 处理器获取系统文档目录
+**文件**: `src/main.js`
+```javascript
+ipcMain.handle('app:getDefaultStoragePath', async () => {
+  try {
+    const documentsPath = app.getPath('documents');
+    const defaultPath = path.join(documentsPath, 'KimStoryboard');
+    return { success: true, path: defaultPath };
+  } catch (error) {
+    return { success: false, error: error.message };
+  }
+});
+```
+
+#### 2. 更新 preload.js 暴露接口
+**文件**: `src/preload.js`
+```javascript
+getDefaultStoragePath: () => ipcRenderer.invoke('app:getDefaultStoragePath'),
+```
+
+#### 3. 修改 settings.js 加载逻辑
+**文件**: `src/utils/settings.js`
+
+**loadSettings() 修复**:
+- 使用 `hasValidStoragePath` 标记，空字符串视为"未设置"
+- 如果没有有效路径，通过 IPC 获取系统文档目录
+
+```javascript
+let hasValidStoragePath = false;
+if (savedSettings) {
+  const parsed = JSON.parse(savedSettings);
+  // 空字符串视为"未设置"
+  if (parsed.storagePath) {
+    settings.storagePath = parsed.storagePath;
+    hasValidStoragePath = true;
+  }
+  // ...
+}
+
+// 没有有效路径时使用系统默认
+if (useElectronAPI && !hasValidStoragePath) {
+  const result = await window.electronAPI.getDefaultStoragePath();
+  settings.storagePath = result.path;
+}
+```
+
+**saveSettings() 修复**:
+- 避免保存空字符串，使用当前设置中的值
+
+```javascript
+const newStoragePath = elements.storagePathInput?.value?.trim();
+settings.storagePath = newStoragePath || settings.storagePath;  // 避免覆盖为空
+```
+
+#### 4. 更新 projectList.js
+**文件**: `src/utils/projectList.js` - 移除 `|| '文档/KimStoryboard'` 硬编码
+
+### 修改文件统计
+| 文件 | 修改内容 |
+|------|----------|
+| `src/main.js` | 添加 `app:getDefaultStoragePath` IPC 处理器 |
+| `src/preload.js` | 暴露 `getDefaultStoragePath` 接口 |
+| `src/utils/settings.js` | 修复 `loadSettings()` 和 `saveSettings()` 逻辑 |
+| `src/utils/projectList.js` | 移除硬编码默认值 |
+
+### 行为变更
+| 场景 | 修复前 | 修复后 |
+|------|--------|--------|
+| 新设备首次启动 | 显示 `文档/KimStoryboard` | 显示系统文档目录（如`C:\Users\xxx\Documents\KimStoryboard`） |
+| 用户保存空路径 | 保存空字符串，下次加载仍为空 | 保留原有路径，不覆盖为空 |
+| 用户自定义路径 | 正常保存 | 正常保存 |
+
+---
+
 ## 2026-03-10 - 自动更新模态框 UI
 
 ### 完成内容

@@ -6,6 +6,7 @@ contextBridge.exposeInMainWorld('electronAPI', {
   openProjectDialog: () => ipcRenderer.invoke('dialog:openProject'),
   showOpenDialog: (options) => ipcRenderer.invoke('dialog:showOpenDialog', options),
   showSaveDialog: (options) => ipcRenderer.invoke('dialog:showSaveDialog', options),
+  getDefaultStoragePath: () => ipcRenderer.invoke('app:getDefaultStoragePath'),
 
   // 文件系统 API
   readFile: (filePath) => ipcRenderer.invoke('fs:readFile', filePath),

@@ -390,9 +390,10 @@ async function loadProjects() {
   if (window.useElectronAPI) {
     try {
       // 使用设置中的存储路径 - 直接从 window.settings 读取
-      const storagePath = window.settings?.storagePath || '文档/KimStoryboard';
+      const storagePath = window.settings?.storagePath;
 
-      const result = await window.electronAPI.listProjects(storagePath);
+      // 如果没有设置存储路径，使用空字符串（会加载失败，但不会使用硬编码的开发路径）
+      const result = await window.electronAPI.listProjects(storagePath || '');
 
       if (result.success) {
         // 使用状态管理器更新状态

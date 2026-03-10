@@ -34,7 +34,7 @@ async function loadSettings() {
   const elements = window.elements || {};
   // 直接检查 window.electronAPI 而不是 window.useElectronAPI
   const useElectronAPI = !!(window.electronAPI);
-  
+
   // 初始化 window.currentTheme（如果未定义）
   if (!window.currentTheme) {
     window.currentTheme = 'light';
@@ -43,11 +43,16 @@ async function loadSettings() {
 
   // 从 localStorage 加载基本设置（主题、API 配置等）
   const savedSettings = localStorage.getItem('kim_settings');
+  let hasValidStoragePath = false;
   if (savedSettings) {
     try {
       const parsed = JSON.parse(savedSettings);
       // 只加载非模板相关的设置
-      settings.storagePath = parsed.storagePath || settings.storagePath;
+      // 注意：空字符串视为"未设置"，需要后续使用系统默认路径
+      if (parsed.storagePath) {
+        settings.storagePath = parsed.storagePath;
+        hasValidStoragePath = true;
+      }
       settings.apiProvider = parsed.apiProvider || settings.apiProvider;
       settings.apiKeys = parsed.apiKeys || settings.apiKeys;
       settings.models = parsed.models || settings.models;
@@ -56,6 +61,22 @@ async function loadSettings() {
       currentTheme = settings.theme;
     } catch (e) {
       console.error('加载设置失败:', e);
+    }
+  }
+
+  // 如果是 Electron 环境且没有设置存储路径，使用系统文档目录作为默认值
+  if (useElectronAPI && !hasValidStoragePath) {
+    try {
+      // 通过 IPC 获取系统文档目录
+      const result = await window.electronAPI.getDefaultStoragePath();
+      if (result.success && result.path) {
+        settings.storagePath = result.path;
+      } else {
+        settings.storagePath = '文档/KimStoryboard';
+      }
+    } catch (e) {
+      console.error('获取默认存储路径失败:', e);
+      settings.storagePath = '文档/KimStoryboard';
     }
   }
 
@@ -134,7 +155,9 @@ function saveSettings() {
   const elements = window.elements;
   const currentTheme = window.currentTheme;
 
-  settings.storagePath = elements.storagePathInput?.value || '';
+  // 从表单获取值，如果为空则使用当前设置中的值（避免保存空值）
+  const newStoragePath = elements.storagePathInput?.value?.trim();
+  settings.storagePath = newStoragePath || settings.storagePath;
   settings.apiProvider = elements.apiProviderSelect?.value || 'deepseek';
   settings.apiKeys.deepseek = elements.deepseekApiKey?.value || '';
   settings.apiKeys.doubao = elements.doubaoApiKey?.value || '';
@@ -472,11 +495,11 @@ function getDefaultTemplate() {
 async function showTemplateStoragePath() {
   const elements = window.elements;
   const useElectronAPI = window.useElectronAPI;
-  
+
   if (!useElectronAPI) {
     return;
   }
-  
+
   try {
     const result = await window.electronAPI.getTemplatesPath();
     if (result.success && elements.templateStoragePath) {
@@ -484,11 +507,11 @@ async function showTemplateStoragePath() {
       elements.templateStoragePath.value = result.path;
     } else {
       // 如果获取失败，显示设置中的存储路径
-      elements.templateStoragePath.value = '模板配置文件存储在：' + (window.settings.storagePath || '文档/KimStoryboard');
+      elements.templateStoragePath.value = '模板配置文件存储在：' + window.settings.storagePath;
     }
   } catch (error) {
     console.error('获取模板路径失败:', error);
-    elements.templateStoragePath.value = '模板配置文件存储在：' + (window.settings.storagePath || '文档/KimStoryboard');
+    elements.templateStoragePath.value = '模板配置文件存储在：' + window.settings.storagePath;
   }
 }
 

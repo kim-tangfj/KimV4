@@ -186,6 +186,18 @@ ipcMain.handle('log:error', async (event, logEntry) => {
   return { success: true };
 });
 
+// 获取默认存储路径
+ipcMain.handle('app:getDefaultStoragePath', async () => {
+  try {
+    const documentsPath = app.getPath('documents');
+    const defaultPath = path.join(documentsPath, 'KimStoryboard');
+    return { success: true, path: defaultPath };
+  } catch (error) {
+    console.error('获取文档目录失败:', error);
+    return { success: false, error: error.message };
+  }
+});
+
 // ========== 自动更新 IPC 处理器 ==========
 function initUpdateIPC() {
   // 检查更新
