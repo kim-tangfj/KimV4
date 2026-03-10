@@ -35,15 +35,16 @@ module.exports = {
   getLogsDir: () => _logsDir,
   getTemplatesConfigPath: () => path.join(_configDir, 'templates.json'),
   getOptionsConfigPath: () => path.join(_configDir, 'options.json'),
+  getCustomOptionsConfigPath: () => path.join(_configDir, 'options-custom.json'),
   getOldUserDataPath: () => _oldUserDataPath,
   getOldConfigDir: () => path.join(_oldUserDataPath, 'config'),
 
   checkMigrationNeeded: () => {
     const oldConfigDir = path.join(_oldUserDataPath, 'config');
     const filesToMigrate = [];
-    const templatesConfig = path.join(oldConfigDir, 'templates.json');
-    const optionsConfig = path.join(oldConfigDir, 'options.json');
 
+    // 检查模板配置
+    const templatesConfig = path.join(oldConfigDir, 'templates.json');
     if (fs.existsSync(templatesConfig)) {
       const newTemplatesConfig = path.join(_configDir, 'templates.json');
       if (!fs.existsSync(newTemplatesConfig)) {
@@ -51,10 +52,21 @@ module.exports = {
       }
     }
 
+    // 检查内置选项
+    const optionsConfig = path.join(oldConfigDir, 'options.json');
     if (fs.existsSync(optionsConfig)) {
       const newOptionsConfig = path.join(_configDir, 'options.json');
       if (!fs.existsSync(newOptionsConfig)) {
         filesToMigrate.push('options.json');
+      }
+    }
+
+    // 检查自定义选项
+    const customOptionsConfig = path.join(oldConfigDir, 'options-custom.json');
+    if (fs.existsSync(customOptionsConfig)) {
+      const newCustomOptionsConfig = path.join(_configDir, 'options-custom.json');
+      if (!fs.existsSync(newCustomOptionsConfig)) {
+        filesToMigrate.push('options-custom.json');
       }
     }
 
@@ -70,6 +82,7 @@ module.exports = {
         fs.mkdirSync(_configDir, { recursive: true });
       }
 
+      // 迁移模板配置
       const oldTemplates = path.join(oldConfigDir, 'templates.json');
       const newTemplates = path.join(_configDir, 'templates.json');
       if (fs.existsSync(oldTemplates) && !fs.existsSync(newTemplates)) {
@@ -77,11 +90,20 @@ module.exports = {
         migrated.push('templates.json');
       }
 
+      // 迁移内置选项
       const oldOptions = path.join(oldConfigDir, 'options.json');
       const newOptions = path.join(_configDir, 'options.json');
       if (fs.existsSync(oldOptions) && !fs.existsSync(newOptions)) {
         fs.copyFileSync(oldOptions, newOptions);
         migrated.push('options.json');
+      }
+
+      // 迁移自定义选项
+      const oldCustomOptions = path.join(oldConfigDir, 'options-custom.json');
+      const newCustomOptions = path.join(_configDir, 'options-custom.json');
+      if (fs.existsSync(oldCustomOptions) && !fs.existsSync(newCustomOptions)) {
+        fs.copyFileSync(oldCustomOptions, newCustomOptions);
+        migrated.push('options-custom.json');
       }
 
       return { success: true, migrated };
