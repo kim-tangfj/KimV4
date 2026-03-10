@@ -40,6 +40,10 @@
       "!**/*.md"
     ],
     "asar": true,
+    "asarUnpack": [
+      "**/node_modules/electron-updater/**",
+      "**/*.node"
+    ],
     "extraResources": [
       {
         "from": "assets/default",
