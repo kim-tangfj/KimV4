@@ -41,11 +41,12 @@ jobs:
       
       # 步骤 5: 创建 GitHub Release 并上传安装包
       - name: 创建 GitHub Release
-        uses: softprops/action-gh-release@v1
+        uses: softprops/action-gh-release@v2
         with:
           files: dist/*.exe  # 上传所有 .exe 文件
-          draft: true  # 创建草稿发布，可手动审核后发布
+          draft: false  # 直接发布（覆盖已有文件）
           generate_release_notes: true  # 自动生成发布说明
+          overwrite: true  # 覆盖同名文件
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}  # 使用 GitHub 自动提供的 Token
   
