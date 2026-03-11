@@ -318,17 +318,49 @@ async function deleteCurrentProject(elements, useElectronAPI, loadProjects, show
 
       const result = await window.electronAPI.deleteProject(state.currentProject.projectDir);
       if (result.success) {
+        // 清空所有状态
         window.updateState('currentProject', null);
         window.updateState('currentShot', null);
         window.updateState('currentScene', null);
         window.updateState('projectData', null);
+        
+        // 关闭项目素材库侧边栏（如果已打开）
+        if (window.closeAssetsSidebar) {
+          window.closeAssetsSidebar();
+        }
+        
+        // 刷新项目列表
         await loadProjects();
+        
+        // 清空提示词预览
         if (elements.promptPreview) {
           elements.promptPreview.innerHTML = '<div class="placeholder-text">请选中项目 > 片段 > 镜头，自动生成提示词</div>';
         }
+        
+        // 清空属性栏
         if (elements.propertyForm) {
           elements.propertyForm.innerHTML = '<div class="placeholder-text">请选择项目、片段或镜头以编辑属性</div>';
         }
+        
+        // 清空片段列表
+        if (elements.shotList) {
+          elements.shotList.innerHTML = '<div class="placeholder-text">请先创建项目</div>';
+        }
+        
+        // 清空镜头列表
+        if (elements.sceneList) {
+          elements.sceneList.innerHTML = '<div class="placeholder-text">请先创建片段</div>';
+        }
+        
+        // 重置底部面板标题
+        if (elements.bottomPanelTitle) {
+          elements.bottomPanelTitle.textContent = '属性';
+        }
+        
+        // 禁用片段操作按钮
+        if (elements.newShotBtn) elements.newShotBtn.disabled = true;
+        if (elements.deleteShotBtn) elements.deleteShotBtn.disabled = true;
+        
         showToast('项目已删除');
       } else {
         showToast('删除失败：' + result.error);
