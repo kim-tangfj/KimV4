@@ -4,6 +4,95 @@
 
 ---
 
+## 2026-03-11 - 修复删除项目后 UI 未清空的问题
+
+### 问题
+右键项目选择"删除项目"，删除成功后：
+- 项目素材库侧边栏未关闭
+- 片段列表、镜头列表未清空
+- 属性栏、提示词预览未清空
+- 片段操作按钮仍可点击
+
+### 根因
+`deleteCurrentProject()` 函数只清空了基本状态（currentProject/currentShot/currentScene/projectData），但：
+- 未关闭项目素材库侧边栏
+- 未清空片段列表和镜头列表 DOM
+- 未禁用片段操作按钮
+
+### 修复方案
+**文件**: `src/utils/projectList.js`
+
+在 `deleteCurrentProject()` 函数中添加完整的 UI 清理逻辑：
+
+```javascript
+if (result.success) {
+  // 清空所有状态
+  window.updateState('currentProject', null);
+  window.updateState('currentShot', null);
+  window.updateState('currentScene', null);
+  window.updateState('projectData', null);
+  
+  // 关闭项目素材库侧边栏（如果已打开）
+  if (window.closeAssetsSidebar) {
+    window.closeAssetsSidebar();
+  }
+  
+  // 刷新项目列表
+  await loadProjects();
+  
+  // 清空提示词预览
+  if (elements.promptPreview) {
+    elements.promptPreview.innerHTML = '<div class="placeholder-text">请选中项目 > 片段 > 镜头，自动生成提示词</div>';
+  }
+  
+  // 清空属性栏
+  if (elements.propertyForm) {
+    elements.propertyForm.innerHTML = '<div class="placeholder-text">请选择项目、片段或镜头以编辑属性</div>';
+  }
+  
+  // 清空片段列表
+  if (elements.shotList) {
+    elements.shotList.innerHTML = '<div class="placeholder-text">请先创建项目</div>';
+  }
+  
+  // 清空镜头列表
+  if (elements.sceneList) {
+    elements.sceneList.innerHTML = '<div class="placeholder-text">请先创建片段</div>';
+  }
+  
+  // 重置底部面板标题
+  if (elements.bottomPanelTitle) {
+    elements.bottomPanelTitle.textContent = '属性';
+  }
+  
+  // 禁用片段操作按钮
+  if (elements.newShotBtn) elements.newShotBtn.disabled = true;
+  if (elements.deleteShotBtn) elements.deleteShotBtn.disabled = true;
+  
+  showToast('项目已删除');
+}
+```
+
+### 行为对比
+| UI 元素 | 修复前 | 修复后 |
+|---------|--------|--------|
+| 项目素材库侧边栏 | 保持打开 | 自动关闭 |
+| 片段列表 | 显示旧数据 | 清空显示"请先创建项目" |
+| 镜头列表 | 显示旧数据 | 清空显示"请先创建片段" |
+| 属性栏 | 显示旧数据 | 清空显示提示 |
+| 提示词预览 | 显示旧数据 | 清空显示提示 |
+| 片段操作按钮 | 可点击 | 禁用 |
+
+### 修改文件
+| 文件 | 变更 |
+|------|------|
+| `src/utils/projectList.js` | +32 行，删除项目后完整清理 UI |
+
+### Git 提交
+- 提交：`75573a3` - fix: delete project auto close assets and clear UI
+
+---
+
 ## 2026-03-10 - 添加单实例锁防止重复启动
 
 ### 需求
